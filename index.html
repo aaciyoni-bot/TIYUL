@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -25,6 +26,10 @@
         .avatar-edit-btn { position: absolute; bottom: 0; right: 0; background-color: #4f46e5; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid white; }
         .doc-card { transition: all 0.2s ease; }
         .doc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        
+        /* צ'קבוקס קאסטום לצ'קליסט קרוואן */
+        .check-toggle { transition: all 0.3s; }
+        .check-toggle.active { background-color: #10b981; border-color: #10b981; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 pb-20 select-none">
@@ -56,6 +61,7 @@
         </div>
     </main>
 
+    <!-- Modal Elements -->
     <div id="custom-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 transform transition-all">
             <h3 id="modal-title" class="text-xl font-bold mb-3 text-gray-800"></h3>
@@ -102,19 +108,23 @@
 
         const db = firebase.database();
 
-        // רשימת כל המשתתפים, הלשוניות והארנק
+        // רשימת כל הלשוניות (כולל פיצ'רים)
         const people = [
             "יוני", "חנה", "ליאור", "אייל", "הילה", "יובל", 
             "עוזיאל", "שרונה", "להבה", "אליה", "דביר", "הלל", 
             "ציוד כללי פרידמן משמר", 
             "ציוד כללי פרידמן אדורה", 
             "ציוד כללי משותף",
+            "🚐 ניהול קרוואן",
+            "🎲 תורנויות",
             "💰 ארנק משותף"
         ];
         
+        // משפחה להקצאת תורנויות (ללא ציוד כללי ופיצ'רים)
+        const activeFamilyMembers = people.filter(p => !p.startsWith("ציוד") && !["🚐 ניהול קרוואן", "🎲 תורנויות", "💰 ארנק משותף"].includes(p));
         const adults = ["יוני", "חנה", "עוזיאל", "שרונה"];
 
-        let appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {} } };
+        let appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {} }, checklists: {}, chores: {} };
         let currentTab = people[0];
         let currentUploadDocType = "";
 
@@ -128,8 +138,10 @@
                     appData.avatars = data.avatars || {};
                     appData.documents = data.documents || {};
                     appData.wallet = data.wallet || { expenses: {} };
+                    appData.checklists = data.checklists || { departure: [], arrival: [] };
+                    appData.chores = data.chores || {};
                 } else {
-                    appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {} } };
+                    appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {} }, checklists: {}, chores: {} };
                 }
                 
                 generateInitialData();
@@ -145,6 +157,7 @@
             document.getElementById('loading-text').innerText = "שגיאת קוד פנימית.";
         }
 
+        // === פונקציות עזר ===
         function showModal(title, message, showCancel = false, onOk = null) {
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-message').innerText = message;
@@ -168,12 +181,19 @@
             modal.classList.remove('hidden');
         }
 
+        // === רינדור ראשי ===
         function renderApp() {
             renderTabs();
+            const content = document.getElementById('app-content');
+            
             if (currentTab === "💰 ארנק משותף") {
                 renderWallet();
+            } else if (currentTab === "🚐 ניהול קרוואן") {
+                renderCaravan();
+            } else if (currentTab === "🎲 תורנויות") {
+                renderChores();
             } else {
-                renderContent();
+                renderContent(); // רשימות אריזה רגילות ומסמכים
             }
             updateTotalProgress();
         }
@@ -184,9 +204,10 @@
 
             people.forEach(person => {
                 const isActive = person === currentTab;
+                const isSpecialTab = ["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות"].includes(person);
                 let total = 0, packed = 0;
                 
-                if(person !== "💰 ארנק משותף" && appData.items[person]) {
+                if(!isSpecialTab && appData.items[person]) {
                     Object.values(appData.items[person]).forEach(item => {
                         total++;
                         if(item.packed) packed++;
@@ -200,8 +221,8 @@
                 const btn = document.createElement('button');
                 btn.className = `px-5 py-3 whitespace-nowrap text-sm flex-shrink-0 transition-colors border-b-2 ${isActive ? 'border-indigo-600 text-indigo-700 font-bold bg-indigo-50/50' : 'border-transparent text-gray-500 hover:bg-gray-50'}`;
                 
-                if (person === "💰 ארנק משותף") {
-                    btn.innerHTML = `<div class="flex flex-col items-center gap-1"><span class="text-base">${person}</span></div>`;
+                if (isSpecialTab) {
+                    btn.innerHTML = `<div class="flex flex-col items-center gap-1"><span class="text-base font-bold">${person}</span></div>`;
                 } else {
                     btn.innerHTML = `
                         <div class="flex flex-col items-center gap-1">
@@ -215,95 +236,143 @@
             });
         }
 
-        function handleAvatarUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            showModal('מעלה תמונה...', 'מכווץ ושומר...', false);
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width, height = img.height;
-                    if (width > height) { if (width > 200) { height *= 200 / width; width = 200; } } 
-                    else { if (height > 200) { width *= 200 / height; height = 200; } }
-                    canvas.width = width; canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    db.ref('avatars/' + currentTab).set(canvas.toDataURL('image/jpeg', 0.6)).then(() => {
-                        document.getElementById('custom-modal').classList.add('hidden');
-                    });
-                }
-                img.src = e.target.result;
-            }
-            reader.readAsDataURL(file);
-        }
+        // === פיצ'ר תורנויות (החדש!) ===
+        function renderChores() {
+            const content = document.getElementById('app-content');
+            const chores = appData.chores || {};
+            
+            let html = `
+                <div class="text-center mb-6 mt-4">
+                    <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-dice text-purple-500 mr-2"></i> תורנויות טיול</h2>
+                    <p class="text-gray-500 mt-2">מי עושה מה היום?</p>
+                </div>
+                
+                <div class="bg-purple-50 rounded-2xl shadow-inner p-5 mb-8 border border-purple-100">
+                    <h3 class="font-bold text-purple-800 mb-4"><i class="fas fa-plus-circle mr-1"></i> הוספת תורנות חדשה</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-chore-name" placeholder="למשל: שטיפת כלים, ריקון פח..." class="w-full p-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400">
+                        <button onclick="addChore()" class="bg-purple-600 text-white px-6 rounded-lg font-bold shadow hover:bg-purple-700 transition">הוסף</button>
+                    </div>
+                </div>
 
-        function openDocUpload(docType) {
-            currentUploadDocType = docType;
-            document.getElementById('doc-upload-input').click();
-        }
+                <div class="flex flex-col gap-3">
+            `;
 
-        function handleDocumentUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            showModal('מעלה מסמך...', 'מכווץ ומאבטח את המסמך...', false);
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width, height = img.height;
-                    if (width > height) { if (width > 1000) { height *= 1000 / width; width = 1000; } } 
-                    else { if (height > 1000) { width *= 1000 / height; height = 1000; } }
-                    canvas.width = width; canvas.height = height;
-                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                    db.ref(`documents/${currentTab}/${currentUploadDocType}`).set(canvas.toDataURL('image/jpeg', 0.7)).then(() => {
-                        document.getElementById('custom-modal').classList.add('hidden');
-                    });
-                }
-                img.src = e.target.result;
-            }
-            reader.readAsDataURL(file);
-            event.target.value = ''; 
-        }
-
-        function viewDocument(docType) {
-            const base64String = appData.documents[currentTab][docType];
-            if(!base64String) return;
-            document.getElementById('full-screen-img').src = base64String;
-            document.getElementById('image-modal').classList.remove('hidden');
-            document.getElementById('delete-doc-btn').onclick = () => {
-                showModal('מחיקת מסמך', 'בטוח שברצונך למחוק?', true, () => {
-                    db.ref(`documents/${currentTab}/${docType}`).remove().then(() => closeImageModal());
-                });
-            };
-        }
-        function closeImageModal() {
-            document.getElementById('image-modal').classList.add('hidden');
-            document.getElementById('full-screen-img').src = '';
-        }
-
-        function getRequiredDocsForTab(tabName) {
-            if (tabName === "ציוד כללי משותף") {
-                return [
-                    { id: 'flight', name: 'כרטיסי טיסה', icon: 'fa-plane' },
-                    { id: 'villa', name: 'הזמנת וילה', icon: 'fa-house-user' },
-                    { id: 'caravan', name: 'השכרת קרוואנים', icon: 'fa-caravan' },
-                    { id: 'insurance', name: 'ביטוחים כלליים', icon: 'fa-shield-alt' }
-                ];
-            } else if (tabName.startsWith("ציוד כללי") || tabName === "💰 ארנק משותף") {
-                return []; 
+            const choreKeys = Object.keys(chores);
+            if(choreKeys.length === 0) {
+                html += `<div class="text-center p-6 bg-white rounded-xl text-gray-500">איזה כיף, אין מטלות! (עדיין...)</div>`;
             } else {
-                let docs = [{ id: 'passport', name: 'דרכון', icon: 'fa-passport' }];
-                if (adults.includes(tabName)) {
-                    docs.push({ id: 'driver_license', name: 'רישיון נהיגה', icon: 'fa-id-card' });
-                    docs.push({ id: 'int_license', name: 'רישיון בינלאומי', icon: 'fa-globe' });
-                }
-                return docs;
+                choreKeys.forEach(key => {
+                    const c = chores[key];
+                    html += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex-1">
+                            <p class="font-bold text-gray-800 text-lg">${c.name}</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <select onchange="assignChore('${key}', this.value)" class="flex-1 sm:w-40 p-2 border border-gray-200 rounded-lg text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-purple-400">
+                                <option value="" ${!c.assignee ? 'selected' : ''}>-- ללא שיבוץ --</option>
+                                ${activeFamilyMembers.map(m => `<option value="${m}" ${c.assignee === m ? 'selected' : ''}>${m}</option>`).join('')}
+                            </select>
+                            <button onclick="editChore('${key}', '${c.name.replace(/'/g, "\\'")}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition"><i class="fas fa-pen"></i></button>
+                            <button onclick="deleteChore('${key}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
+                });
+            }
+            html += `</div>`;
+            content.innerHTML = html;
+        }
+
+        function addChore() {
+            const name = document.getElementById('new-chore-name').value.trim();
+            if(!name) return showModal('שגיאה', 'יש לכתוב את שם התורנות.');
+            db.ref(`chores`).push({ name: name, assignee: "" });
+        }
+
+        function assignChore(id, personName) {
+            db.ref(`chores/${id}/assignee`).set(personName);
+        }
+
+        function editChore(id, oldName) {
+            const newName = prompt("ערוך את שם המטלה:", oldName);
+            if(newName && newName.trim() !== "") {
+                db.ref(`chores/${id}/name`).set(newName.trim());
             }
         }
 
+        function deleteChore(id) {
+            showModal('מחיקה', 'למחוק את התורנות הזו?', true, () => db.ref(`chores/${id}`).remove());
+        }
+
+        // === פיצ'ר קרוואן (צ'קליסטים) ===
+        function renderCaravan() {
+            const content = document.getElementById('app-content');
+            const depList = appData.checklists.departure || [];
+            const arrList = appData.checklists.arrival || [];
+
+            let html = `
+                <div class="text-center mb-6 mt-4">
+                    <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-steering-wheel text-green-600 mr-2"></i> ניהול קרוואן</h2>
+                    <p class="text-gray-500 mt-2">אל תתניעו לפני שעברתם על זה!</p>
+                </div>
+            `;
+
+            // פונקציה לייצור בלוק של צ'קליסט
+            const createListHtml = (title, icon, type, items) => {
+                const total = items.length;
+                const doneCount = items.filter(i => i.done).length;
+                const isAllDone = total > 0 && total === doneCount;
+
+                let block = `
+                <div class="bg-white rounded-2xl shadow-sm mb-6 overflow-hidden border ${isAllDone ? 'border-green-400' : 'border-gray-200'}">
+                    <div class="${isAllDone ? 'bg-green-50' : 'bg-gray-50'} px-5 py-4 border-b flex justify-between items-center">
+                        <h3 class="font-bold ${isAllDone ? 'text-green-800' : 'text-gray-800'} text-lg"><i class="fas ${icon} mr-2"></i> ${title}</h3>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-bold bg-white px-3 py-1 rounded-full border shadow-sm">${doneCount}/${total}</span>
+                            <button onclick="resetChecklist('${type}')" class="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded-lg transition"><i class="fas fa-undo"></i> איפוס</button>
+                        </div>
+                    </div>
+                    <ul class="divide-y divide-gray-100">
+                `;
+                
+                items.forEach((item, index) => {
+                    block += `
+                    <li class="p-3 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition" onclick="toggleChecklistTask('${type}', ${index})">
+                        <div class="check-toggle flex items-center justify-center w-7 h-7 rounded border-2 flex-shrink-0 ${item.done ? 'active text-white' : 'border-gray-300 bg-white text-transparent'}">
+                            <i class="fas fa-check text-sm"></i>
+                        </div>
+                        <p class="${item.done ? 'text-gray-400 line-through' : 'text-gray-800 font-medium'} flex-1 text-lg">${item.task}</p>
+                    </li>`;
+                });
+                
+                block += `</ul></div>`;
+                return block;
+            };
+
+            html += createListHtml('לפני נסיעה (עזיבת חניון)', 'fa-road', 'departure', depList);
+            html += createListHtml('הגעה לחניון חדש', 'fa-map-marker-alt', 'arrival', arrList);
+
+            content.innerHTML = html;
+        }
+
+        function toggleChecklistTask(type, index) {
+            const currentState = appData.checklists[type][index].done;
+            db.ref(`checklists/${type}/${index}/done`).set(!currentState);
+        }
+
+        function resetChecklist(type) {
+            showModal('איפוס רשימה', 'האם לאפס את כל ה-V ברשימה זו לקראת החניון הבא?', true, () => {
+                const list = appData.checklists[type];
+                if(list) {
+                    list.forEach((_, index) => {
+                        db.ref(`checklists/${type}/${index}/done`).set(false);
+                    });
+                }
+            });
+        }
+
+        // === פיצ'ר ארנק משותף ===
         function renderWallet() {
             const content = document.getElementById('app-content');
             const expenses = appData.wallet.expenses || {};
@@ -428,6 +497,97 @@
             });
         }
 
+        // === העלאות תמונות ומסמכים ===
+        function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            showModal('מעלה תמונה...', 'מכווץ ושומר...', false);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width, height = img.height;
+                    if (width > height) { if (width > 200) { height *= 200 / width; width = 200; } } 
+                    else { if (height > 200) { width *= 200 / height; height = 200; } }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    db.ref('avatars/' + currentTab).set(canvas.toDataURL('image/jpeg', 0.6)).then(() => {
+                        document.getElementById('custom-modal').classList.add('hidden');
+                    });
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function openDocUpload(docType) {
+            currentUploadDocType = docType;
+            document.getElementById('doc-upload-input').click();
+        }
+
+        function handleDocumentUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            showModal('מעלה מסמך...', 'מכווץ ומאבטח את המסמך...', false);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width, height = img.height;
+                    if (width > height) { if (width > 1000) { height *= 1000 / width; width = 1000; } } 
+                    else { if (height > 1000) { width *= 1000 / height; height = 1000; } }
+                    canvas.width = width; canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    db.ref(`documents/${currentTab}/${currentUploadDocType}`).set(canvas.toDataURL('image/jpeg', 0.7)).then(() => {
+                        document.getElementById('custom-modal').classList.add('hidden');
+                    });
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+            event.target.value = ''; 
+        }
+
+        function viewDocument(docType) {
+            const base64String = appData.documents[currentTab][docType];
+            if(!base64String) return;
+            document.getElementById('full-screen-img').src = base64String;
+            document.getElementById('image-modal').classList.remove('hidden');
+            document.getElementById('delete-doc-btn').onclick = () => {
+                showModal('מחיקת מסמך', 'בטוח שברצונך למחוק?', true, () => {
+                    db.ref(`documents/${currentTab}/${docType}`).remove().then(() => closeImageModal());
+                });
+            };
+        }
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
+            document.getElementById('full-screen-img').src = '';
+        }
+
+        function getRequiredDocsForTab(tabName) {
+            if (tabName === "ציוד כללי משותף") {
+                return [
+                    { id: 'flight', name: 'כרטיסי טיסה', icon: 'fa-plane' },
+                    { id: 'villa', name: 'הזמנת וילה', icon: 'fa-house-user' },
+                    { id: 'caravan', name: 'השכרת קרוואנים', icon: 'fa-caravan' },
+                    { id: 'insurance', name: 'ביטוחים כלליים', icon: 'fa-shield-alt' }
+                ];
+            } else if (tabName.startsWith("ציוד כללי") || ["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות"].includes(tabName)) {
+                return []; 
+            } else {
+                let docs = [{ id: 'passport', name: 'דרכון', icon: 'fa-passport' }];
+                if (adults.includes(tabName)) {
+                    docs.push({ id: 'driver_license', name: 'רישיון נהיגה', icon: 'fa-id-card' });
+                    docs.push({ id: 'int_license', name: 'רישיון בינלאומי', icon: 'fa-globe' });
+                }
+                return docs;
+            }
+        }
+
+        // === רשימות אריזה רגילות ===
         function renderContent() {
             const content = document.getElementById('app-content');
             const personItems = appData.items[currentTab] || {};
@@ -572,7 +732,7 @@
         function updateTotalProgress() {
             let total = 0, packed = 0;
             Object.keys(appData.items || {}).forEach(personKey => {
-                if(personKey !== "💰 ארנק משותף") {
+                if(!["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות"].includes(personKey)) {
                     Object.values(appData.items[personKey]).forEach(item => {
                         total++; if(item.packed) packed++;
                     });
@@ -587,7 +747,7 @@
             if (!appData.items) return alert("אין נתונים לייצוא");
             let csvContent = "\uFEFFעבור,קטגוריה,פריט,כמות,הערות,נארז?\n";
             people.forEach(person => {
-                if(appData.items[person] && person !== "💰 ארנק משותף") {
+                if(appData.items[person] && !["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות"].includes(person)) {
                     Object.values(appData.items[person]).forEach(item => {
                         csvContent += `"${person}","${(item.category||"").replace(/"/g,'""')}","${(item.name||"").replace(/"/g,'""')}","${(item.amount||"").replace(/"/g,'""')}","${(item.note||"").replace(/"/g,'""')}","${item.packed?"כן":"לא"}"\n`;
                     });
@@ -600,8 +760,43 @@
         }
 
         function generateInitialData() {
+            // תורנויות ברירת מחדל אם אין
+            if (!appData.chores || Object.keys(appData.chores || {}).length === 0) {
+                const defaultChores = [
+                    { name: "שטיפת כלים (ארוחת בוקר)", assignee: "" },
+                    { name: "שטיפת כלים (ארוחת ערב)", assignee: "" },
+                    { name: "ריקון שירותים כימיים (קרוואן 1)", assignee: "" },
+                    { name: "ריקון שירותים כימיים (קרוואן 2)", assignee: "" },
+                    { name: "הכנת קפה בבוקר", assignee: "" }
+                ];
+                db.ref('chores').set(defaultChores);
+            }
+
+            // הזרקת צ'קליסט קרוואן אם הוא לא קיים בענן
+            if (!appData.checklists || Object.keys(appData.checklists.departure || {}).length === 0) {
+                const depTasks = [
+                    { task: "ניתוק כבל חשמל ראשי וגלגולו", done: false },
+                    { task: "ניתוק צינור מים וסגירת ברז", done: false },
+                    { task: "ריקון מים אפורים / קסטת שירותים", done: false },
+                    { task: "סגירת ברז גז ראשי", done: false },
+                    { task: "סגירת כל החלונות והסקיילייט בגג", done: false },
+                    { task: "נעילת ארונות, מגירות ומקרר", done: false },
+                    { task: "קיפול מדרגה חיצונית ומרקיזה", done: false },
+                    { task: "איסוף כפכפים וציוד מבחוץ", done: false }
+                ];
+                const arrTasks = [
+                    { task: "ייצוב הקרוואן בחלקה (שימוש בצ'וקים)", done: false },
+                    { task: "חיבור כבל חשמל לעמדת הפארק", done: false },
+                    { task: "פתיחת ברז מים מרכזי לטעינה", done: false },
+                    { task: "פתיחת ברז גז לבישול וחימום", done: false },
+                    { task: "פתיחת מרקיזה, הוצאת שולחן וכיסאות", done: false }
+                ];
+                db.ref('checklists/departure').set(depTasks);
+                db.ref('checklists/arrival').set(arrTasks);
+            }
+
             people.forEach(person => {
-                if (person === "💰 ארנק משותף") return;
+                if (["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות"].includes(person)) return;
                 
                 if (!appData.items[person] || Object.keys(appData.items[person]).length === 0) {
                     let itemsArray = [];
