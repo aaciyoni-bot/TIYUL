@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -37,8 +38,7 @@
         @keyframes pulse-soft { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         .anim-pulse { animation: pulse-soft 2s infinite; }
         
-        /* Playing Card Style */
-        .playing-card { background: white; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); width: 80px; height: 110px; display: flex; flex-direction: column; justify-content: center; items-center; font-weight: 800; font-size: 2rem; position: relative; }
+        .playing-card { background: white; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); width: 80px; height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: 800; font-size: 2rem; position: relative; }
         .playing-card .suit-top { position: absolute; top: 5px; left: 5px; font-size: 1rem; line-height: 1; }
         .playing-card .suit-bottom { position: absolute; bottom: 5px; right: 5px; font-size: 1rem; line-height: 1; transform: rotate(180deg); }
     </style>
@@ -124,7 +124,6 @@
         catch (e) { document.getElementById('loading-text').innerText = "שגיאה באתחול: " + e.message; }
         const db = firebase.database();
 
-        // Data Definitions
         const families = {
             mishmar: { title: "משפחת פרידמן משמר", members: ["יוני", "חנה", "ליאור", "אייל", "הילה", "יובל", "ציוד כללי פרידמן משמר"] },
             adora: { title: "משפחת פרידמן אדורה", members: ["עוזיאל", "שרונה", "להבה", "אליה", "דביר", "הלל", "ציוד כללי פרידמן אדורה"] },
@@ -142,29 +141,37 @@
         let currentUploadDocType = "";
 
         db.ref('/').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                appData = { ...appData, ...data };
-                // Ensure structural integrity
-                if (!appData.wallet) appData.wallet = { expenses: {}, planned: {} };
-                if (!appData.wallet.planned) appData.wallet.planned = {};
-                if (!appData.wallet.expenses) appData.wallet.expenses = {};
-                if (!appData.games) appData.games = { scores: { mishmar: 0, adora: 0 }, individualScores: {}, currentCountryCity: {}, liveSong: {}, photoHunt: {}, war: {} };
-                if (!appData.games.scores) appData.games.scores = { mishmar: 0, adora: 0 };
-                if (!appData.games.individualScores) appData.games.individualScores = {};
-                if (!appData.games.currentCountryCity) appData.games.currentCountryCity = { letter: "?" };
-                if (!appData.games.liveSong) appData.games.liveSong = { word: "?" };
-                if (!appData.games.photoHunt) appData.games.photoHunt = { mission: "לחצו להגרלת משימה ראשונה!" };
-                if (!appData.games.war) appData.games.war = { players: {} };
-                if (!appData.locations) appData.locations = {};
-                if (!appData.emergencyContacts) appData.emergencyContacts = { custom: {} };
-                if (!appData.emergencyContacts.custom) appData.emergencyContacts.custom = {};
+            try {
+                const data = snapshot.val();
+                if (data) {
+                    appData = { ...appData, ...data };
+                    if (!appData.wallet) appData.wallet = { expenses: {}, planned: {} };
+                    if (!appData.wallet.planned) appData.wallet.planned = {};
+                    if (!appData.wallet.expenses) appData.wallet.expenses = {};
+                    if (!appData.games) appData.games = { scores: { mishmar: 0, adora: 0 }, individualScores: {}, currentCountryCity: {}, liveSong: {}, photoHunt: {}, war: {} };
+                    if (!appData.games.scores) appData.games.scores = { mishmar: 0, adora: 0 };
+                    if (!appData.games.individualScores) appData.games.individualScores = {};
+                    if (!appData.games.currentCountryCity) appData.games.currentCountryCity = { letter: "?" };
+                    if (!appData.games.liveSong) appData.games.liveSong = { word: "?" };
+                    if (!appData.games.photoHunt) appData.games.photoHunt = { mission: "לחצו להגרלת משימה ראשונה!" };
+                    if (!appData.games.war) appData.games.war = { players: {} };
+                    if (!appData.locations) appData.locations = {};
+                    if (!appData.emergencyContacts) appData.emergencyContacts = { custom: {} };
+                    if (!appData.emergencyContacts.custom) appData.emergencyContacts.custom = {};
+                }
+                
+                // הזרקת נתוני ברירת מחדל (הפונקציה שהייתה חסרה!)
+                generateInitialData();
+                
+                document.getElementById('sync-status').innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מחובר ומעודכן';
+                renderApp();
+            } catch (err) {
+                document.getElementById('loading-text').innerText = "שגיאה בטעינת הנתונים: " + err.message;
+                console.error(err);
             }
-            generateInitialData();
-            document.getElementById('sync-status').innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מחובר ומעודכן';
-            renderApp();
         }, (err) => {
-            document.getElementById('sync-status').innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> אין קליטה';
+            document.getElementById('sync-status').innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> שגיאת רשת';
+            document.getElementById('loading-text').innerText = "אין קליטה. בדוק חיבור לאינטרנט.";
         });
 
         function showModal(title, message, showCancel = false, onOk = null) {
@@ -353,7 +360,6 @@
                 </div>
             `;
 
-            // Documents Section
             const requiredDocs = getRequiredDocsForTab(currentTab);
             html += `
             <div class="bg-white rounded-3xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
@@ -367,14 +373,12 @@
                 html += renderDocCard(doc.id, doc.name, doc.icon, hasDoc);
             });
 
-            // Custom Docs
             Object.keys(personDocs).forEach(docId => {
                 if(!requiredDocs.find(d => d.id === docId)) {
                     html += renderDocCard(docId, docId, 'fa-file-alt', true);
                 }
             });
 
-            // Add new custom doc
             html += `
                 <div onclick="addCustomDoc()" class="doc-card bg-indigo-50 border border-dashed border-indigo-300 rounded-2xl p-4 text-center cursor-pointer hover:bg-indigo-100 flex flex-col justify-center items-center">
                     <div class="text-2xl mb-1 text-indigo-400"><i class="fas fa-plus-circle"></i></div>
@@ -382,7 +386,6 @@
                 </div>
             </div></div>`;
 
-            // Packing Items Section
             const grouped = {};
             Object.keys(personItems).forEach(key => {
                 const item = personItems[key];
@@ -512,6 +515,7 @@
                 });
             };
         }
+        
         function closeImageModal() {
             document.getElementById('image-modal').classList.add('hidden');
             document.getElementById('full-screen-img').src = '';
@@ -926,7 +930,6 @@
             const activePhotoMission = appData.games.photoHunt?.mission || "לחצו להגרלת משימה ראשונה!";
             const warPlayers = appData.games.war?.players || {};
             
-            // Build Individual Scoreboard array
             let indScoresHTML = '';
             const indSorted = Object.entries(individualScores).sort((a,b) => b[1] - a[1]);
             if(indSorted.length > 0) {
@@ -962,7 +965,6 @@
                     
                     ${indScoresHTML}
 
-                    <!-- קופת ניקוד מרכזית למשפחות וליחידים -->
                     <div class="mt-6 bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/20">
                         <p class="text-xs font-bold text-indigo-200 mb-2 text-center">מי ניצח עכשיו במשחק?</p>
                         <div class="flex gap-2">
@@ -983,7 +985,6 @@
 
                 <div class="grid grid-cols-1 gap-5">
                     
-                    <!-- מלחמת קלפים לייב (WAR) -->
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 text-center">
                         <div class="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3"><i class="fas fa-heart"></i><i class="fas fa-spade ml-1"></i></div>
                         <h4 class="font-extrabold text-xl text-gray-800 mb-2">מלחמת קלפים Live!</h4>
@@ -1015,7 +1016,6 @@
                         <button onclick="db.ref('games/war/players').remove()" class="w-full text-red-400 font-bold text-sm bg-red-50 py-2 rounded-lg"><i class="fas fa-broom mr-1"></i> נקה שולחן לסיבוב הבא</button>
                     </div>
 
-                    <!-- ציידי התמונות -->
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 text-center">
                         <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 rotate-3"><i class="fas fa-camera"></i></div>
                         <h4 class="font-extrabold text-xl text-gray-800 mb-2">ציידי התמונות Live!</h4>
@@ -1029,7 +1029,6 @@
                         <button onclick="generatePhotoMission()" class="bg-gray-800 text-white w-full py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition text-lg mb-3"><i class="fas fa-random mr-2"></i> שגר משימה חדשה לכולם</button>
                     </div>
 
-                    <!-- טריוויה -->
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 text-center">
                         <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 rotate-3"><i class="fas fa-brain"></i></div>
                         <h4 class="font-extrabold text-xl text-gray-800 mb-2">מגה-טריוויה</h4>
@@ -1043,7 +1042,6 @@
                         <button onclick="nextTrivia()" class="bg-blue-600 text-white w-full py-3.5 rounded-xl font-bold shadow-md hover:bg-blue-700 transition text-lg mb-3">הגרל שאלה</button>
                     </div>
 
-                    <!-- שירים -->
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 text-center">
                         <div class="w-14 h-14 bg-pink-100 text-pink-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 -rotate-3"><i class="fas fa-music"></i></div>
                         <h4 class="font-extrabold text-xl text-gray-800 mb-2">שירון קרוואנים Live</h4>
@@ -1057,7 +1055,6 @@
                         <button onclick="nextSongWord()" class="bg-pink-600 text-white w-full py-3.5 rounded-xl font-bold shadow-md hover:bg-pink-700 transition text-lg mb-3"><i class="fas fa-sync-alt mr-2"></i> הגרל מילה לכולם</button>
                     </div>
 
-                    <!-- ארץ עיר -->
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 text-center">
                         <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 rotate-3"><i class="fas fa-globe-americas"></i></div>
                         <h4 class="font-extrabold text-xl text-gray-800 mb-2">ארץ עיר חכם Live</h4>
@@ -1485,8 +1482,75 @@
             db.ref(`schedule/events`).push({ time, task });
         }
 
-        if ('serviceWorker' in navigator) {
-            console.log("Ready for PWA / App Install.");
+        function generateInitialData() {
+            // הזרקת צ'קליסט קרוואן
+            if (!appData.checklists || !appData.checklists.departure) {
+                db.ref('checklists/departure').set([
+                    { task: "ניתוק כבל חשמל ראשי וגלגולו", done: false },
+                    { task: "ניתוק צינור מים וסגירת ברז", done: false },
+                    { task: "ריקון מים אפורים / קסטת שירותים", done: false },
+                    { task: "סגירת ברז גז ראשי", done: false },
+                    { task: "סגירת כל החלונות והסקיילייט", done: false },
+                    { task: "נעילת מגירות, דלתות ומקרר", done: false },
+                    { task: "קיפול מדרגה חיצונית ומרקיזה", done: false }
+                ]);
+            }
+            if (!appData.checklists || !appData.checklists.arrival) {
+                db.ref('checklists/arrival').set([
+                    { task: "ייצוב הקרוואן בחלקה (צ'וקים)", done: false },
+                    { task: "חיבור חשמל לעמדה", done: false },
+                    { task: "פתיחת גז לבישול וחימום", done: false },
+                    { task: "פתיחת מרקיזה, הוצאת שולחן וכיסאות", done: false }
+                ]);
+            }
+
+            // הזרקת רשימות אריזה
+            allPeople.forEach(person => {
+                if (!appData.items || !appData.items[person]) {
+                    let itemsArray = [];
+                    if (!person.startsWith("ציוד")) {
+                        itemsArray.push({ category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8", note: "יש מכונת כביסה" });
+                        itemsArray.push({ category: "ביגוד יומיום", name: "מכנסיים קצרים", amount: "5", note: "" });
+                        itemsArray.push({ category: "ביגוד חורף", name: "מעיל פליז / סופטשל", amount: "1", note: "לאוסטריה" });
+                        itemsArray.push({ category: "היגיינה ורחצה", name: "תיק רחצה אישי", amount: "1", note: "שמפו, מברשת שיניים" });
+                        
+                        if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(person)) {
+                            itemsArray.push({ category: "דת", name: "תפילין", amount: "1", note: "" });
+                            itemsArray.push({ category: "דת", name: "כיפות וציצית", amount: "3", note: "" });
+                        }
+                        if (["עוזיאל", "יוני"].includes(person)) {
+                            itemsArray.push({ category: "דת", name: "טלית", amount: "1", note: "לשבתות" });
+                        }
+                        if (["הילה", "להבה"].includes(person)) {
+                            itemsArray.push({ category: "ביגוד יומיום", name: "גוזיות", amount: "5", note: "" });
+                        }
+                        if (["יובל", "הלל"].includes(person)) {
+                            itemsArray.push({ category: "ציוד תינוקות", name: "חיתולים", amount: "חבילה", note: "להשלים בסופר" });
+                            itemsArray.push({ category: "ציוד תינוקות", name: "מגבונים", amount: "5", note: "" });
+                            itemsArray.push({ category: "ציוד תינוקות", name: "מנשא גב / עגלה", amount: "1", note: "" });
+                        }
+                    } else if (person.startsWith("ציוד כללי פרידמן")) {
+                        itemsArray.push({ category: "לינה בקרוואן", name: "סדינים ציפות וכריות", amount: "6 סטים", note: "" });
+                        itemsArray.push({ category: "לינה בקרוואן", name: "שמיכות", amount: "6", note: "ללילות קרים" });
+                        itemsArray.push({ category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לבדוק מתח" });
+                        itemsArray.push({ category: "שבת וכשרות", name: "נרונים, הבדלה וקידוש", amount: "ערכה", note: "" });
+                        itemsArray.push({ category: "שבת וכשרות", name: "סירים ומחבתות", amount: "3", note: "מוטבלים" });
+                    } else if (person === "ציוד כללי משותף") {
+                        itemsArray.push({ category: "משחקים", name: "משחקי קופסא ואליאס", amount: "1", note: "" });
+                        itemsArray.push({ category: "אוכל משותף", name: "פקל קפה", amount: "1", note: "" });
+                        itemsArray.push({ category: "חשמל", name: "מתאמים לאירופה", amount: "4", note: "" });
+                        itemsArray.push({ category: "רפואה", name: "עזרה ראשונה + כדורי בחילה", amount: "1", note: "" });
+                    }
+
+                    if (itemsArray.length > 0) {
+                        const personItemsObj = {};
+                        itemsArray.forEach((item, index) => {
+                            personItemsObj[`item_${Date.now()}_${index}`] = { ...item, packed: false };
+                        });
+                        db.ref(`items/${person}`).set(personItemsObj);
+                    }
+                }
+            });
         }
     </script>
 </body>
