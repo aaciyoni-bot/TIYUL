@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -23,6 +24,8 @@
         .avatar-container:hover { transform: scale(1.05); }
         .avatar-img { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 3px solid #4f46e5; background-color: #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .avatar-edit-btn { position: absolute; bottom: 0; right: 0; background-color: #4f46e5; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 2px solid white; }
+        .doc-card { transition: all 0.2s ease; }
+        .doc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 pb-20 select-none">
@@ -32,9 +35,6 @@
             <h1 class="text-xl font-bold"><i class="fas fa-caravan mr-2"></i> קרוואנים 2026</h1>
             <div class="flex gap-2">
                 <button onclick="exportToExcel()" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition shadow" title="ייצוא לאקסל"><i class="fas fa-file-excel mr-1"></i> אקסל</button>
-                <button id="editToggleBtn" onclick="toggleEditMode()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full text-sm font-semibold transition shadow">
-                    <i class="fas fa-pen mr-1"></i> עריכה
-                </button>
             </div>
         </div>
         <div class="flex justify-between items-center text-sm mb-1 mt-3">
@@ -46,47 +46,42 @@
         </div>
     </header>
 
-    <!-- Tabs Container -->
-    <nav id="tabs-container" class="flex overflow-x-auto hide-scrollbar bg-white shadow-sm border-b z-10 sticky top-[100px] px-2 py-1">
+    <nav id="tabs-container" class="flex overflow-x-auto hide-scrollbar bg-white shadow-sm border-b z-10 sticky top-[90px] px-2 py-1">
         <!-- Tabs will be generated here -->
     </nav>
 
-    <!-- Avatar Section -->
-    <div class="flex justify-center mt-6 mb-2">
-        <div class="avatar-container" onclick="document.getElementById('avatar-upload').click()">
-            <img id="current-avatar" class="avatar-img" src="https://ui-avatars.com/api/?name=User&background=random" alt="Avatar">
-            <div class="avatar-edit-btn"><i class="fas fa-camera"></i></div>
-            <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="handleAvatarUpload(event)">
-        </div>
-    </div>
-    <div class="text-center mb-6">
-        <h2 id="current-person-title" class="text-2xl font-bold text-gray-800"></h2>
-    </div>
-
-    <!-- Main Content Area -->
     <main id="app-content" class="p-4 max-w-3xl mx-auto">
-        <div class="text-center mt-10">
-            <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
-            <p class="mt-4 text-gray-600 font-medium">טוען נתונים מהענן...</p>
+        <div class="text-center mt-20" id="loading-spinner">
+            <i class="fas fa-spinner fa-spin text-5xl text-indigo-500"></i>
+            <p class="mt-4 text-gray-600 font-medium text-lg" id="loading-text">טוען נתונים מהענן...</p>
         </div>
     </main>
 
-    <!-- Custom Modal Overlay -->
     <div id="custom-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 transform transition-all">
             <h3 id="modal-title" class="text-xl font-bold mb-3 text-gray-800"></h3>
             <p id="modal-message" class="text-gray-600 mb-6 text-lg"></p>
             <div class="flex justify-end gap-3">
                 <button id="modal-cancel-btn" class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg hidden font-medium transition">ביטול</button>
-                <button id="modal-ok-btn" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md transition">אישור</button>
+                <button id="modal-ok-btn" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold shadow-md transition">אישור</button>
             </div>
         </div>
     </div>
 
+    <div id="image-modal" class="fixed inset-0 bg-black/90 z-[60] hidden flex flex-col items-center justify-center p-4 backdrop-blur-md">
+        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white text-3xl hover:text-gray-300"><i class="fas fa-times"></i></button>
+        <img id="full-screen-img" src="" alt="Document" class="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain">
+        <div class="mt-6 flex gap-4">
+             <button id="delete-doc-btn" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-lg transition"><i class="fas fa-trash mr-2"></i>מחק</button>
+             <button onclick="closeImageModal()" class="bg-white hover:bg-gray-100 text-gray-800 px-6 py-2 rounded-full font-bold shadow-lg transition">סגור</button>
+        </div>
+    </div>
+
+    <!-- Hidden inputs for file uploads -->
+    <input type="file" id="doc-upload-input" class="hidden" accept="image/*" onchange="handleDocumentUpload(event)">
+    <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="handleAvatarUpload(event)">
+
     <script>
-        // ==========================================
-        //  הגדרות Firebase
-        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyCYd3UQO4d1OQN23quXTwMj1WK2wq0chX4",
             authDomain: "tiyul-f886a.firebaseapp.com",
@@ -98,46 +93,58 @@
             databaseURL: "https://tiyul-f886a-default-rtdb.europe-west1.firebasedatabase.app" 
         };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+        } catch (e) {
+            document.getElementById('loading-text').innerText = "שגיאה באתחול האפליקציה: " + e.message;
         }
+
         const db = firebase.database();
 
-        // רשימת כל המשתתפים והלשוניות
+        // רשימת כל המשתתפים, הלשוניות והארנק
         const people = [
             "יוני", "חנה", "ליאור", "אייל", "הילה", "יובל", 
-            "ציוד כללי פרידמן משמר", 
             "עוזיאל", "שרונה", "להבה", "אליה", "דביר", "הלל", 
+            "ציוד כללי פרידמן משמר", 
             "ציוד כללי פרידמן אדורה", 
-            "ציוד כללי משותף"
+            "ציוד כללי משותף",
+            "💰 ארנק משותף"
         ];
         
-        let appData = { items: {}, avatars: {} };
+        const adults = ["יוני", "חנה", "עוזיאל", "שרונה"];
+
+        let appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {} } };
         let currentTab = people[0];
-        let isEditMode = false;
+        let currentUploadDocType = "";
 
         const syncStatus = document.getElementById('sync-status');
 
-        // האזנה לשינויים בענן
-        db.ref('/').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                appData.items = data.items || {};
-                appData.avatars = data.avatars || {};
-            } else {
-                appData = { items: {}, avatars: {} };
-            }
-            
-            // בדיקה וייצור נתונים חסרים למשתתפים חדשים
-            generateInitialData();
-
-            syncStatus.innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מסונכרן';
-            // טעינה ישירה של האפליקציה (ללא מסך משתמש)
-            renderApp();
-        }, (error) => {
-            syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> שגיאת חיבור';
-            showModal('שגיאה', 'לא ניתן להתחבר לענן. בדקו חיבור לאינטרנט.');
-        });
+        try {
+            db.ref('/').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    appData.items = data.items || {};
+                    appData.avatars = data.avatars || {};
+                    appData.documents = data.documents || {};
+                    appData.wallet = data.wallet || { expenses: {} };
+                } else {
+                    appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {} } };
+                }
+                
+                generateInitialData();
+                syncStatus.innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מסונכרן';
+                
+                if(!people.includes(currentTab)) currentTab = people[0];
+                renderApp();
+            }, (error) => {
+                syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> שגיאת חיבור';
+                console.error(error);
+            });
+        } catch(e) {
+            document.getElementById('loading-text').innerText = "שגיאת קוד פנימית.";
+        }
 
         function showModal(title, message, showCancel = false, onOk = null) {
             document.getElementById('modal-title').innerText = title;
@@ -157,17 +164,18 @@
                 modal.classList.add('hidden');
                 if (onOk) onOk();
             };
-            
-            newCancelBtn.onclick = () => {
-                modal.classList.add('hidden');
-            };
+            newCancelBtn.onclick = () => modal.classList.add('hidden');
 
             modal.classList.remove('hidden');
         }
 
         function renderApp() {
             renderTabs();
-            renderContent();
+            if (currentTab === "💰 ארנק משותף") {
+                renderWallet();
+            } else {
+                renderContent();
+            }
             updateTotalProgress();
         }
 
@@ -177,31 +185,33 @@
 
             people.forEach(person => {
                 const isActive = person === currentTab;
-                const tabClass = isActive ? 'tab-active' : 'tab-inactive';
-                
                 let total = 0, packed = 0;
-                if(appData.items[person]) {
+                
+                if(person !== "💰 ארנק משותף" && appData.items[person]) {
                     Object.values(appData.items[person]).forEach(item => {
                         total++;
                         if(item.packed) packed++;
                     });
                 }
+                
                 const progressText = total > 0 ? `${packed}/${total}` : '';
                 const isDone = (packed === total && total > 0);
                 const progressColor = isDone ? 'text-green-500 font-bold' : 'text-gray-500';
 
                 const btn = document.createElement('button');
-                btn.className = `px-5 py-3 whitespace-nowrap text-sm flex-shrink-0 transition-colors border-b-2 ${isActive ? 'border-indigo-600 text-indigo-700 font-bold bg-indigo-50/50' : 'border-transparent hover:border-gray-300'}`;
-                btn.innerHTML = `
-                    <div class="flex flex-col items-center gap-1">
-                        <span class="text-base">${person}</span>
-                        ${total > 0 ? `<span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full ${progressColor}">${isDone ? '<i class="fas fa-check mr-1"></i>' : ''}${progressText}</span>` : ''}
-                    </div>
-                `;
-                btn.onclick = () => {
-                    currentTab = person;
-                    renderApp(); // קריאה ישירה לרינדור
-                };
+                btn.className = `px-5 py-3 whitespace-nowrap text-sm flex-shrink-0 transition-colors border-b-2 ${isActive ? 'border-indigo-600 text-indigo-700 font-bold bg-indigo-50/50' : 'border-transparent text-gray-500 hover:bg-gray-50'}`;
+                
+                if (person === "💰 ארנק משותף") {
+                    btn.innerHTML = `<div class="flex flex-col items-center gap-1"><span class="text-base">${person}</span></div>`;
+                } else {
+                    btn.innerHTML = `
+                        <div class="flex flex-col items-center gap-1">
+                            <span class="text-base">${person}</span>
+                            ${total > 0 ? `<span class="text-xs bg-white border border-gray-200 px-2 py-0.5 rounded-full shadow-sm ${progressColor}">${isDone ? '<i class="fas fa-check mr-1"></i>' : ''}${progressText}</span>` : ''}
+                        </div>
+                    `;
+                }
+                btn.onclick = () => { currentTab = person; renderApp(); };
                 container.appendChild(btn);
             });
         }
@@ -209,44 +219,20 @@
         function handleAvatarUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-
-            if (!file.type.startsWith('image/')) {
-                showModal('שגיאה', 'אנא בחרו קובץ תמונה חוקי.');
-                return;
-            }
-
+            showModal('מעלה תמונה...', 'מכווץ ושומר...', false);
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const MAX_SIZE = 150;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_SIZE) {
-                            height *= MAX_SIZE / width;
-                            width = MAX_SIZE;
-                        }
-                    } else {
-                        if (height > MAX_SIZE) {
-                            width *= MAX_SIZE / height;
-                            height = MAX_SIZE;
-                        }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
+                    let width = img.width, height = img.height;
+                    if (width > height) { if (width > 200) { height *= 200 / width; width = 200; } } 
+                    else { if (height > 200) { width *= 200 / height; height = 200; } }
+                    canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    
-                    const base64String = canvas.toDataURL('image/jpeg', 0.7);
-
-                    if (!appData.avatars) appData.avatars = {};
-                    appData.avatars[currentTab] = base64String;
-                    db.ref('avatars/' + currentTab).set(base64String).then(() => {
-                        document.getElementById('current-avatar').src = base64String;
+                    db.ref('avatars/' + currentTab).set(canvas.toDataURL('image/jpeg', 0.6)).then(() => {
+                        document.getElementById('custom-modal').classList.add('hidden');
                     });
                 }
                 img.src = e.target.result;
@@ -254,20 +240,242 @@
             reader.readAsDataURL(file);
         }
 
+        function openDocUpload(docType) {
+            currentUploadDocType = docType;
+            document.getElementById('doc-upload-input').click();
+        }
+
+        function handleDocumentUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            showModal('מעלה מסמך...', 'מכווץ ומאבטח את המסמך...', false);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width, height = img.height;
+                    if (width > height) { if (width > 1000) { height *= 1000 / width; width = 1000; } } 
+                    else { if (height > 1000) { width *= 1000 / height; height = 1000; } }
+                    canvas.width = width; canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    db.ref(`documents/${currentTab}/${currentUploadDocType}`).set(canvas.toDataURL('image/jpeg', 0.7)).then(() => {
+                        document.getElementById('custom-modal').classList.add('hidden');
+                    });
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+            event.target.value = ''; 
+        }
+
+        function viewDocument(docType) {
+            const base64String = appData.documents[currentTab][docType];
+            if(!base64String) return;
+            document.getElementById('full-screen-img').src = base64String;
+            document.getElementById('image-modal').classList.remove('hidden');
+            document.getElementById('delete-doc-btn').onclick = () => {
+                showModal('מחיקת מסמך', 'בטוח שברצונך למחוק?', true, () => {
+                    db.ref(`documents/${currentTab}/${docType}`).remove().then(() => closeImageModal());
+                });
+            };
+        }
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
+            document.getElementById('full-screen-img').src = '';
+        }
+
+        function getRequiredDocsForTab(tabName) {
+            if (tabName === "ציוד כללי משותף") {
+                return [
+                    { id: 'flight', name: 'כרטיסי טיסה', icon: 'fa-plane' },
+                    { id: 'villa', name: 'הזמנת וילה', icon: 'fa-house-user' },
+                    { id: 'caravan', name: 'השכרת קרוואנים', icon: 'fa-caravan' },
+                    { id: 'insurance', name: 'ביטוחים כלליים', icon: 'fa-shield-alt' }
+                ];
+            } else if (tabName.startsWith("ציוד כללי") || tabName === "💰 ארנק משותף") {
+                return []; 
+            } else {
+                let docs = [{ id: 'passport', name: 'דרכון', icon: 'fa-passport' }];
+                if (adults.includes(tabName)) {
+                    docs.push({ id: 'driver_license', name: 'רישיון נהיגה', icon: 'fa-id-card' });
+                    docs.push({ id: 'int_license', name: 'רישיון בינלאומי', icon: 'fa-globe' });
+                }
+                return docs;
+            }
+        }
+
+        function renderWallet() {
+            const content = document.getElementById('app-content');
+            const expenses = appData.wallet.expenses || {};
+            
+            let totalMishmar = 0;
+            let totalAdora = 0;
+            
+            Object.values(expenses).forEach(exp => {
+                if(exp.paidBy === 'משמר') totalMishmar += Number(exp.amount);
+                if(exp.paidBy === 'אדורה') totalAdora += Number(exp.amount);
+            });
+            
+            const total = totalMishmar + totalAdora;
+            const targetPerFamily = total / 2;
+            
+            let balanceText = "הוצאות שוות - אין חובות!";
+            let balanceColor = "text-green-600";
+            
+            if (totalMishmar > totalAdora) {
+                const diff = (totalMishmar - targetPerFamily).toFixed(2);
+                balanceText = `אדורה חייבים למשמר: €${diff}`;
+                balanceColor = "text-red-500";
+            } else if (totalAdora > totalMishmar) {
+                const diff = (totalAdora - targetPerFamily).toFixed(2);
+                balanceText = `משמר חייבים לאדורה: €${diff}`;
+                balanceColor = "text-red-500";
+            }
+
+            let html = `
+                <div class="text-center mb-6 mt-4">
+                    <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-wallet text-indigo-500 mr-2"></i> ארנק משותף</h2>
+                    <p class="text-gray-500 mt-2">מעקב הוצאות והתקזזות (באירו €)</p>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-md p-5 mb-6 border border-gray-100">
+                    <div class="grid grid-cols-2 gap-4 text-center mb-4 border-b pb-4">
+                        <div>
+                            <p class="text-sm text-gray-500">פרידמן-משמר שילמו</p>
+                            <p class="text-xl font-bold text-indigo-600">€${totalMishmar.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">פרידמן-אדורה שילמו</p>
+                            <p class="text-xl font-bold text-blue-600">€${totalAdora.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div class="text-center bg-gray-50 rounded-xl p-3">
+                        <p class="text-sm text-gray-500 mb-1">שורה תחתונה:</p>
+                        <p class="text-lg font-bold ${balanceColor}">${balanceText}</p>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50 rounded-2xl shadow-inner p-5 mb-8 border border-indigo-100">
+                    <h3 class="font-bold text-indigo-800 mb-4"><i class="fas fa-plus-circle mr-1"></i> הוספת הוצאה חדשה</h3>
+                    <div class="flex flex-col gap-3">
+                        <input type="text" id="wallet-desc" placeholder="על מה שילמתם? (למשל: דלק, סופר)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
+                        <div class="flex gap-3">
+                            <input type="number" id="wallet-amount" placeholder="סכום (€)" class="w-1/2 p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
+                            <select id="wallet-payer" class="w-1/2 p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                                <option value="" disabled selected>מי שילם?</option>
+                                <option value="משמר">פרידמן-משמר</option>
+                                <option value="אדורה">פרידמן-אדורה</option>
+                            </select>
+                        </div>
+                        <button onclick="addExpense()" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold shadow hover:bg-indigo-700 transition mt-1">הוסף הוצאה</button>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-gray-700 mb-3 ml-1 text-lg">פירוט הוצאות:</h3>
+                <div class="flex flex-col gap-3">
+            `;
+
+            const expKeys = Object.keys(expenses);
+            if(expKeys.length === 0) {
+                html += `<div class="text-center p-6 bg-white rounded-xl text-gray-500">טרם נוספו הוצאות.</div>`;
+            } else {
+                // הצג מהחדש לישן
+                expKeys.reverse().forEach(key => {
+                    const exp = expenses[key];
+                    const dateObj = new Date(exp.timestamp);
+                    const dateStr = `${dateObj.getDate()}/${dateObj.getMonth()+1}`;
+                    
+                    html += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-800 text-lg">${exp.description}</p>
+                            <p class="text-sm text-gray-500 mt-1">
+                                <span class="bg-gray-100 px-2 py-0.5 rounded text-xs ml-1">${dateStr}</span>
+                                שילמו: <span class="font-semibold ${exp.paidBy === 'משמר' ? 'text-indigo-600' : 'text-blue-600'}">${exp.paidBy}</span>
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <p class="font-bold text-xl text-gray-800">€${exp.amount}</p>
+                            <button onclick="deleteExpense('${key}')" class="text-red-400 hover:text-red-600 p-2"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
+                });
+            }
+            html += `</div>`;
+            content.innerHTML = html;
+        }
+
+        function addExpense() {
+            const desc = document.getElementById('wallet-desc').value.trim();
+            const amount = document.getElementById('wallet-amount').value;
+            const payer = document.getElementById('wallet-payer').value;
+            
+            if(!desc || !amount || !payer) {
+                return showModal('שגיאה', 'יש למלא את תיאור ההוצאה, הסכום ולבחור מי שילם.');
+            }
+            
+            db.ref(`wallet/expenses`).push({
+                description: desc,
+                amount: Number(amount),
+                paidBy: payer,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+        }
+
+        function deleteExpense(expenseId) {
+            showModal('מחיקת הוצאה', 'האם למחוק הוצאה זו מהארנק?', true, () => {
+                db.ref(`wallet/expenses/${expenseId}`).remove();
+            });
+        }
+
         function renderContent() {
             const content = document.getElementById('app-content');
             const personItems = appData.items[currentTab] || {};
+            const personDocs = appData.documents[currentTab] || {};
             
-            const avatarImg = document.getElementById('current-avatar');
-            const titleElem = document.getElementById('current-person-title');
-            
-            if (appData.avatars && appData.avatars[currentTab]) {
-                avatarImg.src = appData.avatars[currentTab];
-            } else {
-                avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentTab.split(' ')[0])}&background=random&color=fff&size=150`;
+            let html = `
+                <div class="flex justify-center mb-2">
+                    <div class="avatar-container" onclick="document.getElementById('avatar-upload').click()">
+                        <img id="current-avatar" class="avatar-img" src="${appData.avatars[currentTab] || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentTab.split(' ')[0])}&background=random&color=fff&size=150`}">
+                        <div class="avatar-edit-btn"><i class="fas fa-camera"></i></div>
+                    </div>
+                </div>
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-extrabold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-blue-500">${currentTab}</h2>
+                </div>
+            `;
+
+            const requiredDocs = getRequiredDocsForTab(currentTab);
+            if (requiredDocs.length > 0) {
+                html += `
+                <div class="bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl shadow-lg mb-8 overflow-hidden text-white">
+                    <div class="px-5 py-3 border-b border-slate-600 flex items-center justify-between">
+                        <h3 class="font-bold text-lg"><i class="fas fa-folder-open mr-2 text-indigo-300"></i> מסמכים דיגיטליים</h3>
+                    </div>
+                    <div class="p-4 grid grid-cols-2 sm:grid-cols-3 gap-3">`;
+                
+                requiredDocs.forEach(doc => {
+                    const hasDoc = !!personDocs[doc.id];
+                    if (hasDoc) {
+                        html += `
+                        <div onclick="viewDocument('${doc.id}')" class="doc-card bg-slate-600/50 border border-slate-500 rounded-xl p-3 text-center cursor-pointer relative group">
+                            <div class="absolute top-2 left-2 text-green-400"><i class="fas fa-check-circle"></i></div>
+                            <div class="text-3xl mb-2 text-indigo-300"><i class="fas ${doc.icon}"></i></div>
+                            <p class="text-sm font-semibold truncate">${doc.name}</p>
+                            <p class="text-xs text-slate-300 mt-1">הקש לצפייה</p>
+                        </div>`;
+                    } else {
+                        html += `
+                        <div onclick="openDocUpload('${doc.id}')" class="doc-card bg-slate-800 border border-dashed border-slate-500 rounded-xl p-3 text-center cursor-pointer hover:bg-slate-700">
+                            <div class="text-3xl mb-2 text-slate-400"><i class="fas fa-cloud-upload-alt"></i></div>
+                            <p class="text-sm font-semibold text-slate-200 truncate">${doc.name}</p>
+                            <p class="text-xs text-indigo-400 mt-1 font-bold">העלה צילום</p>
+                        </div>`;
+                    }
+                });
+                html += `</div></div>`;
             }
-            
-            titleElem.innerText = `הרשימה של ${currentTab}`;
 
             const grouped = {};
             Object.keys(personItems).forEach(key => {
@@ -277,150 +485,75 @@
             });
 
             if (Object.keys(grouped).length === 0) {
-                let html = `<div class="text-center p-8 bg-white rounded-2xl shadow-sm border border-gray-100"><p class="text-gray-500 mb-4 text-lg">הרשימה ריקה.</p>`;
-                if(isEditMode) {
-                     html += `
-                     <div class="mt-4 p-5 bg-indigo-50 border border-indigo-100 rounded-xl">
-                        <h4 class="font-bold mb-3 text-indigo-800">הוספת פריט ראשון</h4>
-                        <input type="text" id="new-cat-empty" placeholder="קטגוריה (למשל: ביגוד)" class="w-full p-3 border border-indigo-200 rounded-lg mb-3 text-sm focus:ring-2 focus:ring-indigo-400">
-                        <input type="text" id="new-name-empty" placeholder="שם הפריט" class="w-full p-3 border border-indigo-200 rounded-lg mb-3 text-sm focus:ring-2 focus:ring-indigo-400">
-                        <input type="text" id="new-amount-empty" placeholder="כמות" class="w-full p-3 border border-indigo-200 rounded-lg mb-3 text-sm focus:ring-2 focus:ring-indigo-400">
-                        <button onclick="addNewItemEmpty()" class="w-full bg-indigo-600 text-white p-3 rounded-lg text-base font-bold hover:bg-indigo-700 transition shadow">הוסף פריט</button>
-                     </div>`;
-                }
-                html += `</div>`;
+                html += `<div class="text-center p-8"><p>הרשימה ריקה.</p></div>`;
                 content.innerHTML = html;
                 return;
             }
 
-            let html = '';
             for (const [category, items] of Object.entries(grouped)) {
                 let catPacked = items.filter(i => i.packed).length;
                 let catTotal = items.length;
                 let isCatDone = catPacked === catTotal;
 
                 html += `
-                <div class="bg-white rounded-2xl shadow-sm mb-6 overflow-hidden border ${isCatDone ? 'border-green-200' : 'border-gray-200'}">
-                    <div class="${isCatDone ? 'bg-green-50' : 'bg-gray-50'} px-5 py-4 border-b ${isCatDone ? 'border-green-100' : 'border-gray-200'} flex justify-between items-center transition-colors">
-                        <h3 class="font-bold ${isCatDone ? 'text-green-800' : 'text-gray-800'} text-xl flex items-center">
-                            ${isCatDone ? '<i class="fas fa-check-circle mr-2 text-green-500"></i>' : ''} ${category}
-                        </h3>
-                        <span class="text-sm font-semibold ${isCatDone ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-700'} px-3 py-1 rounded-full shadow-inner">${catPacked}/${catTotal}</span>
+                <div class="bg-white rounded-2xl shadow-sm mb-6 overflow-hidden border ${isCatDone ? 'border-green-300' : 'border-gray-200'}">
+                    <div class="${isCatDone ? 'bg-green-100' : 'bg-gray-100'} px-5 py-4 border-b ${isCatDone ? 'border-green-200' : 'border-gray-200'} flex justify-between items-center">
+                        <h3 class="font-bold ${isCatDone ? 'text-green-800' : 'text-gray-800'} text-xl">${isCatDone ? '<i class="fas fa-check-circle mr-2 text-green-600"></i>' : ''}${category}</h3>
+                        <span class="text-sm font-bold bg-white px-3 py-1 rounded-full shadow-sm">${catPacked}/${catTotal}</span>
                     </div>
                     <ul class="divide-y divide-gray-100">
                 `;
 
                 items.forEach(item => {
-                    const checked = item.packed ? 'checked' : '';
-                    const textClass = item.packed ? 'packed-text' : 'text-gray-800';
-                    const bgClass = item.packed ? 'bg-gray-50/50' : '';
-                    
                     html += `
-                    <li class="item-row p-4 flex justify-between items-center ${bgClass}">
-                        <div class="flex items-center gap-4 flex-1 cursor-pointer" onclick="toggleItem('${currentTab}', '${item.id}')">
-                            <div class="relative flex items-center justify-center w-8 h-8 rounded-lg border-2 ${item.packed ? 'border-green-500 bg-green-500' : 'border-gray-300 bg-white'} transition-colors flex-shrink-0">
-                                ${item.packed ? '<i class="fas fa-check text-white text-sm"></i>' : ''}
+                    <li class="item-row p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center ${item.packed ? 'bg-gray-50/50' : ''} gap-3 sm:gap-0">
+                        <div class="flex items-center gap-4 flex-1 w-full cursor-pointer" onclick="toggleItem('${currentTab}', '${item.id}')">
+                            <div class="relative flex items-center justify-center w-8 h-8 rounded-lg border-2 ${item.packed ? 'border-green-500 bg-green-500' : 'border-gray-300 bg-white'} shadow-inner flex-shrink-0">
+                                ${item.packed ? '<i class="fas fa-check text-white"></i>' : ''}
                             </div>
-                            <div>
-                                <p class="font-bold ${textClass} text-lg">${item.name}</p>
-                                <p class="text-sm text-gray-500 mt-1"><span class="font-semibold bg-gray-100 px-2 py-0.5 rounded text-gray-600 mr-1">כמות: ${item.amount}</span> ${item.note ? `<span class="text-gray-400">|</span> ${item.note}` : ''}</p>
+                            <div class="flex-1 pr-1">
+                                <p class="font-bold ${item.packed ? 'packed-text' : 'text-gray-800'} text-lg">${item.name}</p>
+                                <p class="text-sm text-gray-500"><span class="font-bold bg-indigo-50 text-indigo-700 px-2 rounded mr-1">כמות: ${item.amount}</span> ${item.note}</p>
                             </div>
                         </div>
-                    `;
-
-                    if (isEditMode) {
-                        html += `
-                        <div class="flex gap-2 mr-3">
-                            <button onclick="editExistingItem('${currentTab}', '${item.id}', '${item.name.replace(/'/g, "\\'")}', '${item.amount}', '${(item.note||'').replace(/'/g, "\\'")}')" class="text-blue-500 bg-blue-50 p-2.5 rounded-xl hover:bg-blue-100 transition"><i class="fas fa-pen"></i></button>
-                            <button onclick="deleteItem('${currentTab}', '${item.id}')" class="text-red-500 bg-red-50 p-2.5 rounded-xl hover:bg-red-100 transition"><i class="fas fa-trash"></i></button>
-                        </div>`;
-                    }
-                    html += `</li>`;
-                });
-
-                if (isEditMode) {
-                    html += `
-                    <li class="p-4 bg-gray-50 border-t border-dashed border-gray-300">
-                        <div class="flex flex-col gap-3">
-                            <input type="text" id="new-name-${category}" placeholder="שם הפריט החדש" class="w-full p-3 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-400 shadow-sm">
-                            <div class="flex flex-col sm:flex-row gap-2">
-                                <input type="text" id="new-amount-${category}" placeholder="כמות" class="w-full sm:w-1/3 p-3 border border-gray-300 rounded-lg text-base shadow-sm">
-                                <input type="text" id="new-note-${category}" placeholder="הערה (אופציונלי)" class="w-full sm:w-2/3 p-3 border border-gray-300 rounded-lg text-base shadow-sm">
-                            </div>
-                            <button onclick="addNewItem('${currentTab}', '${category}')" class="w-full bg-green-500 text-white px-5 py-3 rounded-lg font-bold shadow-md hover:bg-green-600 transition"><i class="fas fa-plus mr-1"></i> הוסף פריט</button>
+                        <div class="flex gap-2 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-gray-100">
+                            <button onclick="editExistingItem('${currentTab}', '${item.id}', '${item.name.replace(/'/g, "\\'")}', '${item.amount}', '${(item.note||'').replace(/'/g, "\\'")}')" class="text-blue-500 bg-blue-50 px-4 py-2 rounded-xl"><i class="fas fa-pen"></i></button>
+                            <button onclick="deleteItem('${currentTab}', '${item.id}')" class="text-red-500 bg-red-50 px-4 py-2 rounded-xl"><i class="fas fa-trash"></i></button>
                         </div>
                     </li>`;
-                }
+                });
 
-                html += `</ul></div>`;
+                html += `
+                    <li class="p-4 bg-slate-50 border-t border-slate-200">
+                        <div class="flex flex-col gap-3">
+                            <input type="text" id="new-name-${category}" placeholder="שם פריט" class="w-full p-3 border border-slate-300 rounded-lg">
+                            <div class="flex gap-3">
+                                <input type="text" id="new-amount-${category}" placeholder="כמות" class="w-1/3 p-3 border border-slate-300 rounded-lg">
+                                <input type="text" id="new-note-${category}" placeholder="הערה" class="w-2/3 p-3 border border-slate-300 rounded-lg">
+                            </div>
+                            <button onclick="addNewItem('${currentTab}', '${category}')" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold"><i class="fas fa-plus"></i> הוסף פריט</button>
+                        </div>
+                    </li>
+                </ul></div>`;
             }
             content.innerHTML = html;
         }
 
-        function toggleEditMode() {
-            isEditMode = !isEditMode;
-            const btn = document.getElementById('editToggleBtn');
-            btn.innerHTML = isEditMode ? '<i class="fas fa-check mr-1"></i> סיום עריכה' : '<i class="fas fa-pen mr-1"></i> עריכה';
-            btn.classList.toggle('bg-red-500', isEditMode);
-            btn.classList.toggle('text-white', isEditMode);
-            btn.classList.toggle('bg-white/20', !isEditMode);
-            renderContent();
-        }
-
         function toggleItem(person, itemId) {
-            if(isEditMode) return;
             const currentState = appData.items[person][itemId].packed;
             db.ref(`items/${person}/${itemId}/packed`).set(!currentState);
         }
 
         function deleteItem(person, itemId) {
-            showModal('מחיקת פריט', 'האם אתם בטוחים שברצונכם למחוק פריט זה מהרשימה?', true, () => {
+            showModal('מחיקה', 'האם למחוק פריט זה?', true, () => {
                 db.ref(`items/${person}/${itemId}`).remove();
             });
         }
 
-        function addNewItem(person, category) {
-            const nameInput = document.getElementById(`new-name-${category}`);
-            const amountInput = document.getElementById(`new-amount-${category}`);
-            const noteInput = document.getElementById(`new-note-${category}`);
-            
-            if(!nameInput.value.trim()) {
-                showModal('חסר שם', 'יש להזין שם לפריט החדש.');
-                return;
-            }
-
-            const newItem = {
-                category: category,
-                name: nameInput.value.trim(),
-                amount: amountInput.value.trim() || "1",
-                note: noteInput.value.trim(),
-                packed: false
-            };
-
-            db.ref(`items/${person}`).push(newItem);
-        }
-
-        function addNewItemEmpty() {
-            const cat = document.getElementById('new-cat-empty').value.trim() || 'כללי';
-            const name = document.getElementById('new-name-empty').value.trim();
-            const amount = document.getElementById('new-amount-empty').value.trim() || "1";
-            
-            if(!name) {
-                showModal('שגיאה', 'חובה להזין שם פריט');
-                return;
-            }
-
-            const newItem = { category: cat, name: name, amount: amount, note: "", packed: false };
-            db.ref(`items/${currentTab}`).push(newItem);
-        }
-
         function editExistingItem(person, itemId, oldName, oldAmount, oldNote) {
-            const newName = prompt("ערוך שם פריט:", oldName);
-            if (newName === null) return; 
-            const newAmount = prompt("ערוך כמות:", oldAmount);
-            if (newAmount === null) return;
-            const newNote = prompt("ערוך הערה:", oldNote);
-            if (newNote === null) return;
+            const newName = prompt("ערוך שם פריט:", oldName); if (newName === null) return; 
+            const newAmount = prompt("ערוך כמות:", oldAmount); if (newAmount === null) return;
+            const newNote = prompt("ערוך הערה:", oldNote); if (newNote === null) return;
 
             db.ref(`items/${person}/${itemId}`).update({
                 name: newName.trim() || oldName,
@@ -429,173 +562,113 @@
             });
         }
 
-        function updateTotalProgress() {
-            let total = 0, packed = 0;
-            
-            Object.values(appData.items || {}).forEach(personItems => {
-                Object.values(personItems).forEach(item => {
-                    total++;
-                    if(item.packed) packed++;
-                });
-            });
-
-            const percent = total === 0 ? 0 : Math.round((packed / total) * 100);
-            document.getElementById('total-progress-bar').style.width = `${percent}%`;
-            document.getElementById('total-progress-text').innerText = `התקדמות כללית: ${percent}% (${packed}/${total} פריטים נארזו)`;
+        function addNewItem(person, category) {
+            const nameInput = document.getElementById(`new-name-${category}`);
+            const amountInput = document.getElementById(`new-amount-${category}`);
+            const noteInput = document.getElementById(`new-note-${category}`);
+            if(!nameInput.value.trim()) return showModal('חסר שם', 'הזן שם לפריט.');
+            db.ref(`items/${person}`).push({ category, name: nameInput.value.trim(), amount: amountInput.value.trim() || "1", note: noteInput.value.trim(), packed: false });
         }
 
-        function getBaseListForPerson(personName) {
-            let list = [
-                { category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8", note: "מכונת כביסה בדרך" },
-                { category: "ביגוד יומיום", name: "מכנסיים קצרים", amount: "5", note: "" },
-                { category: "ביגוד יומיום", name: "מכנסיים ארוכים", amount: "3", note: "" },
-                { category: "ביגוד יומיום", name: "לבנים / תחתונים", amount: "10", note: "" },
-                { category: "ביגוד יומיום", name: "גרביים", amount: "8", note: "" },
-                { category: "ביגוד יומיום", name: "פיג'מה / בגדי שינה", amount: "2", note: "" },
-                
-                { category: "ביגוד חם (לאוסטריה)", name: "מעיל פליז / סופטשל", amount: "1", note: "חובה לפסגות המושלגות" },
-                { category: "ביגוד חם (לאוסטריה)", name: "חולצות ארוכות (בסיס)", amount: "2", note: "שיטת הבצל" },
-                { category: "ביגוד חם (לאוסטריה)", name: "כובע גרב וכפפות", amount: "1", note: "חובה להרים!" },
-                
-                { category: "הנעלה", name: "נעלי הליכה סגורות / ספורט", amount: "1", note: "נוחות לטיולים" },
-                { category: "הנעלה", name: "סנדלים נוחים", amount: "1", note: "" },
-                { category: "הנעלה", name: "כפכפים", amount: "1", note: "למקלחות ולבריכה" },
-                
-                { category: "בריכה וים", name: "בגדי ים", amount: "2", note: "" },
-                { category: "בריכה וים", name: "חולצת הגנה מהשמש UV", amount: "1", note: "" },
-                { category: "בריכה וים", name: "כובע שמש", amount: "1", note: "" },
-                
-                { category: "היגיינה ורחצה", name: "תיק רחצה אישי", amount: "1", note: "מברשת, משחה, דאודורנט, סבון" },
-                { category: "היגיינה ורחצה", name: "מגבת רחצה", amount: "1", note: "רצוי מיקרופייבר" },
-                { category: "היגיינה ורחצה", name: "מגבת בריכה/ים", amount: "1", note: "" }
-            ];
+        function updateTotalProgress() {
+            let total = 0, packed = 0;
+            Object.keys(appData.items || {}).forEach(personKey => {
+                if(personKey !== "💰 ארנק משותף") {
+                    Object.values(appData.items[personKey]).forEach(item => {
+                        total++; if(item.packed) packed++;
+                    });
+                }
+            });
+            const percent = total === 0 ? 0 : Math.round((packed / total) * 100);
+            document.getElementById('total-progress-bar').style.width = `${percent}%`;
+            document.getElementById('total-progress-text').innerText = `התקדמות כללית: ${percent}%`;
+        }
 
-            // תוספות דת
-            if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל", "הלל"].includes(personName)) {
-                list.push({ category: "דת ורוח", name: "כיפות", amount: "3", note: "" });
-                list.push({ category: "דת ורוח", name: "ציצית", amount: "3", note: "" });
-            }
-            if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(personName)) {
-                list.push({ category: "דת ורוח", name: "תפילין", amount: "1", note: "לא לשכוח!" });
-            }
-            if (["עוזיאל", "יוני"].includes(personName)) {
-                list.push({ category: "דת ורוח", name: "טלית", amount: "1", note: "לשבתות" });
-            }
-
-            // תוספות מיוחדות
-            if (personName === "הילה" || personName === "להבה") {
-                list.push({ category: "ביגוד יומיום", name: "גוזיות", amount: "5", note: "" });
-            }
-
-            // תוספות בנות/נשים לשבת
-            if (["חנה", "שרונה", "הילה", "להבה", "הלל", "יובל"].includes(personName)) {
-                list.push({ category: "ביגוד שבת", name: "שמלות / חצאיות וחולצות", amount: "2", note: "לשבתות בטיול" });
-            } else {
-                list.push({ category: "ביגוד שבת", name: "חולצות מכופתרות", amount: "2", note: "לשבתות" });
-                list.push({ category: "ביגוד שבת", name: "מכנסיים חגיגיים", amount: "2", note: "" });
-            }
-
-            return list;
+        function exportToExcel() {
+            if (!appData.items) return alert("אין נתונים לייצוא");
+            let csvContent = "\uFEFFעבור,קטגוריה,פריט,כמות,הערות,נארז?\n";
+            people.forEach(person => {
+                if(appData.items[person] && person !== "💰 ארנק משותף") {
+                    Object.values(appData.items[person]).forEach(item => {
+                        csvContent += `"${person}","${(item.category||"").replace(/"/g,'""')}","${(item.name||"").replace(/"/g,'""')}","${(item.amount||"").replace(/"/g,'""')}","${(item.note||"").replace(/"/g,'""')}","${item.packed?"כן":"לא"}"\n`;
+                    });
+                }
+            });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
+            link.download = "רשימת_אריזה_קרוואנים.csv";
+            link.click();
         }
 
         function generateInitialData() {
             people.forEach(person => {
+                if (person === "💰 ארנק משותף") return;
+                
                 if (!appData.items[person] || Object.keys(appData.items[person]).length === 0) {
                     let itemsArray = [];
                     
-                    if (person === "ציוד כללי פרידמן משמר") {
+                    if (!person.startsWith("ציוד כללי")) {
                         itemsArray = [
-                            { category: "לינה", name: "סדינים ציפות וכריות", amount: "6 סטים", note: "לארוז בצ'ימידנים רכים" },
-                            { category: "לינה", name: "שמיכות פליז/מעבר", amount: "6 שמיכות", note: "קר בלילות!" },
-                            { category: "לינה", name: "כריות שינה", amount: "6", note: "מהבית" },
-                            { category: "שבת וכשרות", name: "כלים מפלסטיק קשיח / חד פעמי", amount: "לכולם", note: "" },
-                            { category: "שבת וכשרות", name: "סירים ומחבתות", amount: "3", note: "מוטבלים" },
-                            { category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לוודא תאימות מתח לקרוואן" },
-                            { category: "שבת וכשרות", name: "מיחם קטן / תרמוס", amount: "1", note: "למים חמים בשבת" },
-                            { category: "שבת וכשרות", name: "נרונים, הבדלה, גביע קידוש", amount: "1 ערכה", note: "" },
-                            { category: "שבת וכשרות", name: "מפה לשבת וכיסוי חלה", amount: "1", note: "" },
-                            { category: "שבת וכשרות", name: "קופסאות פלסטיק למקרר", amount: "4", note: "" },
-                            { category: "מסמכים", name: "דרכונים ורישיון בינלאומי", amount: "לכולם", note: "" }
+                            { category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8", note: "יש מכונת כביסה" },
+                            { category: "ביגוד יומיום", name: "מכנסיים קצרים", amount: "5", note: "" },
+                            { category: "ביגוד יומיום", name: "מכנסיים ארוכים", amount: "3", note: "" },
+                            { category: "ביגוד יומיום", name: "לבנים / תחתונים", amount: "10", note: "" },
+                            { category: "ביגוד יומיום", name: "גרביים", amount: "8", note: "" },
+                            { category: "ביגוד יומיום", name: "פיג'מה", amount: "2", note: "" },
+                            { category: "ביגוד חורף", name: "מעיל פליז / סופטשל", amount: "1", note: "לאוסטריה" },
+                            { category: "ביגוד חורף", name: "חולצות בסיס ארוכות", amount: "2", note: "שיטת הבצל" },
+                            { category: "ביגוד חורף", name: "כובע גרב וכפפות", amount: "1", note: "" },
+                            { category: "הנעלה", name: "נעלי הליכה סגורות", amount: "1", note: "" },
+                            { category: "הנעלה", name: "סנדלים", amount: "1", note: "" },
+                            { category: "הנעלה", name: "כפכפים", amount: "1", note: "למקלחות ובריכה" },
+                            { category: "בריכה וים", name: "בגדי ים", amount: "2", note: "" },
+                            { category: "היגיינה ורחצה", name: "תיק רחצה אישי", amount: "1", note: "שמפו, מברשת..." },
+                            { category: "היגיינה ורחצה", name: "מגבת רחצה ומגבת בריכה", amount: "2", note: "רצוי מיקרופייבר" }
                         ];
-                    } else if (person === "ציוד כללי פרידמן אדורה") {
-                         itemsArray = [
-                            { category: "לינה", name: "סדינים ציפות וכריות", amount: "לפי כמות מיטות", note: "לארוז בצ'ימידנים רכים" },
-                            { category: "לינה", name: "שמיכות פליז/מעבר", amount: "לכולם", note: "קר בלילות באוסטריה" },
-                            { category: "לינה", name: "כריות שינה", amount: "לכולם", note: "מהבית" },
-                            { category: "שבת וכשרות", name: "כלים מפלסטיק קשיח / חד פעמי", amount: "לכולם", note: "" },
-                            { category: "שבת וכשרות", name: "סירים ומחבתות", amount: "3", note: "מוטבלים" },
-                            { category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לוודא תאימות מתח לקרוואן" },
-                            { category: "שבת וכשרות", name: "נרונים, כוס קידוש", amount: "1", note: "" },
-                            { category: "מסמכים", name: "דרכונים ורישיון בינלאומי", amount: "לכולם", note: "" }
+                        if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(person)) {
+                            itemsArray.push({ category: "דת ורוח", name: "תפילין", amount: "1", note: "" });
+                            itemsArray.push({ category: "דת ורוח", name: "כיפות", amount: "3", note: "" });
+                            itemsArray.push({ category: "דת ורוח", name: "ציצית", amount: "3", note: "" });
+                        }
+                        if (["עוזיאל", "יוני"].includes(person)) {
+                            itemsArray.push({ category: "דת ורוח", name: "טלית", amount: "1", note: "לשבתות" });
+                        }
+                        if (person === "הילה" || person === "להבה") {
+                            itemsArray.push({ category: "ביגוד יומיום", name: "גוזיות", amount: "5", note: "" });
+                        }
+                        if (person === "יובל" || person === "הלל") {
+                            itemsArray.push({ category: "ציוד תינוקות", name: "חיתולים", amount: "1 חבילה", note: "" });
+                            itemsArray.push({ category: "ציוד תינוקות", name: "מגבונים", amount: "5", note: "" });
+                            itemsArray.push({ category: "ציוד תינוקות", name: "מנשא גב / עגלה", amount: "1", note: "" });
+                        }
+                    } else if (person.startsWith("ציוד כללי פרידמן")) {
+                        itemsArray = [
+                            { category: "לינה בקרוואן", name: "סדינים ציפות וכריות", amount: "6 סטים", note: "" },
+                            { category: "לינה בקרוואן", name: "שמיכות", amount: "6", note: "קר בלילות!" },
+                            { category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לבדוק מתח" },
+                            { category: "שבת וכשרות", name: "מיחם / תרמוס", amount: "1", note: "" },
+                            { category: "שבת וכשרות", name: "נרונים, כוס קידוש", amount: "1 ערכה", note: "" },
+                            { category: "שבת וכשרות", name: "סירים ומחבתות (מוטבלים)", amount: "3", note: "" },
+                            { category: "שבת וכשרות", name: "כלים מפלסטיק קשיח", amount: "לכולם", note: "סכו״ם צלחות" }
                         ];
                     } else if (person === "ציוד כללי משותף") {
                         itemsArray = [
-                            { category: "פנאי", name: "משחק אליאס", amount: "1", note: "" },
-                            { category: "פנאי", name: "קלפים וטאקי", amount: "1", note: "" },
+                            { category: "פנאי", name: "אליאס ומשחקי קופסא", amount: "1", note: "" },
                             { category: "אוכל משותף", name: "פקל קפה", amount: "1", note: "" },
-                            { category: "ציוד נוסף", name: "מתאמי חשמל לאירופה", amount: "4", note: "" },
-                            { category: "ציוד נוסף", name: "ערכת עזרה ראשונה גדולה", amount: "1", note: "כולל פלסטרים ותרופות" },
-                            { category: "ציוד נוסף", name: "כדורים נגד בחילות", amount: "2 קופסאות", note: "לכבישים מפותלים" }
+                            { category: "חשמל", name: "מתאמים לאירופה", amount: "4", note: "" },
+                            { category: "רפואה", name: "עזרה ראשונה + כדורי בחילה", amount: "1", note: "לכבישים באוסטריה" }
                         ];
-                    } else if (person === "יובל") {
-                        itemsArray = [
-                            { category: "ציוד תינוקות", name: "חיתולים", amount: "1 חבילה", note: "להתחלה" },
-                            { category: "ציוד תינוקות", name: "מגבונים", amount: "5 חבילות", note: "" },
-                            { category: "ציוד תינוקות", name: "משחת החתלה / סבון תינוקות", amount: "1", note: "" },
-                            { category: "ציוד תינוקות", name: "מנשא גב / טיולון קומפקטי", amount: "1", note: "מנשא חובה למסלולים" },
-                            { category: "ציוד תינוקות", name: "בקבוקים ומוצצים", amount: "מספר יחידות", note: "" },
-                            { category: "ביגוד יומיום", name: "בגדי גוף / חולצות", amount: "10", note: "" },
-                            { category: "ביגוד יומיום", name: "מכנסיים", amount: "10", note: "" },
-                            { category: "ביגוד חם (לאוסטריה)", name: "מעיל פליז / חם", amount: "2", note: "" },
-                            { category: "בריכה וים", name: "בגדי ים וחולצת UV", amount: "3", note: "" }
-                        ];
-                    } else {
-                        itemsArray = getBaseListForPerson(person);
                     }
 
-                    const personItemsObj = {};
-                    itemsArray.forEach((item, index) => {
-                        const id = `item_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 5)}`;
-                        personItemsObj[id] = { ...item, packed: false };
-                    });
-                    
-                    db.ref(`items/${person}`).set(personItemsObj);
+                    if(itemsArray.length > 0) {
+                        const personItemsObj = {};
+                        itemsArray.forEach((item, index) => {
+                            personItemsObj[`item_${Date.now()}_${index}`] = { ...item, packed: false };
+                        });
+                        db.ref(`items/${person}`).set(personItemsObj);
+                    }
                 }
             });
-        }
-
-        function exportToExcel() {
-            if (!appData.items || Object.keys(appData.items).length === 0) {
-                showModal('שגיאה', 'אין נתונים לייצוא');
-                return;
-            }
-
-            let csvContent = "\uFEFF"; 
-            csvContent += "עבור,קטגוריה,פריט,כמות,הערות,נארז?\n";
-
-            people.forEach(person => {
-                if(appData.items[person]) {
-                    Object.values(appData.items[person]).forEach(item => {
-                        const name = (item.name || "").replace(/"/g, '""');
-                        const category = (item.category || "").replace(/"/g, '""');
-                        const amount = (item.amount || "").replace(/"/g, '""');
-                        const note = (item.note || "").replace(/"/g, '""');
-                        const packed = item.packed ? "כן" : "לא";
-
-                        csvContent += `"${person}","${category}","${name}","${amount}","${note}","${packed}"\n`;
-                    });
-                }
-            });
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", "רשימת_אריזה_קרוואנים.csv");
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         }
     </script>
 </body>
