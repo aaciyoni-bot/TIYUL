@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -117,9 +118,9 @@
         }
         const db = firebase.database();
 
-        // הגדרת המשפחות והמשתתפים
+        // הגדרת המשפחות והמשתתפים (ללא גילאים)
         const people = [
-            "יוני", "חנה", "ליאור (16)", "אייל (13)", "הילה (12)", "יובל (2)", 
+            "יוני", "חנה", "ליאור", "אייל", "הילה", "יובל", 
             "ציוד כללי פרידמן משמר", 
             "עוזיאל", "שרונה", "להבה", "אליה", "דביר", "הלל", 
             "ציוד כללי פרידמן אדורה", 
@@ -138,24 +139,24 @@
         db.ref('/').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                // העברת נתונים אוטומטית אם יש לשונית ישנה
-                if (data.items && data.items["ציוד כללי (לכולם)"]) {
-                    data.items["ציוד כללי פרידמן משמר"] = data.items["ציוד כללי (לכולם)"];
-                    data.items["ציוד כללי (לכולם)"] = null; // מחיקת הישן
-                    db.ref('items').set(data.items);
-                    return; // הפונקציה תיקרא שוב אוטומטית עם הנתונים המעודכנים
-                }
-                
                 appData.items = data.items || {};
                 appData.avatars = data.avatars || {};
             } else {
                 appData = { items: {}, avatars: {} };
-                generateInitialData();
             }
+            
+            // מנגנון חכם: תמיד בודק אם חסר ציוד למישהו (שם חדש/ריק) ומשלים אוטומטית לענן
+            generateInitialData();
 
             syncStatus.innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מסונכרן';
             isDataLoaded = true;
             checkUserAndRender();
+        }, (error) => {
+            syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> שגיאת חיבור';
+            showCustomModal('שגיאה', 'לא ניתן להתחבר לענן. בדקו חיבור לאינטרנט.');
+        });
+
+        function showCustomModal(title, message, showCancel = false, onOk = null) {
         }, (error) => {
             syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> שגיאת חיבור';
             showModal('שגיאה', 'לא ניתן להתחבר לענן. בדקו חיבור לאינטרנט.');
@@ -194,13 +195,9 @@
                 showUserModal();
             } else {
                 const selectBtn = document.getElementById('editToggleBtn');
-                // חנה או שרונה יכולות לערוך לכולם. השאר רק לעצמם ולציוד הכללי
-                if (currentUser === 'חנה' || currentUser === 'שרונה' || currentTab === currentUser || currentTab.includes('ציוד כללי')) {
-                    selectBtn.style.display = 'block';
-                } else {
-                    selectBtn.style.display = 'none';
-                    isEditMode = false; 
-                }
+                // כולם יכולים לערוך לכולם לבקשתך
+                selectBtn.style.display = 'block';
+                
                 renderTabs();
                 renderContent();
                 updateTotalProgress();
@@ -491,14 +488,13 @@
 
         function updateTotalProgress() {
             let total = 0, packed = 0;
-            if(appData.items) {
-                Object.values(appData.items).forEach(personItems => {
-                    Object.values(personItems).forEach(item => {
-                        total++;
-                        if(item.packed) packed++;
-                    });
+            
+            Object.values(appData.items || {}).forEach(personItems => {
+                Object.values(personItems).forEach(item => {
+                    total++;
+                    if(item.packed) packed++;
                 });
-            }
+            });
 
             const percent = total === 0 ? 0 : Math.round((packed / total) * 100);
             document.getElementById('total-progress-bar').style.width = `${percent}%`;
@@ -507,43 +503,51 @@
 
         function getBaseListForPerson(personName) {
             let list = [
-                { category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8", note: "" },
+                { category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8", note: "לכל הטיול (יש כביסה בווילה)" },
                 { category: "ביגוד יומיום", name: "מכנסיים קצרים", amount: "5", note: "" },
                 { category: "ביגוד יומיום", name: "מכנסיים ארוכים", amount: "3", note: "" },
                 { category: "ביגוד יומיום", name: "לבנים / תחתונים", amount: "10", note: "" },
                 { category: "ביגוד יומיום", name: "גרביים", amount: "8", note: "" },
-                { category: "ביגוד יומיום", name: "פיג'מה", amount: "2", note: "" },
+                { category: "ביגוד יומיום", name: "פיג'מה / בגדי שינה", amount: "2", note: "" },
                 
-                { category: "ביגוד חם (לאוסטריה)", name: "מעיל פליז / סופטשל", amount: "1", note: "חובה לפסגות" },
+                { category: "ביגוד חם (לאוסטריה)", name: "מעיל פליז / סופטשל", amount: "1", note: "חובה לפסגות המושלגות" },
                 { category: "ביגוד חם (לאוסטריה)", name: "חולצות ארוכות (בסיס)", amount: "2", note: "שיטת הבצל" },
-                { category: "ביגוד חם (לאוסטריה)", name: "כובע גרב וכפפות", amount: "1", note: "" },
+                { category: "ביגוד חם (לאוסטריה)", name: "כובע גרב וכפפות", amount: "1", note: "חובה להרים!" },
                 
-                { category: "הנעלה", name: "נעלי הליכה / ספורט", amount: "1", note: "" },
+                { category: "הנעלה", name: "נעלי הליכה סגורות / ספורט", amount: "1", note: "נוחות לטיולים" },
                 { category: "הנעלה", name: "סנדלים נוחים", amount: "1", note: "" },
-                { category: "הנעלה", name: "כפכפים", amount: "1", note: "למקלחות ולבריכה" },
+                { category: "הנעלה", name: "כפכפים", amount: "1", note: "למקלחות בחניונים ולבריכה" },
                 
                 { category: "בריכה וים", name: "בגדי ים", amount: "2", note: "" },
+                { category: "בריכה וים", name: "חולצת הגנה מהשמש UV", amount: "1", note: "" },
                 { category: "בריכה וים", name: "כובע שמש", amount: "1", note: "" },
                 
-                { category: "היגיינה ורחצה", name: "תיק רחצה אישי", amount: "1", note: "מברשת שיניים, דאודורנט" },
-                { category: "היגיינה ורחצה", name: "מגבת רחצה", amount: "1", note: "רצוי מיקרופייבר" },
-                { category: "היגיינה ורחצה", name: "מגבת בריכה", amount: "1", note: "" }
+                { category: "היגיינה ורחצה", name: "תיק רחצה אישי", amount: "1", note: "מברשת, משחה, דאודורנט, סבון" },
+                { category: "היגיינה ורחצה", name: "מגבת רחצה", amount: "1", note: "רצוי מיקרופייבר לייבוש מהיר" },
+                { category: "היגיינה ורחצה", name: "מגבת בריכה/ים", amount: "1", note: "" }
             ];
 
             // תוספות דת
-            if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור (16)", "אייל (13)"].includes(personName)) {
+            if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(personName)) {
                 list.push({ category: "דת ורוח", name: "תפילין", amount: "1", note: "לא לשכוח!" });
                 list.push({ category: "דת ורוח", name: "כיפות", amount: "3", note: "" });
+                list.push({ category: "דת ורוח", name: "ציצית", amount: "3", note: "" });
             }
-            if (personName === "עוזיאל" || personName === "יוני") {
+            // טלית רק לגברים בוגרים
+            if (["עוזיאל", "יוני"].includes(personName)) {
                 list.push({ category: "דת ורוח", name: "טלית", amount: "1", note: "" });
             }
 
+            // תוספות מיוחדות
+            if (personName === "הילה") {
+                list.push({ category: "ביגוד יומיום", name: "גוזיות", amount: "5", note: "" });
+            }
+
             // תוספות בנות/נשים לשבת
-            if (["חנה", "שרונה", "הילה (12)", "להבה", "הלל", "יובל (2)"].includes(personName)) {
-                list.push({ category: "ביגוד שבת", name: "שמלות / חצאיות וחולצות", amount: "2", note: "ל-3 שבתות" });
+            if (["חנה", "שרונה", "הילה", "להבה", "הלל", "יובל"].includes(personName)) {
+                list.push({ category: "ביגוד שבת", name: "שמלות / חצאיות וחולצות", amount: "2", note: "ל-3 שבתות בטיול" });
             } else {
-                list.push({ category: "ביגוד שבת", name: "חולצות מכופתרות", amount: "2", note: "ל-3 שבתות" });
+                list.push({ category: "ביגוד שבת", name: "חולצות מכופתרות", amount: "2", note: "ל-3 שבתות בטיול" });
                 list.push({ category: "ביגוד שבת", name: "מכנסיים חגיגיים", amount: "2", note: "" });
             }
 
@@ -551,49 +555,74 @@
         }
 
         function generateInitialData() {
-            const initialData = {};
-            
+            // עובר על כל אחד. אם חסרה לו רשימה במסד הנתונים - הוא מייצר ומזריק אותה
             people.forEach(person => {
-                if (person === "ציוד כללי פרידמן משמר" || person === "ציוד כללי פרידמן אדורה") {
-                    initialData[person] = [
-                        { category: "לינה בקרוואן", name: "סדינים ציפות וכריות", amount: "6 סטים", note: "לארוז בצ'ימידנים רכים" },
-                        { category: "לינה בקרוואן", name: "שמיכות פליז/מעבר", amount: "6 שמיכות", note: "קר בלילות בהרים" },
-                        { category: "שבת וכשרות", name: "כלים מפלסטיק קשיח", amount: "סט לכולם", note: "" },
-                        { category: "שבת וכשרות", name: "סירים ומחבתות", amount: "2-3", note: "מוטבלים מראש" },
-                        { category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לוודא תאימות מתח" },
-                        { category: "עזרה ראשונה", name: "תרופות מרשם ומשככי כאבים", amount: "1", note: "לכל הטיול" },
-                        { category: "מסמכים", name: "דרכונים ורישיון נהיגה בינלאומי", amount: "לכולם", note: "חובה לאיסוף הקרוואן" }
-                    ];
-                } else if (person === "ציוד כללי משותף") {
-                    initialData[person] = [
-                        { category: "פנאי", name: "משחק אליאס", amount: "1", note: "" },
-                        { category: "פנאי", name: "קלפים וטאקי", amount: "1", note: "" },
-                        { category: "אוכל משותף", name: "פקל קפה", amount: "1", note: "" }
-                    ];
-                } else if (person === "יובל (2)") {
-                    initialData[person] = [
-                        { category: "ציוד תינוקות", name: "חיתולים", amount: "1 חבילה", note: "להתחלה" },
-                        { category: "ציוד תינוקות", name: "מגבונים", amount: "5 חבילות", note: "" },
-                        { category: "ציוד תינוקות", name: "מנשא גב / טיולון", amount: "1", note: "חובה למסלולים" },
-                        { category: "ציוד תינוקות", name: "בקבוקים ומוצצים", amount: "מספר יחידות", note: "" }
-                    ];
-                } else {
-                    initialData[person] = getBaseListForPerson(person);
+                if (!appData.items[person] || Object.keys(appData.items[person]).length === 0) {
+                    let itemsArray = [];
+                    
+                    if (person.includes("ציוד כללי פרידמן")) {
+                        itemsArray = [
+                            { category: "לינה בקרוואן", name: "סדינים ציפות וכריות", amount: "6 סטים", note: "לארוז בצ'ימידנים רכים" },
+                            { category: "לינה בקרוואן", name: "שמיכות פליז/מעבר", amount: "6 שמיכות", note: "קר בלילות בהרים באוסטריה!" },
+                            { category: "לינה בקרוואן", name: "כריות שינה", amount: "6", note: "חובה להביא מהבית" },
+                            { category: "שבת וכשרות", name: "כלים מפלסטיק קשיח / חד פעמי", amount: "סט לכולם", note: "צלחות, סכו''ם וכוסות" },
+                            { category: "שבת וכשרות", name: "סירים ומחבתות", amount: "2-3", note: "מוטבלים מראש מהבית" },
+                            { category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לוודא תאימות מתח לקרוואן (הספק נמוך)" },
+                            { category: "שבת וכשרות", name: "מיחם קטן / תרמוס", amount: "1", note: "למים חמים בשבת" },
+                            { category: "שבת וכשרות", name: "נרונים, הבדלה, וגביע קידוש", amount: "1 ערכה", note: "ל-3 שבתות" },
+                            { category: "שבת וכשרות", name: "מפה לשבת וכיסוי חלה", amount: "1", note: "" },
+                            { category: "מטבח", name: "סכין חיתוך, קרש, פותחן", amount: "1 מכל סוג", note: "" },
+                            { category: "מטבח", name: "קופסאות פלסטיק", amount: "4", note: "לאחסון אוכל במקרר הקרוואן" },
+                            { category: "עזרה ראשונה", name: "תרופות מרשם", amount: "ל-22 ימים", note: "" },
+                            { category: "עזרה ראשונה", name: "משככי כאבים ומורידי חום", amount: "1 קופסה", note: "אקמול/נורופן (כולל נרות ליובל)" },
+                            { category: "עזרה ראשונה", name: "כדורים נגד בחילות", amount: "1 קופסה", note: "קריטי לכבישים המפותלים" },
+                            { category: "עזרה ראשונה", name: "פלסטרים, חיטוי, אלטוש וקרם הגנה", amount: "1 ערכה", note: "" },
+                            { category: "מסמכים", name: "דרכונים ורישיון נהיגה בינלאומי", amount: "לכולם", note: "חובה לאיסוף הקרוואן ב-22/6!" }
+                        ];
+                    } else if (person === "ציוד כללי משותף") {
+                        itemsArray = [
+                            { category: "פנאי", name: "משחק אליאס", amount: "1", note: "" },
+                            { category: "פנאי", name: "קלפים וטאקי", amount: "1", note: "" },
+                            { category: "אוכל משותף", name: "פקל קפה", amount: "1", note: "" },
+                            { category: "ציוד נוסף", name: "מתאמי חשמל לאירופה", amount: "3-4", note: "" },
+                            { category: "ציוד נוסף", name: "מטענים ניידים (Power Bank)", amount: "2-3", note: "" },
+                            { category: "ציוד נוסף", name: "ערכת עזרה ראשונה גדולה משותפת", amount: "1", note: "לטיולים רגליים" }
+                        ];
+                    } else if (person === "יובל") {
+                        itemsArray = [
+                            { category: "ציוד תינוקות", name: "חיתולים", amount: "1 חבילה", note: "להתחלה. משלימים ב-22/6" },
+                            { category: "ציוד תינוקות", name: "מגבונים", amount: "5 חבילות", note: "" },
+                            { category: "ציוד תינוקות", name: "משחת החתלה / סבון תינוקות", amount: "1", note: "" },
+                            { category: "ציוד תינוקות", name: "מנשא גב / טיולון קומפקטי", amount: "1", note: "מנשא חובה למסלולים רגליים" },
+                            { category: "ציוד תינוקות", name: "בקבוקים ומוצצים", amount: "מספר יחידות", note: "" },
+                            { category: "ביגוד יומיום", name: "בגדי גוף / חולצות קצרות", amount: "10", note: "" },
+                            { category: "ביגוד יומיום", name: "מכנסיים קצרים", amount: "8", note: "" },
+                            { category: "ביגוד יומיום", name: "מכנסיים ארוכים", amount: "5", note: "" },
+                            { category: "ביגוד יומיום", name: "זוגות גרביים", amount: "10", note: "" },
+                            { category: "ביגוד חם (לאוסטריה)", name: "מעיל פליז / חם", amount: "2", note: "קר לפעוטות בהרים" },
+                            { category: "ביגוד חם (לאוסטריה)", name: "כובע גרב וכפפות", amount: "1", note: "" },
+                            { category: "ביגוד שבת", name: "שמלות / בגדים חגיגיים", amount: "2", note: "" },
+                            { category: "בריכה וים", name: "בגדי ים", amount: "3", note: "" },
+                            { category: "בריכה וים", name: "חולצת UV", amount: "2", note: "" },
+                            { category: "היגיינה ורחצה", name: "מגבת רחצה / קפוצ'ון", amount: "1", note: "" }
+                        ];
+                    } else {
+                        itemsArray = getBaseListForPerson(person);
+                    }
+
+                    // כותבים את הנתונים החדשים לענן
+                    const personItemsObj = {};
+                    itemsArray.forEach((item, index) => {
+                        const id = `item_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 5)}`;
+                        personItemsObj[id] = { ...item, packed: false };
+                    });
+                    
+                    db.ref(`items/${person}`).set(personItemsObj);
                 }
             });
-
-            const parsedData = {};
-            for (const [person, itemsArray] of Object.entries(initialData)) {
-                parsedData[person] = {};
-                itemsArray.forEach((item, index) => {
-                    const id = `item_${Date.now()}_${index}`;
-                    parsedData[person][id] = { ...item, packed: false };
-                });
-            }
-
-            db.ref('items').set(parsedData);
         }
 
+        // --- פונקציית ייצוא לאקסל ---
         function exportToExcel() {
             if (!appData.items || Object.keys(appData.items).length === 0) {
                 showModal('שגיאה', 'אין נתונים לייצוא');
