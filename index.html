@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -5,12 +6,10 @@
     <meta name="theme-color" content="#4f46e5">
     <title>טיול קרוואנים 2026 - משפחות פרידמן</title>
     
-    <!-- Tailwind & Icons -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&display=swap" rel="stylesheet">
     
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -38,6 +37,11 @@
         
         @keyframes pulse-soft { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         .anim-pulse { animation: pulse-soft 2s infinite; }
+        
+        /* Playing Card Style */
+        .playing-card { background: white; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); width: 80px; height: 110px; display: flex; flex-direction: column; justify-content: center; items-center; font-weight: 800; font-size: 2rem; position: relative; }
+        .playing-card .suit-top { position: absolute; top: 5px; left: 5px; font-size: 1rem; line-height: 1; }
+        .playing-card .suit-bottom { position: absolute; bottom: 5px; right: 5px; font-size: 1rem; line-height: 1; transform: rotate(180deg); }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 pb-20 select-none">
@@ -81,7 +85,6 @@
         </div>
     </main>
 
-    <!-- מודל להודעות מאובטחות -->
     <div id="custom-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 transform scale-95 transition-transform duration-300" id="modal-content-box">
             <h3 id="modal-title" class="text-2xl font-extrabold mb-2 text-gray-800"></h3>
@@ -93,7 +96,6 @@
         </div>
     </div>
 
-    <!-- מודל לתצוגת מסמכים ותמונות בגדול -->
     <div id="image-modal" class="fixed inset-0 bg-black/90 z-[60] hidden flex flex-col items-center justify-center p-4 backdrop-blur-md">
         <button onclick="closeImageModal()" class="absolute top-6 right-6 text-white text-4xl hover:text-gray-300"><i class="fas fa-times"></i></button>
         <img id="full-screen-img" src="" alt="Document" class="max-w-full max-h-[75vh] rounded-xl shadow-2xl object-contain">
@@ -133,7 +135,7 @@
         const allPeople = [...families.mishmar.members, ...families.adora.members, ...families.shared.members];
         const activeFamilyMembers = allPeople.filter(p => !p.startsWith("ציוד"));
 
-        let appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {}, planned: {} }, checklists: {}, chores: {}, locations: {}, pantry: {}, gallery: {}, schedule: {}, emergencyContacts: {}, games: { scores: {}, currentCountryCity: {}, liveSong: {}, photoHunt: {} } };
+        let appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {}, planned: {} }, checklists: {}, chores: {}, locations: {}, pantry: {}, gallery: {}, schedule: {}, emergencyContacts: {}, games: { scores: {}, individualScores: {}, currentCountryCity: {}, liveSong: {}, photoHunt: {}, war: {} } };
         
         let currentView = 'dashboard'; 
         let currentGroup = null; 
@@ -148,13 +150,16 @@
                 if (!appData.wallet) appData.wallet = { expenses: {}, planned: {} };
                 if (!appData.wallet.planned) appData.wallet.planned = {};
                 if (!appData.wallet.expenses) appData.wallet.expenses = {};
-                if (!appData.games) appData.games = { scores: { mishmar: 0, adora: 0 }, currentCountryCity: {}, liveSong: {}, photoHunt: {} };
+                if (!appData.games) appData.games = { scores: { mishmar: 0, adora: 0 }, individualScores: {}, currentCountryCity: {}, liveSong: {}, photoHunt: {}, war: {} };
                 if (!appData.games.scores) appData.games.scores = { mishmar: 0, adora: 0 };
+                if (!appData.games.individualScores) appData.games.individualScores = {};
                 if (!appData.games.currentCountryCity) appData.games.currentCountryCity = { letter: "?" };
                 if (!appData.games.liveSong) appData.games.liveSong = { word: "?" };
                 if (!appData.games.photoHunt) appData.games.photoHunt = { mission: "לחצו להגרלת משימה ראשונה!" };
+                if (!appData.games.war) appData.games.war = { players: {} };
                 if (!appData.locations) appData.locations = {};
-                if (!appData.emergencyContacts) appData.emergencyContacts = {};
+                if (!appData.emergencyContacts) appData.emergencyContacts = { custom: {} };
+                if (!appData.emergencyContacts.custom) appData.emergencyContacts.custom = {};
             }
             generateInitialData();
             document.getElementById('sync-status').innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מחובר ומעודכן';
@@ -814,10 +819,6 @@
         }
         function deleteExpense(id) { showModal('מחיקה', 'למחוק הוצאה?', true, () => db.ref(`wallet/expenses/${id}`).remove()); }
 
-        function deleteLocation(id) { 
-            showModal('מחיקה', 'למחוק יעד זה?', true, () => { db.ref(`locations/${id}`).remove(); }); 
-        }
-
         function renderMap() {
             const content = document.getElementById('app-content');
             const locs = appData.locations || {};
@@ -880,6 +881,9 @@
             if(!name || !url) return showModal('שגיאה', 'יש למלא שם יעד וקישור לניווט.');
             db.ref(`locations`).push({ name, url, type });
         }
+        function deleteLocation(id) { 
+            showModal('מחיקה', 'למחוק יעד זה?', true, () => { db.ref(`locations/${id}`).remove(); }); 
+        }
 
         const gameDict = {
             country: ["ישראל", "איטליה", "אוסטריה", "קרואטיה", "אנגליה", "צרפת", "גרמניה", "ספרד", "יוון", "ארהב", "ברזיל", "ארגנטינה", "יפן", "סין", "הודו", "רוסיה", "קנדה", "מקסיקו", "מצרים", "טורקיה", "שוויץ", "שוודיה", "נורווגיה", "דנמרק", "הולנד", "בלגיה", "פולין", "הונגריה", "רומניה", "תאילנד", "אוסטרליה"],
@@ -916,11 +920,24 @@
 
         function renderGames() {
             const content = document.getElementById('app-content');
-            const scores = appData.games.scores;
+            const scores = appData.games.scores || { mishmar: 0, adora: 0 };
+            const individualScores = appData.games.individualScores || {};
             const activeLetter = appData.games.currentCountryCity?.letter || "?";
             const activeWord = appData.games.liveSong?.word || "?";
             const activePhotoMission = appData.games.photoHunt?.mission || "לחצו להגרלת משימה ראשונה!";
+            const warPlayers = appData.games.war?.players || {};
             
+            // Build Individual Scoreboard array
+            let indScoresHTML = '';
+            const indSorted = Object.entries(individualScores).sort((a,b) => b[1] - a[1]);
+            if(indSorted.length > 0) {
+                indScoresHTML = `<div class="mt-4 pt-4 border-t border-white/20"><p class="text-xs font-bold opacity-70 mb-2">אליפות אישית:</p><div class="flex flex-wrap justify-center gap-2">`;
+                indSorted.forEach(([name, score]) => {
+                    indScoresHTML += `<span class="bg-white/10 px-2 py-1 rounded text-sm font-bold">${name}: ${score}</span>`;
+                });
+                indScoresHTML += `</div></div>`;
+            }
+
             let html = `
                 <div class="text-center mb-6 mt-2">
                     <div class="w-20 h-20 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 shadow-inner anim-pulse"><i class="fas fa-gamepad"></i></div>
@@ -943,28 +960,74 @@
                             <div class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-pink-300 to-pink-100 drop-shadow-sm">${scores.adora}</div>
                         </div>
                     </div>
-                    <button onclick="resetGameScores()" class="mt-6 w-full bg-white/10 hover:bg-white/20 border border-white/20 py-2 rounded-xl text-sm font-bold transition backdrop-blur-sm"><i class="fas fa-redo-alt mr-1"></i> איפוס תוצאות לטורניר חדש</button>
+                    
+                    ${indScoresHTML}
+
+                    <!-- קופת ניקוד מרכזית למשפחות וליחידים -->
+                    <div class="mt-6 bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/20">
+                        <p class="text-xs font-bold text-indigo-200 mb-2 text-center">מי ניצח עכשיו במשחק?</p>
+                        <div class="flex gap-2">
+                            <select id="score-winner" class="flex-1 bg-white/20 text-white rounded-lg p-2 text-sm font-bold outline-none">
+                                <option value="family_mishmar" class="text-gray-800">משפחת משמר</option>
+                                <option value="family_adora" class="text-gray-800">משפחת אדורה</option>
+                                <optgroup label="שחקנים יחידים" class="text-gray-800">
+                                    ${activeFamilyMembers.map(m => `<option value="ind_${m}">${m}</option>`).join('')}
+                                </optgroup>
+                            </select>
+                            <input type="number" id="score-amount" value="1" class="w-16 bg-white/20 text-white rounded-lg p-2 text-center font-bold outline-none" title="כמות נקודות">
+                            <button onclick="awardPoints()" class="bg-indigo-500 hover:bg-indigo-600 px-4 rounded-lg font-bold shadow-md transition">+</button>
+                        </div>
+                    </div>
+
+                    <button onclick="resetGameScores()" class="mt-4 w-full text-indigo-300 hover:text-white text-xs font-bold transition"><i class="fas fa-redo-alt mr-1"></i> איפוס כל התוצאות לטורניר חדש</button>
                 </div>
 
                 <div class="grid grid-cols-1 gap-5">
                     
-                    <!-- ציידי התמונות (חדש) -->
+                    <!-- מלחמת קלפים לייב (WAR) -->
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 text-center">
+                        <div class="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3"><i class="fas fa-heart"></i><i class="fas fa-spade ml-1"></i></div>
+                        <h4 class="font-extrabold text-xl text-gray-800 mb-2">מלחמת קלפים Live!</h4>
+                        <p class="text-gray-500 text-sm mb-5">כל אחד שולף קלף. מי שהוציא את הקלף הגבוה ביותר לוקח נקודה לכיס! (אס הוא הגבוה ביותר).</p>
+                        
+                        <div class="bg-red-50 border border-red-200 rounded-2xl p-4 mb-5 flex flex-wrap justify-center gap-3 min-h-[140px] relative">
+                            ${Object.keys(warPlayers).length === 0 ? '<p class="text-red-400 font-bold self-center">השולחן ריק. תתחילו לשלוף!</p>' : ''}
+                            ${Object.entries(warPlayers).map(([name, data]) => {
+                                const isRed = data.suit === '♥' || data.suit === '♦';
+                                return `
+                                <div class="flex flex-col items-center">
+                                    <span class="text-xs font-bold text-gray-600 mb-1">${name}</span>
+                                    <div class="playing-card ${isRed ? 'text-red-600' : 'text-gray-900'}">
+                                        <div class="suit-top">${data.value}${data.suit}</div>
+                                        <div class="self-center text-4xl">${data.suit}</div>
+                                        <div class="suit-bottom">${data.value}${data.suit}</div>
+                                    </div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                        
+                        <div class="flex gap-2 mb-3">
+                            <select id="war-player-name" class="flex-1 p-3 border border-red-200 rounded-xl outline-none focus:ring-2 focus:ring-red-400 bg-gray-50 font-bold">
+                                <option value="" disabled selected>מי שולף עכשיו?</option>
+                                ${activeFamilyMembers.map(m => `<option value="${m}">${m}</option>`).join('')}
+                            </select>
+                            <button onclick="drawWarCard()" class="bg-red-600 text-white px-6 rounded-xl font-bold shadow-md hover:bg-red-700 transition"><i class="fas fa-hand-paper mr-1"></i> שלוף!</button>
+                        </div>
+                        <button onclick="db.ref('games/war/players').remove()" class="w-full text-red-400 font-bold text-sm bg-red-50 py-2 rounded-lg"><i class="fas fa-broom mr-1"></i> נקה שולחן לסיבוב הבא</button>
+                    </div>
+
+                    <!-- ציידי התמונות -->
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 text-center">
                         <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 rotate-3"><i class="fas fa-camera"></i></div>
                         <h4 class="font-extrabold text-xl text-gray-800 mb-2">ציידי התמונות Live!</h4>
-                        <p class="text-gray-500 text-sm mb-5">המשימה מופיעה לכולם. הראשונים שמצלמים ומעלים - מנצחים!</p>
+                        <p class="text-gray-500 text-sm mb-5">המשימה מופיעה לכולם. הראשון שמצלם מנצח!</p>
                         
                         <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5 relative">
                             <p class="text-amber-600 font-bold text-xs mb-2 uppercase tracking-wider">המשימה הנוכחית:</p>
                             <p class="font-extrabold text-amber-900 text-2xl mb-4 leading-tight">${activePhotoMission}</p>
                             <button onclick="document.getElementById('photo-hunt-upload').click()" class="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-600 transition shadow-md w-full"><i class="fas fa-camera-retro mr-2"></i> יש לי את זה! צלם עכשיו</button>
                         </div>
-                        
                         <button onclick="generatePhotoMission()" class="bg-gray-800 text-white w-full py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition text-lg mb-3"><i class="fas fa-random mr-2"></i> שגר משימה חדשה לכולם</button>
-                        <div class="flex gap-2">
-                            <button onclick="addScore('mishmar', 5)" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-bold border"><i class="fas fa-plus mr-1 text-green-500"></i> 5 נק' למשמר</button>
-                            <button onclick="addScore('adora', 5)" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-bold border"><i class="fas fa-plus mr-1 text-green-500"></i> 5 נק' לאדורה</button>
-                        </div>
                     </div>
 
                     <!-- טריוויה -->
@@ -978,12 +1041,7 @@
                             <button onclick="document.getElementById('trivia-a').classList.remove('hidden')" class="text-sm bg-blue-200 text-blue-800 px-4 py-2 rounded-lg font-bold hover:bg-blue-300 transition">הצג תשובה</button>
                             <p id="trivia-a" class="hidden font-bold text-2xl text-green-600 mt-4 bg-white py-2 rounded-xl border border-green-100"></p>
                         </div>
-                        
                         <button onclick="nextTrivia()" class="bg-blue-600 text-white w-full py-3.5 rounded-xl font-bold shadow-md hover:bg-blue-700 transition text-lg mb-3">הגרל שאלה</button>
-                        <div class="flex gap-2">
-                            <button onclick="addScore('mishmar', 1)" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-bold border"><i class="fas fa-plus mr-1 text-green-500"></i> 1 נק' למשמר</button>
-                            <button onclick="addScore('adora', 1)" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-bold border"><i class="fas fa-plus mr-1 text-green-500"></i> 1 נק' לאדורה</button>
-                        </div>
                     </div>
 
                     <!-- שירים -->
@@ -995,14 +1053,9 @@
                         <div class="bg-pink-50 border border-pink-200 rounded-2xl p-5 mb-5">
                             <p class="text-pink-600 font-bold text-sm mb-1 uppercase tracking-wider">המילה המשותפת:</p>
                             <p class="font-extrabold text-pink-900 text-4xl mb-4">${activeWord}</p>
-                            <input type="text" placeholder="איזה שיר מצאתם?" class="w-full p-3 border border-pink-200 rounded-xl outline-none focus:ring-2 focus:ring-pink-400 bg-white font-bold text-center">
+                            <input type="text" placeholder="איזה שיר מצאתם? הקלידו כאן" class="w-full p-3 border border-pink-200 rounded-xl outline-none focus:ring-2 focus:ring-pink-400 bg-white font-bold text-center">
                         </div>
-                        
                         <button onclick="nextSongWord()" class="bg-pink-600 text-white w-full py-3.5 rounded-xl font-bold shadow-md hover:bg-pink-700 transition text-lg mb-3"><i class="fas fa-sync-alt mr-2"></i> הגרל מילה לכולם</button>
-                        <div class="flex gap-2">
-                            <button onclick="addScore('mishmar', 2)" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-bold border"><i class="fas fa-plus mr-1 text-green-500"></i> 2 נק' למשמר</button>
-                            <button onclick="addScore('adora', 2)" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-xl text-sm font-bold border"><i class="fas fa-plus mr-1 text-green-500"></i> 2 נק' לאדורה</button>
-                        </div>
                     </div>
 
                     <!-- ארץ עיר -->
@@ -1012,7 +1065,6 @@
                         <p class="text-gray-500 text-sm mb-5">האות משותפת לכולם. מי מסיים להקליד ראשון?</p>
                         
                         <div class="w-20 h-20 bg-emerald-500 text-white rounded-2xl flex items-center justify-center text-5xl font-extrabold mx-auto mb-6 shadow-lg border-4 border-emerald-200">${activeLetter}</div>
-                        
                         <button onclick="rollLetter()" class="bg-emerald-600 text-white w-full py-3.5 rounded-xl font-bold shadow-md hover:bg-emerald-700 transition text-lg mb-6"><i class="fas fa-dice mr-2"></i> הגרל אות לכולם!</button>
                         
                         <div class="grid grid-cols-2 gap-3 mb-6 text-right">
@@ -1023,7 +1075,6 @@
                                 </div>
                             `).join('')}
                         </div>
-                        
                         <button onclick="checkCityCountry()" class="bg-gray-800 text-white w-full py-3.5 rounded-xl font-bold shadow-md hover:bg-black transition text-lg mb-3">בדוק אותי ותן ניקוד!</button>
                     </div>
                 </div>
@@ -1031,15 +1082,43 @@
             content.innerHTML = html;
         }
 
-        function resetGameScores() {
-            showModal('איפוס טורניר', 'האם לאפס את הניקוד של שתי המשפחות ל-0?', true, () => {
-                db.ref('games/scores/mishmar').set(0);
-                db.ref('games/scores/adora').set(0);
+        function awardPoints() {
+            const winnerVal = document.getElementById('score-winner').value;
+            const amount = Number(document.getElementById('score-amount').value) || 0;
+            if(amount === 0) return;
+
+            if (winnerVal.startsWith('family_')) {
+                const family = winnerVal.split('_')[1];
+                db.ref(`games/scores/${family}`).set((appData.games.scores[family] || 0) + amount);
+            } else if (winnerVal.startsWith('ind_')) {
+                const person = winnerVal.split('_')[1];
+                db.ref(`games/individualScores/${person}`).set((appData.games.individualScores[person] || 0) + amount);
+            }
+        }
+
+        function drawWarCard() {
+            const playerSelect = document.getElementById('war-player-name');
+            const playerName = playerSelect.value;
+            if(!playerName) return showModal("שגיאה", "אנא בחר מי שולף קלף מהרשימה.");
+
+            const suits = ['♥', '♦', '♣', '♠'];
+            const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+            const rSuit = suits[Math.floor(Math.random() * suits.length)];
+            const rVal = values[Math.floor(Math.random() * values.length)];
+
+            db.ref(`games/war/players/${playerName}`).set({
+                value: rVal,
+                suit: rSuit,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             });
         }
 
-        function addScore(family, amount) {
-            db.ref(`games/scores/${family}`).set((appData.games.scores[family] || 0) + amount);
+        function resetGameScores() {
+            showModal('איפוס טורניר', 'האם לאפס את הניקוד של כל המשפחות והיחידים ל-0?', true, () => {
+                db.ref('games/scores/mishmar').set(0);
+                db.ref('games/scores/adora').set(0);
+                db.ref('games/individualScores').set({});
+            });
         }
 
         function nextTrivia() {
@@ -1058,7 +1137,6 @@
         function rollLetter() {
             const letters = "אבגדהוזחטיכלמנסעפצקרשת";
             const finalLetter = letters[Math.floor(Math.random() * letters.length)];
-            // Clear inputs visually for the roller
             document.querySelectorAll('[id^="cc-"]').forEach(inp => { inp.value = ''; inp.classList.remove('border-red-500', 'border-green-500'); });
             db.ref('games/currentCountryCity/letter').set(finalLetter);
         }
@@ -1071,7 +1149,7 @@
         function handlePhotoHuntUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            showModal('מעלה תמונה...', 'מצרף את ההוכחה לגלריה המשותפת...', false);
+            showModal('מעלה תמונה...', 'מצרף לגלריה...', false);
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
@@ -1085,9 +1163,9 @@
                     
                     const uploaderName = prompt("כל הכבוד! מי צילם?") || "אנונימי";
                     const currentMission = appData.games.photoHunt?.mission || "משימת צילום";
-                    db.ref('gallery').push({ url: canvas.toDataURL('image/jpeg', 0.6), uploader: `🎯 משימה: ${currentMission} (${uploaderName})` }).then(() => {
+                    db.ref('gallery').push({ url: canvas.toDataURL('image/jpeg', 0.6), uploader: `🎯 ${currentMission} (${uploaderName})` }).then(() => {
                         document.getElementById('custom-modal').classList.add('hidden');
-                        showModal('אלופים!', 'התמונה עלתה בהצלחה לגלריה. אל תשכחו לתת לעצמכם נקודות!');
+                        showModal('אלופים!', 'התמונה עלתה לגלריה. אל תשכחו להעניק לעצמכם נקודות בקופה!');
                     });
                 }
                 img.src = e.target.result;
@@ -1124,12 +1202,9 @@
                     } else if(cat === 'חי') {
                         isCorrect = gameDict.animal.includes(val);
                         reason = isCorrect ? "V" : "לא במילון החיות";
-                    } else if(cat === 'צבע') {
-                        isCorrect = gameDict.color.includes(val);
-                        reason = isCorrect ? "V" : "לא במילון הצבעים";
                     } else if(cat === 'דומם') {
                         isCorrect = gameDict.object.includes(val);
-                        reason = isCorrect ? "V" : "לא במילון הדומם/חפצים";
+                        reason = isCorrect ? "V" : "לא במילון החפצים";
                     } else if(cat === 'מקצוע') {
                         isCorrect = gameDict.profession.includes(val);
                         reason = isCorrect ? "V" : "לא במילון המקצועות";
@@ -1140,38 +1215,38 @@
                 }
 
                 if(isCorrect) {
-                    inp.classList.add('border-green-500');
-                    inp.classList.remove('border-red-500');
+                    inp.classList.add('border-green-500'); inp.classList.remove('border-red-500');
                     points++;
                     resultsHTML += `<p class="text-green-600 font-bold"><i class="fas fa-check"></i> ${cat}: ${val}</p>`;
                 } else {
-                    inp.classList.add('border-red-500');
-                    inp.classList.remove('border-green-500');
+                    inp.classList.add('border-red-500'); inp.classList.remove('border-green-500');
                     resultsHTML += `<p class="text-red-500"><i class="fas fa-times"></i> ${cat}: ${val ? val : '-'} (${reason})</p>`;
                 }
             });
             
             resultsHTML += `</div>`;
-            showModal(`בדיקה הושלמה!`, `הרווחתם ${points} נקודות. אל תשכחו להוסיף אותן למשפחה שלכם בלוח התוצאות!`, false);
+            showModal(`בדיקה הושלמה!`, `הרווחתם ${points} נקודות. אל תשכחו להוסיף אותן בקופה למעלה!`, false);
             document.getElementById('modal-message').innerHTML += resultsHTML;
         }
 
         function renderEmergency() {
             const content = document.getElementById('app-content');
-            const contacts = appData.emergencyContacts || {};
-            const caravanPhone = contacts.caravan || 'הזן מספר';
-            const insurancePhone = contacts.insurance || 'הזן מספר';
+            const defaults = appData.emergencyContacts || {};
+            const customContacts = defaults.custom || {};
+            
+            const caravanPhone = defaults.caravan || 'הזן מספר';
+            const insurancePhone = defaults.insurance || 'הזן מספר';
 
-            content.innerHTML = `
+            let html = `
                 <div class="text-center mb-8 mt-2">
                     <div class="w-20 h-20 bg-red-600 text-white rounded-full flex items-center justify-center text-4xl mx-auto mb-4 shadow-lg"><i class="fas fa-first-aid"></i></div>
                     <h2 class="text-3xl font-extrabold text-gray-800">אזור חירום</h2>
-                    <p class="text-gray-500 mt-2 font-medium">זמין גם ללא אינטרנט (Offline)</p>
+                    <p class="text-gray-500 mt-2 font-medium">מספרים חיוניים לטיול</p>
                 </div>
 
-                <div class="bg-white rounded-3xl shadow-md overflow-hidden mb-6 border border-gray-200">
+                <div class="bg-white rounded-3xl shadow-md overflow-hidden mb-8 border border-gray-200">
                     <div class="bg-red-50 px-5 py-4 border-b border-red-100 flex items-center">
-                        <h3 class="font-bold text-red-800 text-lg"><i class="fas fa-phone-alt mr-2"></i> מספרי חירום חיוניים</h3>
+                        <h3 class="font-bold text-red-800 text-lg"><i class="fas fa-phone-alt mr-2"></i> מוקדים מרכזיים</h3>
                     </div>
                     <ul class="divide-y divide-gray-50 p-2">
                         <li class="p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -1181,20 +1256,52 @@
                         <li class="p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                             <div class="flex items-center gap-2">
                                 <span class="font-bold text-gray-800">חברת השכרת קרוואנים</span>
-                                <button onclick="editEmergencyNumber('caravan', '${caravanPhone}')" class="text-blue-500 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-sm font-bold transition"><i class="fas fa-pen"></i> ערוך</button>
+                                <button onclick="editEmergencyNumber('caravan', '${caravanPhone}')" class="text-blue-500 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-sm font-bold transition"><i class="fas fa-pen"></i></button>
                             </div>
                             <button onclick="confirmCall('חברת השכרת קרוואנים', '${caravanPhone}')" class="${caravanPhone !== 'הזן מספר' ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} px-6 py-2.5 rounded-xl font-bold text-xl transition w-full sm:w-auto dir-ltr"><i class="fas fa-phone mr-2"></i> ${caravanPhone}</button>
                         </li>
                         <li class="p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                             <div class="flex items-center gap-2">
                                 <span class="font-bold text-gray-800">ביטוח רפואי (מוקד חו"ל)</span>
-                                <button onclick="editEmergencyNumber('insurance', '${insurancePhone}')" class="text-blue-500 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-sm font-bold transition"><i class="fas fa-pen"></i> ערוך</button>
+                                <button onclick="editEmergencyNumber('insurance', '${insurancePhone}')" class="text-blue-500 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-sm font-bold transition"><i class="fas fa-pen"></i></button>
                             </div>
                             <button onclick="confirmCall('ביטוח רפואי', '${insurancePhone}')" class="${insurancePhone !== 'הזן מספר' ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} px-6 py-2.5 rounded-xl font-bold text-xl transition w-full sm:w-auto dir-ltr"><i class="fas fa-phone mr-2"></i> ${insurancePhone}</button>
                         </li>
                     </ul>
                 </div>
+
+                <div class="bg-red-50 rounded-3xl p-6 mb-8 border border-red-100">
+                    <h3 class="font-bold text-red-800 mb-4"><i class="fas fa-plus-circle mr-1"></i> הוספת איש קשר חדש לחירום</h3>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="custom-em-name" placeholder="שם איש הקשר (למשל: דוד מאיטליה)" class="flex-1 p-3 border border-red-200 rounded-xl outline-none focus:ring-2 focus:ring-red-400">
+                        <input type="tel" id="custom-em-phone" placeholder="מספר טלפון" class="flex-1 p-3 border border-red-200 rounded-xl outline-none focus:ring-2 focus:ring-red-400 dir-ltr">
+                        <button onclick="addCustomEmergency()" class="bg-red-600 text-white px-6 py-3 rounded-xl font-bold shadow hover:bg-red-700 transition">הוסף</button>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-gray-700 mb-3 ml-1 text-lg">אנשי קשר אישיים:</h3>
+                <div class="flex flex-col gap-3">
             `;
+
+            const customKeys = Object.keys(customContacts);
+            if(customKeys.length === 0) {
+                html += `<div class="text-center p-6 bg-white rounded-xl text-gray-500 shadow-sm border">לא נוספו אנשי קשר אישיים.</div>`;
+            } else {
+                customKeys.forEach(key => {
+                    const contact = customContacts[key];
+                    html += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <div class="flex-1 w-full flex justify-between sm:justify-start items-center">
+                            <span class="font-bold text-gray-800 text-lg">${contact.name}</span>
+                            <button onclick="db.ref('emergencyContacts/custom/${key}').remove()" class="text-red-400 hover:text-red-600 sm:ml-4 mr-auto"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <button onclick="confirmCall('${contact.name}', '${contact.phone}')" class="bg-red-100 text-red-700 hover:bg-red-200 px-6 py-2.5 rounded-xl font-bold text-xl transition w-full sm:w-auto dir-ltr"><i class="fas fa-phone mr-2"></i> ${contact.phone}</button>
+                    </div>`;
+                });
+            }
+
+            html += `</div>`;
+            content.innerHTML = html;
         }
 
         function confirmCall(name, number) {
@@ -1207,6 +1314,13 @@
             if (newNum !== null && newNum.trim() !== '') db.ref(`emergencyContacts/${key}`).set(newNum.trim());
         }
 
+        function addCustomEmergency() {
+            const name = document.getElementById('custom-em-name').value.trim();
+            const phone = document.getElementById('custom-em-phone').value.trim();
+            if(!name || !phone) return showModal('שגיאה', 'יש להזין שם ומספר טלפון.');
+            db.ref(`emergencyContacts/custom`).push({ name, phone });
+        }
+
         function renderPantry() {
             const content = document.getElementById('app-content');
             const pantry = appData.pantry || {};
@@ -1215,12 +1329,12 @@
                 <div class="text-center mb-8 mt-2">
                     <div class="w-20 h-20 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 shadow-inner"><i class="fas fa-shopping-basket"></i></div>
                     <h2 class="text-3xl font-extrabold text-gray-800">מזווה ומקרר משותף</h2>
-                    <p class="text-gray-500 mt-2 font-medium">ניהול מלאי כדי שלא נקנה כפול</p>
+                    <p class="text-gray-500 mt-2 font-medium">ניהול מלאי מצרכים בקרוואן</p>
                 </div>
                 
                 <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 mb-6">
                     <div class="flex gap-3">
-                        <input type="text" id="pantry-item" placeholder="מוצר (למשל: חלב, פסטה)" class="flex-1 p-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-400 bg-gray-50 font-bold">
+                        <input type="text" id="pantry-item" placeholder="מוצר (למשל: חלב, ביצים)" class="flex-1 p-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-400 bg-gray-50 font-bold">
                         <input type="text" id="pantry-qty" placeholder="כמות" value="1" class="w-20 p-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-400 bg-gray-50 text-center font-bold">
                         <button onclick="addPantryItem()" class="bg-orange-500 text-white px-5 rounded-xl font-bold shadow hover:bg-orange-600 transition"><i class="fas fa-plus"></i></button>
                     </div>
@@ -1260,10 +1374,10 @@
                 <div class="text-center mb-8 mt-2">
                     <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 shadow-inner"><i class="fas fa-camera-retro"></i></div>
                     <h2 class="text-3xl font-extrabold text-gray-800">גלריה משותפת</h2>
-                    <p class="text-gray-500 mt-2 font-medium">תמונות מהדרך והוכחות למשימות</p>
+                    <p class="text-gray-500 mt-2 font-medium">זכרונות מהדרך</p>
                 </div>
                 
-                <button onclick="document.getElementById('gallery-upload').click()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-extrabold shadow-lg hover:bg-blue-700 transition text-lg mb-8"><i class="fas fa-upload mr-2"></i> העלה תמונה חדשה</button>
+                <button onclick="document.getElementById('gallery-upload').click()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-extrabold shadow-lg hover:bg-blue-700 transition text-lg mb-8"><i class="fas fa-upload mr-2"></i> העלה תמונת זיכרון חדשה</button>
                 <input type="file" id="gallery-upload" class="hidden" accept="image/*" onchange="handleGalleryUpload(event)">
                 
                 <div class="grid grid-cols-2 gap-4">
@@ -1277,7 +1391,7 @@
                     <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 text-white">
                         <p class="text-xs font-bold leading-tight">${img.uploader}</p>
                     </div>
-                    <button onclick="db.ref('gallery/${key}').remove()" class="absolute top-2 right-2 bg-red-500 w-8 h-8 rounded-full text-white opacity-0 group-hover:opacity-100 transition"><i class="fas fa-trash"></i></button>
+                    <button onclick="db.ref('gallery/${key}').remove()" class="absolute top-2 right-2 bg-red-500 w-8 h-8 rounded-full text-white opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><i class="fas fa-trash"></i></button>
                 </div>`;
             });
             
@@ -1300,7 +1414,7 @@
                     canvas.width = width; canvas.height = height;
                     canvas.getContext('2d').drawImage(img, 0, 0, width, height);
                     
-                    const uploaderName = prompt("מי צילם?") || "אנונימי";
+                    const uploaderName = prompt("מי בתמונה? (או איפה צולם)") || "זיכרון מהטיול";
                     db.ref('gallery').push({ url: canvas.toDataURL('image/jpeg', 0.6), uploader: uploaderName }).then(() => {
                         document.getElementById('custom-modal').classList.add('hidden');
                     });
@@ -1318,7 +1432,7 @@
                 <div class="text-center mb-8 mt-2">
                     <div class="w-20 h-20 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 shadow-inner"><i class="fas fa-calendar-check"></i></div>
                     <h2 class="text-3xl font-extrabold text-gray-800">לו"ז יומי</h2>
-                    <p class="text-gray-500 mt-2 font-medium">מה התוכנית להיום ומי כבר מוכן לצאת?</p>
+                    <p class="text-gray-500 mt-2 font-medium">מה התוכנית להיום ומי מוכן לצאת?</p>
                 </div>
                 
                 <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 mb-6">
@@ -1373,106 +1487,7 @@
         }
 
         if ('serviceWorker' in navigator) {
-            // Placeholder for real PWA service worker registration
-            console.log("PWA Ready context.");
-        }
-
-        function generateInitialData() {
-            // תורנויות
-            if (!appData.chores || Object.keys(appData.chores || {}).length === 0) {
-                db.ref('chores').set([
-                    { name: "שטיפת כלים", assignee: "" },
-                    { name: "ריקון שירותים כימיים", assignee: "" },
-                    { name: "הכנת ארוחת בוקר", assignee: "" }
-                ]);
-            }
-
-            // צ'קליסט קרוואן
-            if (!appData.checklists || Object.keys(appData.checklists.departure || {}).length === 0) {
-                db.ref('checklists/departure').set([
-                    { task: "ניתוק חשמל וגלגול כבל", done: false },
-                    { task: "ניתוק מים וסגירת ברז", done: false },
-                    { task: "ריקון מים אפורים/קסטה", done: false },
-                    { task: "סגירת ברז גז ראשי", done: false },
-                    { task: "סגירת כל החלונות והסקיילייט", done: false },
-                    { task: "נעילת ארונות ומקרר", done: false },
-                    { task: "קיפול מדרגה ומרקיזה", done: false }
-                ]);
-                db.ref('checklists/arrival').set([
-                    { task: "ייצוב הקרוואן (צ'וקים)", done: false },
-                    { task: "חיבור כבל חשמל", done: false },
-                    { task: "פתיחת ברז מים וגז", done: false }
-                ]);
-            }
-
-            // רשימות אריזה ענקיות וציוד דת (כפי שביקשת)
-            allPeople.forEach(person => {
-                if (["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות", "📍 מפת מסלול"].includes(person)) return;
-                
-                if (!appData.items[person] || Object.keys(appData.items[person]).length === 0) {
-                    let itemsArray = [];
-                    
-                    if (!person.startsWith("ציוד כללי")) {
-                        itemsArray = [
-                            { category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8", note: "יש כביסה" },
-                            { category: "ביגוד יומיום", name: "מכנסיים קצרים", amount: "5", note: "" },
-                            { category: "ביגוד יומיום", name: "מכנסיים ארוכים", amount: "3", note: "" },
-                            { category: "ביגוד יומיום", name: "לבנים / תחתונים", amount: "10", note: "" },
-                            { category: "ביגוד יומיום", name: "גרביים", amount: "8", note: "" },
-                            { category: "ביגוד חורף", name: "מעיל סופטשל", amount: "1", note: "לאוסטריה" },
-                            { category: "ביגוד חורף", name: "חולצות ארוכות", amount: "2", note: "שיטת הבצל" },
-                            { category: "ביגוד חורף", name: "כובע גרב וכפפות", amount: "1", note: "" },
-                            { category: "הנעלה", name: "נעלי הליכה סגורות", amount: "1", note: "" },
-                            { category: "הנעלה", name: "סנדלים", amount: "1", note: "" },
-                            { category: "הנעלה", name: "כפכפים", amount: "1", note: "למקלחות" },
-                            { category: "בריכה וים", name: "בגדי ים", amount: "2", note: "" },
-                            { category: "היגיינה ורחצה", name: "תיק רחצה אישי", amount: "1", note: "שמפו, מברשת..." },
-                            { category: "היגיינה ורחצה", name: "מגבת רחצה ומגבת בריכה", amount: "2", note: "רצוי מיקרופייבר" }
-                        ];
-                        if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(person)) {
-                            itemsArray.push({ category: "דת ורוח", name: "תפילין", amount: "1", note: "" });
-                            itemsArray.push({ category: "דת ורוח", name: "כיפות", amount: "3", note: "" });
-                            itemsArray.push({ category: "דת ורוח", name: "ציצית", amount: "3", note: "" });
-                        }
-                        if (["עוזיאל", "יוני"].includes(person)) {
-                            itemsArray.push({ category: "דת ורוח", name: "טלית", amount: "1", note: "לשבתות" });
-                        }
-                        if (person === "הילה" || person === "להבה") {
-                            itemsArray.push({ category: "ביגוד יומיום", name: "גוזיות", amount: "5", note: "" });
-                        }
-                        if (person === "יובל" || person === "הלל") {
-                            itemsArray.push({ category: "ציוד תינוקות", name: "חיתולים", amount: "1 חבילה", note: "" });
-                            itemsArray.push({ category: "ציוד תינוקות", name: "מגבונים", amount: "5", note: "" });
-                            itemsArray.push({ category: "ציוד תינוקות", name: "מנשא גב", amount: "1", note: "" });
-                        }
-                    } else if (person.startsWith("ציוד כללי פרידמן")) {
-                        itemsArray = [
-                            { category: "לינה בקרוואן", name: "סדינים ציפות וכריות", amount: "6 סטים", note: "" },
-                            { category: "לינה בקרוואן", name: "שמיכות", amount: "6", note: "קר בלילות!" },
-                            { category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לבדוק מתח" },
-                            { category: "שבת וכשרות", name: "מיחם / תרמוס", amount: "1", note: "" },
-                            { category: "שבת וכשרות", name: "נרונים, כוס קידוש", amount: "1 ערכה", note: "" },
-                            { category: "שבת וכשרות", name: "סירים ומחבתות (מוטבלים)", amount: "3", note: "" },
-                            { category: "שבת וכשרות", name: "כלים מפלסטיק קשיח", amount: "לכולם", note: "סכו״ם צלחות" }
-                        ];
-                    } else if (person === "ציוד כללי משותף") {
-                        itemsArray = [
-                            { category: "פנאי", name: "אליאס ומשחקי קופסא", amount: "1", note: "" },
-                            { category: "אוכל משותף", name: "פקל קפה", amount: "1", note: "" },
-                            { category: "חשמל", name: "מתאמים לאירופה", amount: "4", note: "" },
-                            { category: "רפואה", name: "עזרה ראשונה + כדורי בחילה", amount: "1", note: "לאוסטריה" }
-                        ];
-                    }
-
-                    if(itemsArray.length > 0) {
-                        const personItemsObj = {};
-                        itemsArray.forEach((item, index) => {
-                            personItemsObj[`item_${Date.now()}_${index}`] = { ...item, packed: false };
-                        });
-                        db.ref(`items/${person}`).set(personItemsObj);
-                    }
-                }
-            });
+            console.log("Ready for PWA / App Install.");
         }
     </script>
 </body>
