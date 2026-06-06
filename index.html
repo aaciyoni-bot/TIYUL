@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -22,6 +23,15 @@
         .check-toggle { transition: all 0.3s; }
         .check-toggle.active { background-color: #10b981; border-color: #10b981; }
         .packed-text { text-decoration: line-through; color: #9ca3af; }
+        
+        /* משחקים אנימציות */
+        @keyframes roll {
+            0% { transform: translateY(0); opacity: 1; }
+            50% { transform: translateY(-20px); opacity: 0; }
+            51% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .rolling-text { animation: roll 0.15s linear infinite; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 pb-20 select-none">
@@ -66,7 +76,7 @@
         </button>
 
         <h3 class="font-bold text-gray-600 mb-3 px-2 text-sm uppercase tracking-wider">כלים וניהול מסע</h3>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-3 mb-4">
             <button onclick="openModule('caravan')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 flex items-center gap-3">
                 <div class="text-green-500 text-2xl"><i class="fas fa-steering-wheel"></i></div>
                 <div class="text-right"><p class="font-bold text-sm text-gray-800">ניהול קרוואן</p><p class="text-xs text-gray-500">צ'קליסטים</p></div>
@@ -85,9 +95,9 @@
             </button>
         </div>
 
-        <button onclick="openModule('games')" class="w-full mt-3 bg-gradient-to-r from-orange-400 to-pink-500 p-4 rounded-xl shadow-md text-white flex items-center justify-center gap-3 hover:opacity-90 transition transform hover:scale-105 active:scale-95">
+        <button onclick="openModule('games')" class="w-full bg-gradient-to-r from-orange-400 to-pink-500 p-4 rounded-xl shadow-md text-white flex items-center justify-center gap-3 hover:opacity-90 transition transform hover:scale-105 active:scale-95">
             <i class="fas fa-gamepad text-3xl animate-pulse"></i>
-            <div class="text-right"><p class="font-black text-lg">משחקי הדרך</p><p class="text-xs text-orange-100">טריוויה לייב: משמר VS אדורה!</p></div>
+            <div class="text-right"><p class="font-black text-lg">קונסולת משחקים</p><p class="text-xs text-orange-100">טריוויה, שירים וארץ עיר!</p></div>
         </button>
     </div>
 
@@ -152,7 +162,7 @@
         const activeFamilyMembers = [...groups.mishmar.slice(0,6), ...groups.adora.slice(0,6)];
         const adults = ["יוני", "חנה", "עוזיאל", "שרונה"];
 
-        let appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {}, planned: {} }, checklists: {}, chores: {}, locations: {}, games: { triviaScores: {} } };
+        let appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {}, planned: {} }, checklists: {}, chores: {}, locations: {}, games: { scores: {} } };
         let currentTab = '';
         let activeTabGroup = [];
         let currentUploadDocType = "";
@@ -171,20 +181,19 @@
                 appData.checklists = data.checklists || { departure: [], arrival: [] };
                 appData.chores = data.chores || {};
                 appData.locations = data.locations || {};
-                appData.games = data.games || { triviaScores: {} };
+                appData.games = data.games || { scores: { mishmar: 0, adora: 0 } };
+                if (!appData.games.scores) appData.games.scores = { mishmar: 0, adora: 0 };
             }
             
             generateInitialData();
             syncStatus.innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מסונכרן';
-            
             updateTotalProgress();
             
             if(document.getElementById('loading-spinner')) {
-                // First load complete
                 document.getElementById('loading-spinner').remove();
-                goHome(); // Show dashboard
+                goHome(); 
             } else if(currentTab !== '') {
-                renderApp(); // Re-render current open module if updating live
+                renderApp(); 
             }
         }, (error) => {
             syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> שגיאת חיבור';
@@ -221,7 +230,7 @@
                 tabsContainer.classList.remove('hidden');
             } else {
                 activeTabGroup = [];
-                currentTab = moduleName; // e.g. 'caravan', 'wallet'
+                currentTab = moduleName;
                 tabsContainer.classList.add('hidden');
             }
             renderApp();
@@ -243,8 +252,8 @@
             else if (currentTab === 'wallet') renderWallet();
             else if (currentTab === 'chores') renderChores();
             else if (currentTab === 'map') renderMap();
-            else if (currentTab === 'games') renderGames();
-            else if (currentTab !== '') renderContent(); // Equipment lists
+            else if (currentTab === 'games') renderGamesDashboard();
+            else if (currentTab !== '') renderContent(); 
         }
 
         function renderTabs() {
@@ -274,58 +283,140 @@
             });
         }
 
-        const triviaQuestions = [
-            { q: "מי בדרך כלל לוקח הכי הרבה זמן להתארגן בבוקר?", options: ["יוני", "עוזיאל", "הילה", "להבה"], a: 2 },
-            { q: "איך אומרים 'תודה' באיטלקית?", options: ["גרסיאס", "גרציה", "מרסי", "דנקה"], a: 1 },
-            { q: "מה הגובה של המון בלאן (ההר הכי גבוה באלפים)?", options: ["4,809 מטר", "3,500 מטר", "5,200 מטר", "8,848 מטר"], a: 0 },
-            { q: "כמה רגליים יש לעכביש?", options: ["6", "8", "10", "12"], a: 1 },
-            { q: "איזה מאכל איטלקי אהוב במיוחד על דביר ואייל?", options: ["פיצה", "לזניה", "רביולי", "ניוקי"], a: 0 },
-            { q: "מה עיר הבירה של אוסטריה?", options: ["זלצבורג", "אינסברוק", "וינה", "לינץ"], a: 2 }
+        // --- מאגר נתונים למשחקים ---
+        const musicWords = [
+            "אהבה","שמש","ים","לב","אור","לילה","יום","שמחה","עיניים","פרח","שמיים","מים","רוח","אש","אדמה","דרך","חלום","כוכב","ילד","עולם","שיר","מנגינה","בוקר","ערב","גשם","שלג","הר","עץ","ציפור","פרפר","חבר","אמא","אבא","בית","רחוב","עיר","ארץ","כחול","אדום","ירוק","לבן","שחור","זהב","כסף","זמן","שעון","רגע","שנה","חודש","שבוע","תקווה","שלום","חיוך","דמעה","צחוק","בכי","ריקוד","קפיצה","ריצה","הליכה","מבט","קול","שקט","רעש","מילה","סיפור","ספר","מכתב","תמונה","צבע","מכונית","רכבת","מטוס","אונייה","סירה","כביש","שביל","דלת","חלון","קיר","גג","חדר","מיטה","כיסא","שולחן","אוכל","מים","לחם","יין","חלב","דבש","מתוק","מר","חמוץ","מלוח","חם","קר","גדול","קטן","ארוך","קצר","גבוה","נמוך","מהר","לאט","חזק","חלש","יפה","מכוער","טוב","רע","חכם","טיפש","חדש","ישן","צעיר","זקן","ראשון","אחרון","אחד","שניים","שלושה","מאה","אלף","מיליון","חיים","מוות","לידה","יום הולדת","חג","שבת","ראשון","אמת","שקר","סוד","חידה","תשובה","שאלה","סיבה","תוצאה","כוח","חולשה","אומץ","פחד","גיבור","מלך","מלכה","נסיך","נסיכה","מלאך","שד","רוח","נשמה","גוף","ראש","יד","רגל","עין","אוזן","אף","פה","שן","שיער","פנים","גב","בטן","לב","דם","עור","עצם","שריר","כאב","תרופה","רופא","חולה","בריא","משוגע","נורמלי","רגיל","מיוחד","זר","מוכר","חבר","אויב","מלחמה","קרב","ניצחון","הפסד","משחק","צעצוע","בובה","כדור","חבל","אבן","עץ","ברזל","זהב","כסף","נחושת","זכוכית","פלסטיק","נייר","ספר","מחברת","עט","עיפרון","מחשב","טלפון","מסך","מקלדת","עכבר","שיר","פזמון","זמר","זמרת","להקה","כלי","גיטרה","פסנתר","תוף","חליל","כינור"
         ];
 
-        function renderGames() {
+        const eretzIrCategories = ["ארץ", "עיר", "חי", "צומח", "דומם", "ילד", "ילדה", "מקצוע", "מאכל", "צבע", "כלי תחבורה", "אישיות מפורסמת", "מותג / חברה"];
+        const hebrewLetters = ["א","ב","ג","ד","ה","ו","ז","ח","ט","י","כ","ל","מ","נ","ס","ע","פ","צ","ק","ר","ש","ת"];
+
+        const triviaQuestions = [
+            { q: "איזה כלי שחמט יכול לזוז באלכסון בלבד?", options: ["צריח", "סוס", "רץ", "מלך"], a: 2 },
+            { q: "מהו ההר הגבוה בעולם?", options: ["קילימנג'רו", "האברסט", "מון בלאן", "החרמון"], a: 1 },
+            { q: "כמה רגליים יש לעכביש?", options: ["6", "8", "10", "12"], a: 1 },
+            { q: "איזו חיה מיוצגת בסמל של מותג המכוניות 'פרארי'?", options: ["שור", "אריה", "סוס", "נמר"], a: 2 },
+            { q: "איך קוראים לנסיכה בסרט 'אלדין'?", options: ["בל", "שלגיה", "יסמין", "אריאל"], a: 2 },
+            { q: "מה שמו של האיש הראשון שטס לחלל?", options: ["ניל ארמסטרונג", "יורי גגארין", "אילון מאסק", "באז אולדרין"], a: 1 },
+            { q: "מהי בירת איטליה?", options: ["מילאנו", "ונציה", "רומא", "נאפולי"], a: 2 },
+            { q: "איזה נהר חוצה את העיר וינה שבאוסטריה?", options: ["הריין", "הדנובה", "הסן", "התמזה"], a: 1 },
+            { q: "באיזה יום בשבוע נבראו השמש והירח?", options: ["יום שני", "יום שלישי", "יום רביעי", "יום שישי"], a: 2 },
+            { q: "איזו מכה היא השלישית בעשר מכות מצרים?", options: ["דם", "צפרדע", "כינים", "ערוב"], a: 2 },
+            { q: "איך אומרים תודה באיטלקית?", options: ["גרסיאס", "גרציה", "מרסי", "דנקה"], a: 1 },
+            { q: "כמה חודשים יש בשנה מעוברת בלוח העברי?", options: ["11", "12", "13", "14"], a: 2 },
+            { q: "מהו הפרי שגדל על עץ הדקל?", options: ["בננה", "תמר", "קוקוס", "רימון"], a: 1 },
+            { q: "מי כתב את סדרת הספרים 'הארי פוטר'?", options: ["ג'יי. אר. אר. טולקין", "ג'יי קיי רולינג", "רואלד דאל", "ריק ריירדן"], a: 1 },
+            { q: "איזה צבע מתקבל מערבוב של כחול וצהוב?", options: ["כתום", "סגול", "ירוק", "חום"], a: 2 },
+            { q: "כמה שחקנים יש בקבוצת כדורגל על המגרש?", options: ["9", "10", "11", "12"], a: 2 },
+            { q: "מה שמו של הילד מעץ שהאף שלו מתארך כשהוא משקר?", options: ["פיטר פן", "פינוקיו", "במבי", "דמבו"], a: 1 },
+            { q: "איזה חוש פועל באמצעות האף?", options: ["ראייה", "שמיעה", "מישוש", "ריח"], a: 3 },
+            { q: "מה צבע התפוח המורעל ששלגיה אכלה?", options: ["ירוק", "צהוב", "אדום", "שחור"], a: 2 },
+            { q: "מאיזו עיר מתחילה בדרך כלל טיסת אל על לאיטליה?", options: ["חיפה", "תל אביב (נתבג)", "אילת", "ירושלים"], a: 1 }
+        ];
+
+        let activeGame = '';
+
+        function renderGamesDashboard() {
             const content = document.getElementById('app-content');
-            const scores = appData.games.triviaScores || { mishmar: 0, adora: 0 };
+            const scores = appData.games.scores || { mishmar: 0, adora: 0 };
             
-            content.innerHTML = `
+            let html = `
                 <div class="text-center mb-6 mt-4">
-                    <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-gamepad text-orange-500 mr-2"></i> משחקי הדרך</h2>
-                    <p class="text-gray-500 mt-2">טריוויה לייב: מי המשפחה שתנצח?</p>
+                    <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-gamepad text-orange-500 mr-2"></i> קונסולת משחקים</h2>
+                    <p class="text-gray-500 mt-2">הזמן עובר בכיף בנסיעות ארוכות!</p>
                 </div>
 
-                <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl shadow-lg p-1 mb-8">
-                    <div class="bg-white rounded-xl p-5 flex justify-between items-center text-center">
+                <!-- Scoreboard -->
+                <div class="bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl shadow-lg p-1 mb-8">
+                    <div class="bg-white rounded-xl p-4 flex justify-between items-center text-center">
                         <div class="flex-1">
-                            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">פרידמן - משמר</p>
-                            <p class="text-4xl font-black text-indigo-600">${scores.mishmar || 0}</p>
+                            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">משמר</p>
+                            <p class="text-3xl font-black text-indigo-600">${scores.mishmar || 0}</p>
                         </div>
-                        <div class="px-4 text-3xl font-black text-gray-200">VS</div>
+                        <div class="px-2 text-2xl font-black text-gray-300">VS</div>
                         <div class="flex-1">
-                            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">פרידמן - אדורה</p>
-                            <p class="text-4xl font-black text-blue-600">${scores.adora || 0}</p>
+                            <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">אדורה</p>
+                            <p class="text-3xl font-black text-blue-600">${scores.adora || 0}</p>
                         </div>
                     </div>
                 </div>
+            `;
 
-                <div class="bg-orange-50 border border-orange-200 rounded-2xl p-6 text-center">
-                    <h3 class="font-bold text-orange-800 text-xl mb-4">🏆 ליגת טריוויה קרוואנים!</h3>
-                    <p class="text-gray-600 mb-6 text-sm">שואלים שאלה בעל פה. מי שעונה נכון מקבל נקודה למשפחה שלו!</p>
-                    <button onclick="startTriviaQuestion()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg text-lg transition transform hover:scale-105 active:scale-95 w-full">
+            if (activeGame === '') {
+                html += `
+                <div class="grid grid-cols-1 gap-4 mb-6">
+                    <button onclick="activeGame='trivia'; renderGamesDashboard()" class="bg-white p-5 rounded-2xl shadow-sm border border-purple-200 hover:bg-purple-50 transition text-right flex items-center gap-4">
+                        <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-2xl"><i class="fas fa-question"></i></div>
+                        <div><h3 class="font-bold text-gray-800 text-lg">טריוויה לייב</h3><p class="text-sm text-gray-500">שאלות לכל המשפחה, צוברים נקודות!</p></div>
+                    </button>
+                    <button onclick="activeGame='music'; renderGamesDashboard()" class="bg-white p-5 rounded-2xl shadow-sm border border-pink-200 hover:bg-pink-50 transition text-right flex items-center gap-4">
+                        <div class="w-14 h-14 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-2xl"><i class="fas fa-music"></i></div>
+                        <div><h3 class="font-bold text-gray-800 text-lg">שירון קרוואנים</h3><p class="text-sm text-gray-500">מקבלים מילה, הראשונים ששרים מנצחים!</p></div>
+                    </button>
+                    <button onclick="activeGame='eretzir'; renderGamesDashboard()" class="bg-white p-5 rounded-2xl shadow-sm border border-blue-200 hover:bg-blue-50 transition text-right flex items-center gap-4">
+                        <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl"><i class="fas fa-globe"></i></div>
+                        <div><h3 class="font-bold text-gray-800 text-lg">ארץ עיר מורחב</h3><p class="text-sm text-gray-500">מגלגלים אות ומתחילים לרוץ על הקטגוריות.</p></div>
+                    </button>
+                </div>`;
+            } else if (activeGame === 'trivia') {
+                html += `
+                <div class="bg-purple-50 border border-purple-200 rounded-2xl p-6 text-center">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-purple-800 text-xl"><i class="fas fa-question-circle"></i> טריוויה לייב</h3>
+                        <button onclick="activeGame=''; renderGamesDashboard()" class="text-gray-500 hover:bg-gray-200 p-2 rounded-full text-sm"><i class="fas fa-arrow-right"></i> חזור</button>
+                    </div>
+                    <p class="text-gray-600 mb-6 text-sm">מי שעונה נכון מקבל נקודה למשפחה שלו!</p>
+                    <button onclick="startTriviaQuestion()" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-lg transition transform hover:scale-105 active:scale-95 w-full">
                         <i class="fas fa-play mr-2"></i> שלוף שאלה!
                     </button>
-                    <div id="trivia-area" class="mt-6 hidden"></div>
-                </div>
-            `;
+                    <div id="game-area" class="mt-6 hidden"></div>
+                </div>`;
+            } else if (activeGame === 'music') {
+                html += `
+                <div class="bg-pink-50 border border-pink-200 rounded-2xl p-6 text-center">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-pink-800 text-xl"><i class="fas fa-music"></i> שירון קרוואנים</h3>
+                        <button onclick="activeGame=''; renderGamesDashboard()" class="text-gray-500 hover:bg-gray-200 p-2 rounded-full text-sm"><i class="fas fa-arrow-right"></i> חזור</button>
+                    </div>
+                    <p class="text-gray-600 mb-6 text-sm">המערכת תגריל מילה. המשפחה הראשונה ששרה שיר עם המילה הזו זוכה בנקודה!</p>
+                    <button onclick="startMusicGame()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-lg transition transform hover:scale-105 active:scale-95 w-full">
+                        <i class="fas fa-random mr-2"></i> הגרל מילה!
+                    </button>
+                    <div id="game-area" class="mt-6 hidden"></div>
+                </div>`;
+            } else if (activeGame === 'eretzir') {
+                html += `
+                <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-blue-800 text-xl"><i class="fas fa-globe"></i> ארץ עיר קרוואנים</h3>
+                        <button onclick="activeGame=''; renderGamesDashboard()" class="text-gray-500 hover:bg-gray-200 p-2 rounded-full text-sm"><i class="fas fa-arrow-right"></i> חזור</button>
+                    </div>
+                    <p class="text-gray-600 mb-6 text-sm">גלגלו אות, ונסו להשלים כמה שיותר מהר את כל הקטגוריות בעל פה!</p>
+                    <button onclick="rollEretzIr()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-lg transition transform hover:scale-105 active:scale-95 w-full">
+                        <i class="fas fa-dice mr-2"></i> גלגל אות!
+                    </button>
+                    <div id="game-area" class="mt-6 hidden"></div>
+                </div>`;
+            }
+
+            content.innerHTML = html;
         }
 
+        function addScore(family) {
+            const currentScore = appData.games.scores[family] || 0;
+            db.ref(`games/scores/${family}`).set(currentScore + 1);
+            document.getElementById('game-area').innerHTML = `<p class="text-green-600 font-bold text-lg mt-4 animate-bounce">הנקודה נרשמה למשפחת ${family === 'mishmar' ? 'משמר' : 'אדורה'}! 🏆</p>`;
+        }
+
+        // טריוויה
         function startTriviaQuestion() {
             const currentQuestionIndex = Math.floor(Math.random() * triviaQuestions.length);
             const qObj = triviaQuestions[currentQuestionIndex];
-            const area = document.getElementById('trivia-area');
+            const area = document.getElementById('game-area');
             area.classList.remove('hidden');
             
             let optionsHtml = qObj.options.map((opt, idx) => 
-                `<button onclick="answerTrivia(${idx}, ${qObj.a})" class="w-full text-right p-3 bg-white border border-orange-200 rounded-lg shadow-sm hover:bg-orange-100 font-medium transition text-gray-700">${opt}</button>`
+                `<button onclick="answerTrivia(${idx}, ${qObj.a})" class="w-full text-right p-3 bg-white border border-purple-200 rounded-lg shadow-sm hover:bg-purple-100 font-medium transition text-gray-700">${opt}</button>`
             ).join('');
 
             area.innerHTML = `
@@ -338,10 +429,10 @@
 
         function answerTrivia(selectedIdx, correctIdx) {
             if(selectedIdx === correctIdx) {
-                document.getElementById('trivia-area').innerHTML = `
+                document.getElementById('game-area').innerHTML = `
                     <div class="bg-green-100 p-5 rounded-xl border border-green-200 text-center animate-pulse">
                         <p class="text-xl font-bold text-green-700 mb-4">🎉 תשובה נכונה! 🎉</p>
-                        <p class="text-sm font-bold text-gray-600 mb-3">לאיזו משפחה להוסיף את הנקודה?</p>
+                        <p class="text-sm font-bold text-gray-600 mb-3">מי ענה נכון?</p>
                         <div class="flex gap-3 justify-center">
                             <button onclick="addScore('mishmar')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">משמר</button>
                             <button onclick="addScore('adora')" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">אדורה</button>
@@ -349,7 +440,7 @@
                     </div>
                 `;
             } else {
-                document.getElementById('trivia-area').innerHTML = `
+                document.getElementById('game-area').innerHTML = `
                     <div class="bg-red-50 p-5 rounded-xl border border-red-200 text-center">
                         <p class="text-lg font-bold text-red-600 mb-2">אופס... טעות! 😢</p>
                         <button onclick="startTriviaQuestion()" class="text-gray-500 underline text-sm mt-2">נסו שאלה אחרת</button>
@@ -358,11 +449,63 @@
             }
         }
 
-        function addScore(family) {
-            const currentScore = appData.games.triviaScores[family] || 0;
-            db.ref(`games/triviaScores/${family}`).set(currentScore + 1);
-            document.getElementById('trivia-area').classList.add('hidden');
+        // שירון קרוואנים
+        function startMusicGame() {
+            const randomWord = musicWords[Math.floor(Math.random() * musicWords.length)];
+            const area = document.getElementById('game-area');
+            area.classList.remove('hidden');
+            
+            area.innerHTML = `
+                <div class="bg-white p-6 rounded-xl shadow border border-pink-200 text-center">
+                    <p class="text-sm text-gray-500 mb-2">השלימו שיר עם המילה:</p>
+                    <p class="text-5xl font-black text-pink-600 mb-6 drop-shadow-md">"${randomWord}"</p>
+                    <div class="border-t pt-4">
+                        <p class="text-xs text-gray-500 mb-3 font-bold uppercase">מי שר ראשון וזוכה בנקודה?</p>
+                        <div class="flex gap-3 justify-center">
+                            <button onclick="addScore('mishmar')" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg font-bold transition">משמר</button>
+                            <button onclick="addScore('adora')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition">אדורה</button>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
+
+        // ארץ עיר
+        function rollEretzIr() {
+            const area = document.getElementById('game-area');
+            area.classList.remove('hidden');
+            
+            let counter = 0;
+            area.innerHTML = `<div class="text-6xl font-black text-blue-600 mb-4 rolling-text">א</div>`;
+            
+            const interval = setInterval(() => {
+                area.innerHTML = `<div class="text-6xl font-black text-blue-600 mb-4 rolling-text">${hebrewLetters[Math.floor(Math.random() * hebrewLetters.length)]}</div>`;
+                counter++;
+                if(counter > 15) {
+                    clearInterval(interval);
+                    const finalLetter = hebrewLetters[Math.floor(Math.random() * hebrewLetters.length)];
+                    let catHtml = eretzIrCategories.map(cat => 
+                        `<div class="bg-blue-50 border border-blue-100 p-2 rounded text-sm font-bold text-blue-800">${cat}</div>`
+                    ).join('');
+                    
+                    area.innerHTML = `
+                        <div class="bg-white p-6 rounded-xl shadow border border-blue-200 text-center">
+                            <p class="text-sm text-gray-500 mb-2">האות שנבחרה:</p>
+                            <p class="text-6xl font-black text-blue-600 mb-6 bg-blue-50 inline-block px-6 py-2 rounded-2xl border-2 border-blue-200">${finalLetter}</p>
+                            <p class="font-bold text-gray-700 mb-3 border-b pb-2">קטגוריות למילוי:</p>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-right">
+                                ${catHtml}
+                            </div>
+                            <div class="mt-6 border-t pt-4 flex gap-3 justify-center">
+                                <button onclick="addScore('mishmar')" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded text-sm font-bold transition">+ נקודה למשמר</button>
+                                <button onclick="addScore('adora')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-bold transition">+ נקודה לאדורה</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }, 100);
+        }
+
 
         function renderMap() {
             const content = document.getElementById('app-content');
@@ -371,22 +514,23 @@
             let html = `
                 <div class="text-center mb-6 mt-4">
                     <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-map-marked-alt text-red-500 mr-2"></i> מפת מסלול</h2>
-                    <p class="text-gray-500 mt-2">ניווט מהיר ליעדים שלנו</p>
+                    <p class="text-gray-500 mt-2">האב ניווט חכם לחניונים ויעדים</p>
                 </div>
 
                 <div class="w-full bg-white rounded-2xl shadow-md overflow-hidden mb-8 border border-gray-200">
-                    <iframe src="https://www.google.com/maps/d/embed?mid=1vXv68_zBwN2A0E4yv6S5Sg2c7kM&hl=en" width="100%" height="350" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
-                    <div class="bg-red-50 p-3 text-center text-sm text-red-700 border-t border-red-100">
-                        <i class="fas fa-info-circle mr-1"></i> החליפו קישור זה למפה האישית שלכם ב-Google My Maps!
+                    <!-- מסגרת מפה של Google My Maps -->
+                    <iframe src="https://www.google.com/maps/d/embed?mid=1vXv68_zBwN2A0E4yv6S5Sg2c7kM&hl=he" width="100%" height="350" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
+                    <div class="bg-red-50 p-3 text-center text-xs text-red-700 border-t border-red-100 font-bold">
+                        <i class="fas fa-info-circle mr-1"></i> טיפ: החליפו את הקישור בקוד ל-Google My Maps הפרטי שלכם!
                     </div>
                 </div>
 
                 <div class="bg-slate-50 rounded-2xl shadow-inner p-5 mb-8 border border-slate-200">
-                    <h3 class="font-bold text-slate-800 mb-4 text-lg"><i class="fas fa-map-pin mr-2 text-red-400"></i> מועדפים לניווט מהיר</h3>
+                    <h3 class="font-bold text-slate-800 mb-4 text-lg"><i class="fas fa-location-arrow mr-2 text-red-400"></i> מועדפים לניווט מהיר (Waze/Google)</h3>
                     
                     <div class="flex flex-col gap-3 mb-6">
-                        <input type="text" id="loc-name" placeholder="שם המקום (למשל: סופר כשר מילאנו)" class="w-full p-3 border border-slate-300 rounded-lg outline-none">
-                        <input type="text" id="loc-url" placeholder="הדבק קישור לניווט (Google Maps / Waze)" class="w-full p-3 border border-slate-300 rounded-lg outline-none text-left" dir="ltr">
+                        <input type="text" id="loc-name" placeholder="שם המקום (למשל: חניון אוסטריה, סופר כשר מילאנו)" class="w-full p-3 border border-slate-300 rounded-lg outline-none">
+                        <input type="text" id="loc-url" placeholder="הדבק קישור גוגל מפות (Share Link)" class="w-full p-3 border border-slate-300 rounded-lg outline-none text-left" dir="ltr">
                         <button onclick="addLocation()" class="bg-red-500 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-red-600 transition">הוסף מקום לניווט</button>
                     </div>
 
@@ -395,17 +539,17 @@
 
             const locKeys = Object.keys(locations);
             if(locKeys.length === 0) {
-                html += `<div class="text-center p-4 bg-white/60 rounded-xl text-slate-500 text-sm">אין עדיין מקומות שמורים.</div>`;
+                html += `<div class="text-center p-4 bg-white/60 rounded-xl text-slate-500 text-sm">אין עדיין יעדים שמורים לניווט מהיר.</div>`;
             } else {
                 locKeys.forEach(key => {
                     const loc = locations[key];
                     html += `
                     <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center gap-3">
                         <div class="flex-1 overflow-hidden">
-                            <p class="font-bold text-slate-800 truncate">${loc.name}</p>
+                            <p class="font-bold text-slate-800 truncate text-lg">${loc.name}</p>
                         </div>
                         <div class="flex gap-2">
-                            <a href="${loc.url}" target="_blank" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-4 py-2 rounded-lg font-bold transition text-sm flex items-center shadow-sm"><i class="fas fa-location-arrow mr-1"></i> נווט</a>
+                            <a href="${loc.url}" target="_blank" class="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-lg font-bold transition text-sm flex items-center shadow-sm"><i class="fas fa-external-link-alt mr-2"></i> נווט</a>
                             <button onclick="deleteLocation('${key}')" class="text-red-400 hover:text-red-600 px-3 py-2 bg-red-50 rounded-lg transition"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>`;
@@ -426,6 +570,65 @@
             showModal('מחיקה', 'למחוק מיקום זה?', true, () => db.ref(`locations/${key}`).remove());
         }
 
+        function renderChores() {
+            const content = document.getElementById('app-content');
+            const chores = appData.chores || {};
+            
+            let html = `
+                <div class="text-center mb-6 mt-4">
+                    <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-dice text-purple-500 mr-2"></i> תורנויות טיול</h2>
+                    <p class="text-gray-500 mt-2">מי עושה מה היום?</p>
+                </div>
+                
+                <div class="bg-purple-50 rounded-2xl shadow-inner p-5 mb-8 border border-purple-100">
+                    <h3 class="font-bold text-purple-800 mb-4"><i class="fas fa-plus-circle mr-1"></i> הוספת תורנות חדשה</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-chore-name" placeholder="למשל: שטיפת כלים, ריקון פח..." class="w-full p-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400">
+                        <button onclick="addChore()" class="bg-purple-600 text-white px-6 rounded-lg font-bold shadow hover:bg-purple-700 transition">הוסף</button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+            `;
+
+            const choreKeys = Object.keys(chores);
+            if(choreKeys.length === 0) {
+                html += `<div class="text-center p-6 bg-white rounded-xl text-gray-500">איזה כיף, אין מטלות! (עדיין...)</div>`;
+            } else {
+                choreKeys.forEach(key => {
+                    const c = chores[key];
+                    html += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex-1">
+                            <p class="font-bold text-gray-800 text-lg">${c.name}</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <select onchange="assignChore('${key}', this.value)" class="flex-1 sm:w-40 p-2 border border-gray-200 rounded-lg text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-purple-400">
+                                <option value="" ${!c.assignee ? 'selected' : ''}>-- ללא שיבוץ --</option>
+                                ${activeFamilyMembers.map(m => `<option value="${m}" ${c.assignee === m ? 'selected' : ''}>${m}</option>`).join('')}
+                            </select>
+                            <button onclick="editChore('${key}', '${c.name.replace(/'/g, "\\'")}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition"><i class="fas fa-pen"></i></button>
+                            <button onclick="deleteChore('${key}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
+                });
+            }
+            html += `</div>`;
+            content.innerHTML = html;
+        }
+
+        function addChore() {
+            const name = document.getElementById('new-chore-name').value.trim();
+            if(!name) return showModal('שגיאה', 'יש לכתוב את שם התורנות.');
+            db.ref(`chores`).push({ name: name, assignee: "" });
+        }
+        function assignChore(id, personName) { db.ref(`chores/${id}/assignee`).set(personName); }
+        function editChore(id, oldName) {
+            const newName = prompt("ערוך את שם המטלה:", oldName);
+            if(newName && newName.trim() !== "") db.ref(`chores/${id}/name`).set(newName.trim());
+        }
+        function deleteChore(id) { showModal('מחיקה', 'למחוק את התורנות הזו?', true, () => db.ref(`chores/${id}`).remove()); }
+
         function renderCaravan() {
             const content = document.getElementById('app-content');
             const depList = appData.checklists.departure || [];
@@ -434,7 +637,7 @@
             let html = `
                 <div class="text-center mb-6 mt-4">
                     <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-steering-wheel text-green-600 mr-2"></i> ניהול קרוואן</h2>
-                    <p class="text-gray-500 mt-2">צ'קליסט הגעה ועזיבה לחניון</p>
+                    <p class="text-gray-500 mt-2">אל תתניעו לפני שעברתם על זה!</p>
                 </div>
             `;
 
@@ -449,7 +652,7 @@
                         <h3 class="font-bold ${isAllDone ? 'text-green-800' : 'text-gray-800'} text-lg"><i class="fas ${icon} mr-2"></i> ${title}</h3>
                         <div class="flex items-center gap-3">
                             <span class="text-sm font-bold bg-white px-3 py-1 rounded-full border shadow-sm">${doneCount}/${total}</span>
-                            <button onclick="resetChecklist('${type}')" class="text-xs bg-red-100 text-red-600 px-3 py-1.5 rounded-lg"><i class="fas fa-undo"></i> איפוס</button>
+                            <button onclick="resetChecklist('${type}')" class="text-xs bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1.5 rounded-lg transition"><i class="fas fa-undo"></i> איפוס</button>
                         </div>
                     </div>
                     <ul class="divide-y divide-gray-100">
@@ -457,9 +660,7 @@
                 items.forEach((item, index) => {
                     block += `
                     <li class="p-3 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition" onclick="toggleChecklistTask('${type}', ${index})">
-                        <div class="check-toggle flex items-center justify-center w-7 h-7 rounded border-2 flex-shrink-0 ${item.done ? 'active text-white' : 'border-gray-300 bg-white text-transparent'}">
-                            <i class="fas fa-check text-sm"></i>
-                        </div>
+                        <div class="check-toggle flex items-center justify-center w-7 h-7 rounded border-2 flex-shrink-0 ${item.done ? 'active text-white' : 'border-gray-300 bg-white text-transparent'}"><i class="fas fa-check text-sm"></i></div>
                         <p class="${item.done ? 'text-gray-400 line-through' : 'text-gray-800 font-medium'} flex-1 text-lg">${item.task}</p>
                     </li>`;
                 });
@@ -472,12 +673,11 @@
             content.innerHTML = html;
         }
 
-        function toggleChecklistTask(type, index) {
-            db.ref(`checklists/${type}/${index}/done`).set(!appData.checklists[type][index].done);
-        }
+        function toggleChecklistTask(type, index) { db.ref(`checklists/${type}/${index}/done`).set(!appData.checklists[type][index].done); }
         function resetChecklist(type) {
-            showModal('איפוס רשימה', 'האם לאפס את הרשימה לקראת החניון הבא?', true, () => {
-                appData.checklists[type].forEach((_, index) => db.ref(`checklists/${type}/${index}/done`).set(false));
+            showModal('איפוס רשימה', 'האם לאפס את כל ה-V ברשימה זו לקראת החניון הבא?', true, () => {
+                const list = appData.checklists[type];
+                if(list) list.forEach((_, index) => db.ref(`checklists/${type}/${index}/done`).set(false));
             });
         }
 
@@ -486,147 +686,166 @@
             const expenses = appData.wallet.expenses || {};
             const planned = appData.wallet.planned || {};
             
-            let tMishmar = 0, tAdora = 0;
+            let totalMishmar = 0;
+            let totalAdora = 0;
+            
             Object.values(expenses).forEach(exp => {
-                if(exp.paidBy === 'משמר') tMishmar += Number(exp.amount);
-                if(exp.paidBy === 'אדורה') tAdora += Number(exp.amount);
+                if(exp.paidBy === 'משמר') totalMishmar += Number(exp.amount);
+                if(exp.paidBy === 'אדורה') totalAdora += Number(exp.amount);
             });
-            const total = tMishmar + tAdora, target = total / 2;
-            let balText = "הוצאות שוות!", balColor = "text-green-600";
-            if (tMishmar > tAdora) { balText = `אדורה חייבים למשמר: €${(tMishmar - target).toFixed(2)}`; balColor = "text-red-500"; } 
-            else if (tAdora > tMishmar) { balText = `משמר חייבים לאדורה: €${(tAdora - target).toFixed(2)}`; balColor = "text-red-500"; }
+            
+            const total = totalMishmar + totalAdora;
+            const targetPerFamily = total / 2;
+            
+            let balanceText = "הוצאות שוות - אין חובות!";
+            let balanceColor = "text-green-600";
+            
+            if (totalMishmar > totalAdora) {
+                balanceText = `אדורה חייבים למשמר: €${(totalMishmar - targetPerFamily).toFixed(2)}`;
+                balanceColor = "text-red-500";
+            } else if (totalAdora > totalMishmar) {
+                balanceText = `משמר חייבים לאדורה: €${(totalAdora - targetPerFamily).toFixed(2)}`;
+                balanceColor = "text-red-500";
+            }
 
             let html = `
                 <div class="text-center mb-6 mt-4">
                     <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-wallet text-indigo-500 mr-2"></i> ארנק משותף</h2>
+                    <p class="text-gray-500 mt-2">תכנון קניות מראש ומעקב הוצאות בפועל</p>
                 </div>
                 
-                <div class="bg-amber-50 rounded-2xl p-5 mb-8 border border-amber-200 shadow-sm">
-                    <h3 class="font-bold text-amber-800 mb-4 text-lg"><i class="fas fa-cart-plus mr-2"></i> תכנון קניות (מי קונה מה?)</h3>
-                    <div class="flex flex-col gap-3 mb-4">
-                        <input type="text" id="planned-desc" placeholder="למשל: כרטיסים לגארדלנד..." class="w-full p-3 border border-amber-200 rounded-lg">
-                        <div class="flex gap-2">
-                            <select id="planned-assignee" class="flex-1 p-3 border border-amber-200 rounded-lg bg-white">
-                                <option value="טרם הוחלט" selected>-- מי קונה? --</option>
-                                <option value="משמר">משמר יקנו</option>
-                                <option value="אדורה">אדורה יקנו</option>
+                <div class="bg-amber-50 rounded-2xl shadow-md p-5 mb-8 border border-amber-200">
+                    <h3 class="font-bold text-amber-800 mb-4 text-lg"><i class="fas fa-shopping-cart mr-2"></i> מה צריך לקנות? (מי קונה מה)</h3>
+                    <div class="flex flex-col gap-3 mb-5">
+                        <input type="text" id="planned-desc" placeholder="למשל: כרטיסים לגארדלנד, קניות לשבת..." class="w-full p-3 border border-amber-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-400">
+                        <div class="flex gap-3">
+                            <select id="planned-assignee" class="flex-1 p-3 border border-amber-200 rounded-lg outline-none focus:ring-2 focus:ring-amber-400 bg-white">
+                                <option value="טרם הוחלט" selected>-- מי אחראי לקנות? --</option><option value="משמר">משמר יקנו</option><option value="אדורה">אדורה יקנו</option>
                             </select>
-                            <button onclick="addPlannedExpense()" class="bg-amber-500 text-white px-6 rounded-lg font-bold">הוסף</button>
+                            <button onclick="addPlannedExpense()" class="bg-amber-500 text-white px-6 rounded-lg font-bold shadow hover:bg-amber-600 transition">הוסף</button>
                         </div>
                     </div>
                     <div class="flex flex-col gap-2">
             `;
-            Object.keys(planned).forEach(key => {
-                const item = planned[key];
-                html += `
-                <div class="bg-white p-3 rounded-xl border border-amber-100 flex justify-between items-center gap-2">
-                    <div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="db.ref('wallet/planned/${key}/done').set(!${item.done})">
-                        <div class="w-6 h-6 rounded border-2 flex items-center justify-center ${item.done ? 'bg-amber-500 border-amber-500 text-white' : 'border-gray-300'}"><i class="fas fa-check text-xs"></i></div>
-                        <span class="${item.done ? 'line-through text-gray-400' : 'font-bold text-gray-800'}">${item.description}</span>
-                    </div>
-                    <div class="flex gap-2">
-                        <select onchange="db.ref('wallet/planned/${key}/assignee').set(this.value)" class="text-xs p-1.5 border rounded bg-amber-50">
-                            <option value="טרם הוחלט" ${item.assignee==='טרם הוחלט'?'selected':''}>מי?</option>
-                            <option value="משמר" ${item.assignee==='משמר'?'selected':''}>משמר</option>
-                            <option value="אדורה" ${item.assignee==='אדורה'?'selected':''}>אדורה</option>
-                        </select>
-                        <button onclick="db.ref('wallet/planned/${key}').remove()" class="text-red-400 px-2"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>`;
-            });
+
+            const plannedKeys = Object.keys(planned);
+            if(plannedKeys.length === 0) html += `<div class="text-center p-4 bg-white/60 rounded-xl text-amber-700/70 text-sm">אין קניות עתידיות ברשימה.</div>`;
+            else {
+                plannedKeys.forEach(key => {
+                    const item = planned[key];
+                    html += `
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-amber-100 flex justify-between items-center gap-2">
+                        <div class="flex items-center gap-3 flex-1">
+                            <div class="check-toggle flex items-center justify-center w-6 h-6 rounded border-2 flex-shrink-0 cursor-pointer ${item.done ? 'bg-amber-500 border-amber-500 text-white' : 'border-gray-300 bg-white text-transparent'}" onclick="togglePlannedExpense('${key}')"><i class="fas fa-check text-xs"></i></div>
+                            <span class="${item.done ? 'line-through text-gray-400' : 'font-bold text-gray-800'}">${item.description}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select onchange="updatePlannedAssignee('${key}', this.value)" class="text-xs p-1.5 border border-amber-200 rounded-lg bg-amber-50 text-amber-800 font-semibold outline-none">
+                                <option value="טרם הוחלט" ${item.assignee === 'טרם הוחלט' ? 'selected' : ''}>מי קונה?</option><option value="משמר" ${item.assignee === 'משמר' ? 'selected' : ''}>משמר</option><option value="אדורה" ${item.assignee === 'אדורה' ? 'selected' : ''}>אדורה</option>
+                            </select>
+                            <button onclick="deletePlannedExpense('${key}')" class="text-red-400 hover:text-red-600 p-2 rounded transition"><i class="fas fa-trash text-sm"></i></button>
+                        </div>
+                    </div>`;
+                });
+            }
+
             html += `</div></div>
-                <div class="bg-white rounded-2xl shadow-md p-5 mb-6">
-                    <div class="grid grid-cols-2 text-center border-b pb-4 mb-4">
-                        <div><p class="text-sm text-gray-500">משמר שילמו</p><p class="text-xl font-bold text-indigo-600">€${tMishmar.toFixed(2)}</p></div>
-                        <div><p class="text-sm text-gray-500">אדורה שילמו</p><p class="text-xl font-bold text-blue-600">€${tAdora.toFixed(2)}</p></div>
-                    </div>
-                    <div class="text-center bg-gray-50 p-3 rounded-xl"><p class="text-lg font-bold ${balColor}">${balText}</p></div>
+                <div class="flex items-center justify-center mb-6">
+                    <div class="h-px bg-gray-300 w-1/4"></div><span class="px-4 text-gray-500 font-bold text-sm">הוצאות בפועל (התקזזות)</span><div class="h-px bg-gray-300 w-1/4"></div>
                 </div>
-                <div class="bg-indigo-50 rounded-2xl p-5 border border-indigo-100 mb-6">
-                    <h3 class="font-bold text-indigo-800 mb-3">הוספת הוצאה בפועל (להתקזזות)</h3>
-                    <input type="text" id="wallet-desc" placeholder="תיאור ההוצאה" class="w-full p-3 mb-3 border rounded-lg">
-                    <div class="flex gap-3 mb-3">
-                        <input type="number" id="wallet-amount" placeholder="סכום (€)" class="w-1/2 p-3 border rounded-lg">
-                        <select id="wallet-payer" class="w-1/2 p-3 border rounded-lg bg-white">
-                            <option value="" disabled selected>מי שילם?</option><option value="משמר">משמר</option><option value="אדורה">אדורה</option>
-                        </select>
+                <div class="bg-white rounded-2xl shadow-md p-5 mb-6 border border-gray-100">
+                    <div class="grid grid-cols-2 gap-4 text-center mb-4 border-b pb-4">
+                        <div><p class="text-sm text-gray-500">פרידמן-משמר שילמו</p><p class="text-xl font-bold text-indigo-600">€${totalMishmar.toFixed(2)}</p></div>
+                        <div><p class="text-sm text-gray-500">פרידמן-אדורה שילמו</p><p class="text-xl font-bold text-blue-600">€${totalAdora.toFixed(2)}</p></div>
                     </div>
-                    <button onclick="addExpense()" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold">הוסף לארנק</button>
+                    <div class="text-center bg-gray-50 rounded-xl p-3"><p class="text-sm text-gray-500 mb-1">שורה תחתונה:</p><p class="text-lg font-bold ${balanceColor}">${balanceText}</p></div>
                 </div>
+                <div class="bg-indigo-50 rounded-2xl shadow-inner p-5 mb-8 border border-indigo-100">
+                    <h3 class="font-bold text-indigo-800 mb-4"><i class="fas fa-plus-circle mr-1"></i> הוספת הוצאה ששולמה</h3>
+                    <div class="flex flex-col gap-3">
+                        <input type="text" id="wallet-desc" placeholder="על מה שילמתם? (למשל: דלק, סופר)" class="w-full p-3 border border-indigo-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-400">
+                        <div class="flex gap-3">
+                            <input type="number" id="wallet-amount" placeholder="סכום (€)" class="w-1/2 p-3 border border-indigo-200 rounded-lg outline-none">
+                            <select id="wallet-payer" class="w-1/2 p-3 border border-indigo-200 rounded-lg outline-none bg-white">
+                                <option value="" disabled selected>מי שילם?</option><option value="משמר">פרידמן-משמר</option><option value="אדורה">פרידמן-אדורה</option>
+                            </select>
+                        </div>
+                        <button onclick="addExpense()" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold shadow hover:bg-indigo-700 transition mt-1">הוסף הוצאה לארנק</button>
+                    </div>
+                </div>
+                <h3 class="font-bold text-gray-700 mb-3 ml-1 text-lg">פירוט הוצאות שכבר שולמו:</h3>
                 <div class="flex flex-col gap-3">
             `;
-            Object.keys(expenses).reverse().forEach(key => {
-                const exp = expenses[key];
-                html += `
-                <div class="bg-white p-4 rounded-xl border flex justify-between items-center">
-                    <div><p class="font-bold">${exp.description}</p><p class="text-sm text-gray-500">שילמו: ${exp.paidBy}</p></div>
-                    <div class="flex items-center gap-4"><p class="font-bold text-xl">€${exp.amount}</p><button onclick="db.ref('wallet/expenses/${key}').remove()" class="text-red-400"><i class="fas fa-trash"></i></button></div>
-                </div>`;
-            });
+
+            const expKeys = Object.keys(expenses);
+            if(expKeys.length === 0) html += `<div class="text-center p-6 bg-white rounded-xl text-gray-500">טרם נוספו הוצאות.</div>`;
+            else {
+                expKeys.reverse().forEach(key => {
+                    const exp = expenses[key];
+                    const dateObj = new Date(exp.timestamp);
+                    const dateStr = `${dateObj.getDate()}/${dateObj.getMonth()+1}`;
+                    html += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-800 text-lg">${exp.description}</p>
+                            <p class="text-sm text-gray-500 mt-1"><span class="bg-gray-100 px-2 py-0.5 rounded text-xs ml-1">${dateStr}</span> שילמו: <span class="font-semibold ${exp.paidBy === 'משמר' ? 'text-indigo-600' : 'text-blue-600'}">${exp.paidBy}</span></p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <p class="font-bold text-xl text-gray-800">€${exp.amount}</p>
+                            <button onclick="deleteExpense('${key}')" class="text-red-400 hover:text-red-600 p-2"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
+                });
+            }
             html += `</div>`;
             content.innerHTML = html;
         }
 
         function addPlannedExpense() {
-            const d = document.getElementById('planned-desc').value.trim();
-            const a = document.getElementById('planned-assignee').value;
-            if(!d) return showModal('שגיאה', 'יש למלא את תיאור הקנייה.');
-            db.ref(`wallet/planned`).push({ description: d, assignee: a, done: false, timestamp: firebase.database.ServerValue.TIMESTAMP });
+            const desc = document.getElementById('planned-desc').value.trim();
+            const assignee = document.getElementById('planned-assignee').value;
+            if(!desc) return showModal('שגיאה', 'יש למלא את תיאור הקנייה.');
+            db.ref(`wallet/planned`).push({ description: desc, assignee: assignee || 'טרם הוחלט', done: false, timestamp: firebase.database.ServerValue.TIMESTAMP });
         }
-        function addExpense() {
-            const d = document.getElementById('wallet-desc').value.trim();
-            const a = document.getElementById('wallet-amount').value;
-            const p = document.getElementById('wallet-payer').value;
-            if(!d || !a || !p) return showModal('שגיאה', 'יש למלא הכל.');
-            db.ref(`wallet/expenses`).push({ description: d, amount: Number(a), paidBy: p, timestamp: firebase.database.ServerValue.TIMESTAMP });
-        }
+        function updatePlannedAssignee(key, newAssignee) { db.ref(`wallet/planned/${key}/assignee`).set(newAssignee); }
+        function togglePlannedExpense(key) { db.ref(`wallet/planned/${key}/done`).set(!appData.wallet.planned[key].done); }
+        function deletePlannedExpense(key) { showModal('מחיקה', 'למחוק משימת קנייה זו?', true, () => db.ref(`wallet/planned/${key}`).remove()); }
 
-        function renderChores() {
-            const content = document.getElementById('app-content');
-            const chores = appData.chores || {};
-            let html = `
-                <div class="text-center mb-6 mt-4">
-                    <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-dice text-purple-500 mr-2"></i> תורנויות</h2>
-                </div>
-                <div class="bg-purple-50 rounded-2xl p-5 mb-8 border border-purple-100">
-                    <div class="flex gap-2">
-                        <input type="text" id="new-chore-name" placeholder="שם תורנות..." class="w-full p-3 border rounded-lg outline-none">
-                        <button onclick="db.ref('chores').push({name:document.getElementById('new-chore-name').value.trim(), assignee:''})" class="bg-purple-600 text-white px-6 rounded-lg font-bold">הוסף</button>
-                    </div>
-                </div>
-                <div class="flex flex-col gap-3">
-            `;
-            Object.keys(chores).forEach(key => {
-                const c = chores[key];
-                html += `
-                <div class="bg-white p-4 rounded-xl border flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                    <p class="font-bold text-lg">${c.name}</p>
-                    <div class="flex items-center gap-2">
-                        <select onchange="db.ref('chores/${key}/assignee').set(this.value)" class="p-2 border rounded-lg bg-gray-50">
-                            <option value="" ${!c.assignee ? 'selected' : ''}>-- ללא שיבוץ --</option>
-                            ${activeFamilyMembers.map(m => `<option value="${m}" ${c.assignee === m ? 'selected' : ''}>${m}</option>`).join('')}
-                        </select>
-                        <button onclick="db.ref('chores/${key}').remove()" class="text-red-500 p-2"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>`;
-            });
-            content.innerHTML = html + `</div>`;
+        function addExpense() {
+            const desc = document.getElementById('wallet-desc').value.trim();
+            const amount = document.getElementById('wallet-amount').value;
+            const payer = document.getElementById('wallet-payer').value;
+            if(!desc || !amount || !payer) return showModal('שגיאה', 'יש למלא את תיאור ההוצאה, הסכום ולבחור מי שילם.');
+            db.ref(`wallet/expenses`).push({ description: desc, amount: Number(amount), paidBy: payer, timestamp: firebase.database.ServerValue.TIMESTAMP });
         }
+        function deleteExpense(expenseId) { showModal('מחיקת הוצאה', 'האם למחוק הוצאה זו מהארנק?', true, () => db.ref(`wallet/expenses/${expenseId}`).remove()); }
 
         function handleAvatarUpload(event) {
-            const file = event.target.files[0]; if (!file) return;
-            showModal('מעלה...', '', false);
-            const r = new FileReader();
-            r.onload = function(e) {
+            const file = event.target.files[0];
+            if (!file) return;
+            showModal('מעלה תמונה...', 'מכווץ ושומר...', false);
+            const reader = new FileReader();
+            reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height;
-                    if(w>h) { if(w>200) { h*=200/w; w=200; } } else { if(h>200) { w*=200/h; h=200; } }
-                    canvas.width=w; canvas.height=h; canvas.getContext('2d').drawImage(img,0,0,w,h);
-                    db.ref('avatars/' + currentTab).set(canvas.toDataURL('image/jpeg', 0.6)).then(()=>document.getElementById('custom-modal').classList.add('hidden'));
-                }; img.src = e.target.result;
-            }; r.readAsDataURL(file);
+                    let width = img.width, height = img.height;
+                    if (width > height) { if (width > 200) { height *= 200 / width; width = 200; } } 
+                    else { if (height > 200) { width *= 200 / height; height = 200; } }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    db.ref('avatars/' + currentTab).set(canvas.toDataURL('image/jpeg', 0.6)).then(() => document.getElementById('custom-modal').classList.add('hidden'));
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function openDocUpload(docType) {
+            currentUploadDocType = docType;
+            isUploadingCustomDoc = false;
+            document.getElementById('doc-upload-input').click();
         }
 
         function openCustomDocUpload() {
@@ -638,48 +857,50 @@
             }
         }
 
-        function openDocUpload(docType) {
-            currentUploadDocType = docType;
-            isUploadingCustomDoc = false;
-            document.getElementById('doc-upload-input').click();
-        }
-
         function handleDocumentUpload(event) {
-            const file = event.target.files[0]; if (!file) return;
-            showModal('שומר מסמך...', '', false);
-            const r = new FileReader();
-            r.onload = function(e) {
+            const file = event.target.files[0];
+            if (!file) return;
+            showModal('מעלה מסמך...', 'מכווץ ומאבטח את המסמך...', false);
+            const reader = new FileReader();
+            reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height;
-                    if(w>h) { if(w>1000) { h*=1000/w; w=1000; } } else { if(h>1000) { w*=1000/h; h=1000; } }
-                    canvas.width=w; canvas.height=h; canvas.getContext('2d').drawImage(img,0,0,w,h);
-                    db.ref(`documents/${currentTab}/${currentUploadDocType}`).set(canvas.toDataURL('image/jpeg', 0.7)).then(()=>document.getElementById('custom-modal').classList.add('hidden'));
-                }; img.src = e.target.result;
-            }; r.readAsDataURL(file); event.target.value=''; 
+                    let width = img.width, height = img.height;
+                    if (width > height) { if (width > 1000) { height *= 1000 / width; width = 1000; } } 
+                    else { if (height > 1000) { width *= 1000 / height; height = 1000; } }
+                    canvas.width = width; canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    db.ref(`documents/${currentTab}/${currentUploadDocType}`).set(canvas.toDataURL('image/jpeg', 0.7)).then(() => document.getElementById('custom-modal').classList.add('hidden'));
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+            event.target.value = ''; 
         }
 
         function viewDocument(docType) {
-            const base64String = appData.documents[currentTab][docType]; if(!base64String) return;
+            const base64String = appData.documents[currentTab][docType];
+            if(!base64String) return;
             document.getElementById('full-screen-img').src = base64String;
             document.getElementById('image-modal').classList.remove('hidden');
             document.getElementById('delete-doc-btn').onclick = () => {
-                showModal('מחיקה', 'בטוח?', true, () => db.ref(`documents/${currentTab}/${docType}`).remove().then(()=>closeImageModal()));
+                showModal('מחיקת מסמך', 'בטוח שברצונך למחוק?', true, () => db.ref(`documents/${currentTab}/${docType}`).remove().then(() => closeImageModal()));
             };
         }
         function closeImageModal() {
-            document.getElementById('image-modal').classList.add('hidden'); document.getElementById('full-screen-img').src='';
+            document.getElementById('image-modal').classList.add('hidden');
+            document.getElementById('full-screen-img').src = '';
         }
 
         function getRequiredDocsForTab(tabName) {
-            if (tabName.startsWith("ציוד כללי")) return [];
-            let docs = [{ id: 'דרכון', name: 'דרכון', icon: 'fa-passport' }];
-            if (adults.includes(tabName)) {
-                docs.push({ id: 'רישיון נהיגה', name: 'רישיון נהיגה', icon: 'fa-id-card' });
-                docs.push({ id: 'רישיון בינלאומי', name: 'רישיון בינלאומי', icon: 'fa-globe' });
+            if (tabName === "ציוד כללי משותף") return [{ id: 'flight', name: 'כרטיסי טיסה', icon: 'fa-plane' }, { id: 'villa', name: 'הזמנת וילה', icon: 'fa-house-user' }, { id: 'caravan', name: 'השכרת קרוואנים', icon: 'fa-caravan' }, { id: 'insurance', name: 'ביטוחים כלליים', icon: 'fa-shield-alt' }];
+            else if (tabName.startsWith("ציוד כללי")) return []; 
+            else {
+                let docs = [{ id: 'passport', name: 'דרכון', icon: 'fa-passport' }];
+                if (adults.includes(tabName)) { docs.push({ id: 'driver_license', name: 'רישיון נהיגה', icon: 'fa-id-card' }); docs.push({ id: 'int_license', name: 'רישיון בינלאומי', icon: 'fa-globe' }); }
+                return docs;
             }
-            return docs;
         }
 
         function renderContent() {
@@ -688,19 +909,18 @@
             const personDocs = appData.documents[currentTab] || {};
             
             let html = `
-                <div class="flex justify-center mb-2 mt-4">
+                <div class="flex justify-center mb-2">
                     <div class="avatar-container" onclick="document.getElementById('avatar-upload').click()">
                         <img id="current-avatar" class="avatar-img" src="${appData.avatars[currentTab] || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentTab.split(' ')[0])}&background=random&color=fff&size=150`}">
                         <div class="avatar-edit-btn"><i class="fas fa-camera"></i></div>
                     </div>
                 </div>
                 <div class="text-center mb-8">
-                    <h2 class="text-3xl font-extrabold text-gray-800">${currentTab}</h2>
+                    <h2 class="text-3xl font-extrabold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-blue-500">${currentTab}</h2>
                 </div>
             `;
 
-            // מחלקת מסמכים חכמה שתומכת גם בהוספה אישית
-            if (!currentTab.startsWith("ציוד כללי")) {
+            if (!currentTab.startsWith("ציוד כללי") || currentTab === "ציוד כללי משותף") {
                 const predefinedDocs = getRequiredDocsForTab(currentTab);
                 html += `
                 <div class="bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl shadow-lg mb-8 overflow-hidden text-white">
@@ -709,39 +929,24 @@
                     </div>
                     <div class="p-4 grid grid-cols-2 sm:grid-cols-3 gap-3">`;
                 
-                // 1. מסמכי חובה מובנים
+                // Fixed Docs
                 predefinedDocs.forEach(doc => {
                     const hasDoc = !!personDocs[doc.id];
                     if (hasDoc) {
-                        html += `
-                        <div onclick="viewDocument('${doc.id}')" class="doc-card bg-slate-600/50 border border-slate-500 rounded-xl p-3 text-center cursor-pointer relative">
-                            <div class="absolute top-2 left-2 text-green-400"><i class="fas fa-check-circle"></i></div>
-                            <div class="text-3xl mb-2 text-indigo-300"><i class="fas ${doc.icon}"></i></div>
-                            <p class="text-sm font-semibold truncate">${doc.name}</p>
-                        </div>`;
+                        html += `<div onclick="viewDocument('${doc.id}')" class="doc-card bg-slate-600/50 border border-slate-500 rounded-xl p-3 text-center cursor-pointer relative group"><div class="absolute top-2 left-2 text-green-400"><i class="fas fa-check-circle"></i></div><div class="text-3xl mb-2 text-indigo-300"><i class="fas ${doc.icon}"></i></div><p class="text-sm font-semibold truncate">${doc.name}</p><p class="text-xs text-slate-300 mt-1">הקש לצפייה</p></div>`;
                     } else {
-                        html += `
-                        <div onclick="openDocUpload('${doc.id}')" class="doc-card bg-slate-800 border border-dashed border-slate-500 rounded-xl p-3 text-center cursor-pointer hover:bg-slate-700">
-                            <div class="text-3xl mb-2 text-slate-400"><i class="fas fa-cloud-upload-alt"></i></div>
-                            <p class="text-sm font-semibold text-slate-200 truncate">${doc.name}</p>
-                        </div>`;
+                        html += `<div onclick="openDocUpload('${doc.id}')" class="doc-card bg-slate-800 border border-dashed border-slate-500 rounded-xl p-3 text-center cursor-pointer hover:bg-slate-700"><div class="text-3xl mb-2 text-slate-400"><i class="fas fa-cloud-upload-alt"></i></div><p class="text-sm font-semibold text-slate-200 truncate">${doc.name}</p><p class="text-xs text-indigo-400 mt-1 font-bold">העלה צילום</p></div>`;
                     }
                 });
 
-                // 2. מסמכים מותאמים אישית שהמשתמש העלה
+                // Custom Uploaded Docs
                 Object.keys(personDocs).forEach(docKey => {
                     const isPredefined = predefinedDocs.some(d => d.id === docKey);
                     if(!isPredefined) {
-                        html += `
-                        <div onclick="viewDocument('${docKey}')" class="doc-card bg-slate-600/50 border border-slate-500 rounded-xl p-3 text-center cursor-pointer relative">
-                            <div class="absolute top-2 left-2 text-green-400"><i class="fas fa-check-circle"></i></div>
-                            <div class="text-3xl mb-2 text-blue-300"><i class="fas fa-file-image"></i></div>
-                            <p class="text-sm font-semibold truncate">${docKey}</p>
-                        </div>`;
+                        html += `<div onclick="viewDocument('${docKey}')" class="doc-card bg-slate-600/50 border border-slate-500 rounded-xl p-3 text-center cursor-pointer relative group"><div class="absolute top-2 left-2 text-green-400"><i class="fas fa-check-circle"></i></div><div class="text-3xl mb-2 text-blue-300"><i class="fas fa-file-image"></i></div><p class="text-sm font-semibold truncate">${docKey}</p><p class="text-xs text-slate-300 mt-1">הקש לצפייה</p></div>`;
                     }
                 });
 
-                // 3. כפתור הוספת מסמך חדש
                 html += `
                         <div onclick="openCustomDocUpload()" class="doc-card bg-indigo-600 border border-indigo-500 rounded-xl p-3 text-center cursor-pointer hover:bg-indigo-500 flex flex-col justify-center">
                             <div class="text-2xl mb-1"><i class="fas fa-plus"></i></div>
@@ -759,54 +964,86 @@
             });
 
             if (Object.keys(grouped).length === 0) {
-                html += `<div class="text-center p-8 text-gray-500">אין פריטים להצגה.</div>`;
-            } else {
-                for (const [category, items] of Object.entries(grouped)) {
-                    let cPacked = items.filter(i => i.packed).length, cTot = items.length, isDone = cPacked === cTot;
+                html += `<div class="text-center p-8"><p>הרשימה ריקה.</p></div>`;
+                content.innerHTML = html;
+                return;
+            }
+
+            for (const [category, items] of Object.entries(grouped)) {
+                let catPacked = items.filter(i => i.packed).length;
+                let catTotal = items.length;
+                let isCatDone = catPacked === catTotal;
+
+                html += `
+                <div class="bg-white rounded-2xl shadow-sm mb-6 overflow-hidden border ${isCatDone ? 'border-green-300' : 'border-gray-200'}">
+                    <div class="${isCatDone ? 'bg-green-100' : 'bg-gray-100'} px-5 py-4 border-b ${isCatDone ? 'border-green-200' : 'border-gray-200'} flex justify-between items-center">
+                        <h3 class="font-bold ${isCatDone ? 'text-green-800' : 'text-gray-800'} text-xl">${isCatDone ? '<i class="fas fa-check-circle mr-2 text-green-600"></i>' : ''}${category}</h3>
+                        <span class="text-sm font-bold bg-white px-3 py-1 rounded-full shadow-sm">${catPacked}/${catTotal}</span>
+                    </div>
+                    <ul class="divide-y divide-gray-100">
+                `;
+
+                items.forEach(item => {
                     html += `
-                    <div class="bg-white rounded-2xl shadow-sm mb-6 border ${isDone ? 'border-green-300' : 'border-gray-200'}">
-                        <div class="${isDone ? 'bg-green-100' : 'bg-gray-100'} px-5 py-4 flex justify-between items-center rounded-t-2xl">
-                            <h3 class="font-bold ${isDone ? 'text-green-800' : 'text-gray-800'}">${isDone ? '<i class="fas fa-check-circle text-green-600 mr-1"></i>' : ''}${category}</h3>
-                            <span class="text-sm font-bold bg-white px-3 py-1 rounded-full">${cPacked}/${cTot}</span>
+                    <li class="item-row p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center ${item.packed ? 'bg-gray-50/50' : ''} gap-3 sm:gap-0">
+                        <div class="flex items-center gap-4 flex-1 w-full cursor-pointer" onclick="toggleItem('${currentTab}', '${item.id}')">
+                            <div class="relative flex items-center justify-center w-8 h-8 rounded-lg border-2 ${item.packed ? 'border-green-500 bg-green-500' : 'border-gray-300 bg-white'} shadow-inner flex-shrink-0">${item.packed ? '<i class="fas fa-check text-white"></i>' : ''}</div>
+                            <div class="flex-1 pr-1">
+                                <p class="font-bold ${item.packed ? 'packed-text' : 'text-gray-800'} text-lg">${item.name}</p>
+                                <p class="text-sm text-gray-500"><span class="font-bold bg-indigo-50 text-indigo-700 px-2 rounded mr-1">כמות: ${item.amount}</span> ${item.note}</p>
+                            </div>
                         </div>
-                        <ul class="divide-y divide-gray-100">
-                    `;
-                    items.forEach(item => {
-                        html += `
-                        <li class="p-3 flex justify-between items-center ${item.packed ? 'bg-gray-50/50' : ''}">
-                            <div class="flex items-center gap-4 flex-1 cursor-pointer" onclick="db.ref('items/${currentTab}/${item.id}/packed').set(!${item.packed})">
-                                <div class="w-8 h-8 rounded-lg border-2 flex items-center justify-center ${item.packed ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'}">${item.packed ? '<i class="fas fa-check"></i>' : ''}</div>
-                                <div><p class="font-bold ${item.packed ? 'packed-text' : ''}">${item.name}</p><p class="text-sm text-gray-500">כמות: ${item.amount} ${item.note ? `| ${item.note}`:''}</p></div>
+                        <div class="flex gap-2 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-gray-100">
+                            <button onclick="editExistingItem('${currentTab}', '${item.id}', '${item.name.replace(/'/g, "\\'")}', '${item.amount}', '${(item.note||'').replace(/'/g, "\\'")}')" class="text-blue-500 bg-blue-50 px-4 py-2 rounded-xl"><i class="fas fa-pen"></i></button>
+                            <button onclick="deleteItem('${currentTab}', '${item.id}')" class="text-red-500 bg-red-50 px-4 py-2 rounded-xl"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </li>`;
+                });
+
+                html += `
+                    <li class="p-4 bg-slate-50 border-t border-slate-200">
+                        <div class="flex flex-col gap-3">
+                            <input type="text" id="new-name-${category}" placeholder="שם פריט" class="w-full p-3 border border-slate-300 rounded-lg">
+                            <div class="flex gap-3">
+                                <input type="text" id="new-amount-${category}" placeholder="כמות" class="w-1/3 p-3 border border-slate-300 rounded-lg">
+                                <input type="text" id="new-note-${category}" placeholder="הערה" class="w-2/3 p-3 border border-slate-300 rounded-lg">
                             </div>
-                            <button onclick="db.ref('items/${currentTab}/${item.id}').remove()" class="text-red-400 p-2"><i class="fas fa-trash"></i></button>
-                        </li>`;
-                    });
-                    html += `
-                        <li class="p-4 bg-slate-50 rounded-b-2xl">
-                            <div class="flex flex-col gap-2">
-                                <input type="text" id="n-${category}" placeholder="שם פריט" class="p-3 border rounded-lg">
-                                <div class="flex gap-2">
-                                    <input type="text" id="a-${category}" placeholder="כמות" class="w-1/3 p-3 border rounded-lg">
-                                    <button onclick="db.ref('items/${currentTab}').push({category:'${category}', name:document.getElementById('n-${category}').value.trim(), amount:document.getElementById('a-${category}').value.trim()||'1', packed:false})" class="w-2/3 bg-indigo-600 text-white rounded-lg font-bold">הוסף</button>
-                                </div>
-                            </div>
-                        </li></ul></div>`;
-                }
+                            <button onclick="addNewItem('${currentTab}', '${category}')" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold"><i class="fas fa-plus"></i> הוסף פריט</button>
+                        </div>
+                    </li>
+                </ul></div>`;
             }
             content.innerHTML = html;
         }
 
+        function toggleItem(person, itemId) { db.ref(`items/${person}/${itemId}/packed`).set(!appData.items[person][itemId].packed); }
+        function deleteItem(person, itemId) { showModal('מחיקה', 'האם למחוק פריט זה?', true, () => db.ref(`items/${person}/${itemId}`).remove()); }
+        function editExistingItem(person, itemId, oldName, oldAmount, oldNote) {
+            const newName = prompt("ערוך שם פריט:", oldName); if (newName === null) return; 
+            const newAmount = prompt("ערוך כמות:", oldAmount); if (newAmount === null) return;
+            const newNote = prompt("ערוך הערה:", oldNote); if (newNote === null) return;
+            db.ref(`items/${person}/${itemId}`).update({ name: newName.trim() || oldName, amount: newAmount.trim() || oldAmount, note: newNote.trim() });
+        }
+        function addNewItem(person, category) {
+            const nameInput = document.getElementById(`new-name-${category}`);
+            const amountInput = document.getElementById(`new-amount-${category}`);
+            const noteInput = document.getElementById(`new-note-${category}`);
+            if(!nameInput.value.trim()) return showModal('חסר שם', 'הזן שם לפריט.');
+            db.ref(`items/${person}`).push({ category, name: nameInput.value.trim(), amount: amountInput.value.trim() || "1", note: noteInput.value.trim(), packed: false });
+        }
+
         function updateTotalProgress() {
             let total = 0, packed = 0;
-            allPeople.forEach(p => {
-                if(appData.items[p]) { Object.values(appData.items[p]).forEach(i => { total++; if(i.packed) packed++; }); }
+            Object.keys(appData.items || {}).forEach(personKey => {
+                Object.values(appData.items[personKey]).forEach(item => { total++; if(item.packed) packed++; });
             });
             const percent = total === 0 ? 0 : Math.round((packed / total) * 100);
             document.getElementById('total-progress-bar').style.width = `${percent}%`;
-            document.getElementById('total-progress-text').innerText = `אריזה כללית: ${percent}%`;
+            document.getElementById('total-progress-text').innerText = `התקדמות כללית: ${percent}%`;
         }
 
         function exportToExcel() {
+            if (!appData.items) return alert("אין נתונים לייצוא");
             let csvContent = "\uFEFFעבור,קטגוריה,פריט,כמות,הערות,נארז?\n";
             allPeople.forEach(person => {
                 if(appData.items[person]) {
@@ -821,13 +1058,26 @@
         }
 
         function generateInitialData() {
-            // Setup defaults if missing
-            if (!appData.chores || Object.keys(appData.chores).length === 0) {
-                db.ref('chores').set([{ name: "שטיפת כלים", assignee: "" }, { name: "ריקון שירותים (קרוואן 1)", assignee: "" }]);
+            if (!appData.chores || Object.keys(appData.chores || {}).length === 0) {
+                db.ref('chores').set([
+                    { name: "שטיפת כלים (ארוחת בוקר)", assignee: "" }, { name: "שטיפת כלים (ארוחת ערב)", assignee: "" },
+                    { name: "ריקון שירותים כימיים (קרוואן 1)", assignee: "" }, { name: "ריקון שירותים כימיים (קרוואן 2)", assignee: "" },
+                    { name: "הכנת קפה בבוקר", assignee: "" }
+                ]);
             }
+
             if (!appData.checklists || Object.keys(appData.checklists.departure || {}).length === 0) {
-                db.ref('checklists/departure').set([{ task: "ניתוק חשמל ומים", done: false }, { task: "ריקון קסטה אפורה/שחורה", done: false }, { task: "סגירת גז וחלונות", done: false }]);
-                db.ref('checklists/arrival').set([{ task: "ייצוב קרוואן וחשמל", done: false }, { task: "פתיחת גז לבישול", done: false }]);
+                db.ref('checklists/departure').set([
+                    { task: "ניתוק כבל חשמל ראשי וגלגולו", done: false }, { task: "ניתוק צינור מים וסגירת ברז", done: false },
+                    { task: "ריקון מים אפורים / קסטת שירותים", done: false }, { task: "סגירת ברז גז ראשי", done: false },
+                    { task: "סגירת כל החלונות והסקיילייט בגג", done: false }, { task: "נעילת ארונות, מגירות ומקרר", done: false },
+                    { task: "קיפול מדרגה חיצונית ומרקיזה", done: false }, { task: "איסוף כפכפים וציוד מבחוץ", done: false }
+                ]);
+                db.ref('checklists/arrival').set([
+                    { task: "ייצוב הקרוואן בחלקה (שימוש בצ'וקים)", done: false }, { task: "חיבור כבל חשמל לעמדת הפארק", done: false },
+                    { task: "פתיחת ברז מים מרכזי לטעינה", done: false }, { task: "פתיחת ברז גז לבישול וחימום", done: false },
+                    { task: "פתיחת מרקיזה, הוצאת שולחן וכיסאות", done: false }
+                ]);
             }
 
             allPeople.forEach(person => {
@@ -835,21 +1085,50 @@
                     let itemsArray = [];
                     if (!person.startsWith("ציוד כללי")) {
                         itemsArray = [
-                            { category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8" },
-                            { category: "ביגוד יומיום", name: "מכנסיים קצרים", amount: "5" },
+                            { category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8", note: "יש מכונת כביסה" },
+                            { category: "ביגוד יומיום", name: "מכנסיים קצרים", amount: "5", note: "" },
+                            { category: "ביגוד יומיום", name: "מכנסיים ארוכים", amount: "3", note: "" },
+                            { category: "ביגוד יומיום", name: "לבנים / תחתונים", amount: "10", note: "" },
+                            { category: "ביגוד יומיום", name: "גרביים", amount: "8", note: "" },
+                            { category: "ביגוד יומיום", name: "פיג'מה", amount: "2", note: "" },
                             { category: "ביגוד חורף", name: "מעיל פליז / סופטשל", amount: "1", note: "לאוסטריה" },
-                            { category: "היגיינה ורחצה", name: "תיק רחצה אישי", amount: "1" }
+                            { category: "ביגוד חורף", name: "חולצות בסיס ארוכות", amount: "2", note: "שיטת הבצל" },
+                            { category: "ביגוד חורף", name: "כובע גרב וכפפות", amount: "1", note: "" },
+                            { category: "הנעלה", name: "נעלי הליכה סגורות", amount: "1", note: "" },
+                            { category: "הנעלה", name: "סנדלים", amount: "1", note: "" },
+                            { category: "הנעלה", name: "כפכפים", amount: "1", note: "למקלחות ובריכה" },
+                            { category: "בריכה וים", name: "בגדי ים", amount: "2", note: "" },
+                            { category: "היגיינה ורחצה", name: "תיק רחצה אישי", amount: "1", note: "שמפו, מברשת..." },
+                            { category: "היגיינה ורחצה", name: "מגבת רחצה ומגבת בריכה", amount: "2", note: "רצוי מיקרופייבר" }
                         ];
                         if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(person)) {
-                            itemsArray.push({ category: "דת ורוח", name: "תפילין וכיפות", amount: "1" });
+                            itemsArray.push({ category: "דת ורוח", name: "תפילין", amount: "1", note: "" }, { category: "דת ורוח", name: "כיפות", amount: "3", note: "" }, { category: "דת ורוח", name: "ציצית", amount: "3", note: "" });
                         }
-                    } else {
-                        itemsArray = [ { category: "לינה וקרוואן", name: "סדינים ושמיכות", amount: "6 סטים" }, { category: "שבת וכשרות", name: "פלטת שבת ומיחם", amount: "1" } ];
+                        if (["עוזיאל", "יוני"].includes(person)) itemsArray.push({ category: "דת ורוח", name: "טלית", amount: "1", note: "לשבתות" });
+                        if (person === "הילה" || person === "להבה") itemsArray.push({ category: "ביגוד יומיום", name: "גוזיות", amount: "5", note: "" });
+                        if (person === "יובל" || person === "הלל") itemsArray.push({ category: "ציוד תינוקות", name: "חיתולים", amount: "1 חבילה", note: "" }, { category: "ציוד תינוקות", name: "מגבונים", amount: "5", note: "" }, { category: "ציוד תינוקות", name: "מנשא גב / עגלה", amount: "1", note: "" });
+                    } else if (person.startsWith("ציוד כללי פרידמן")) {
+                        itemsArray = [
+                            { category: "לינה בקרוואן", name: "סדינים ציפות וכריות", amount: "6 סטים", note: "" },
+                            { category: "לינה בקרוואן", name: "שמיכות", amount: "6", note: "קר בלילות!" },
+                            { category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לבדוק מתח" },
+                            { category: "שבת וכשרות", name: "מיחם / תרמוס", amount: "1", note: "" },
+                            { category: "שבת וכשרות", name: "נרונים, כוס קידוש", amount: "1 ערכה", note: "" },
+                            { category: "שבת וכשרות", name: "סירים ומחבתות (מוטבלים)", amount: "3", note: "" },
+                            { category: "שבת וכשרות", name: "כלים מפלסטיק קשיח", amount: "לכולם", note: "סכו״ם צלחות" }
+                        ];
+                    } else if (person === "ציוד כללי משותף") {
+                        itemsArray = [
+                            { category: "פנאי", name: "אליאס ומשחקי קופסא", amount: "1", note: "" },
+                            { category: "אוכל משותף", name: "פקל קפה", amount: "1", note: "" },
+                            { category: "חשמל", name: "מתאמים לאירופה", amount: "4", note: "" },
+                            { category: "רפואה", name: "עזרה ראשונה + כדורי בחילה", amount: "1", note: "לכבישים באוסטריה" }
+                        ];
                     }
-
                     if(itemsArray.length > 0) {
-                        const obj = {}; itemsArray.forEach((item, i) => obj[`item_${Date.now()}_${i}`] = { ...item, packed: false });
-                        db.ref(`items/${person}`).set(obj);
+                        const personItemsObj = {};
+                        itemsArray.forEach((item, index) => personItemsObj[`item_${Date.now()}_${index}`] = { ...item, packed: false });
+                        db.ref(`items/${person}`).set(personItemsObj);
                     }
                 }
             });
