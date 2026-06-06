@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -71,7 +72,7 @@
     </header>
 
     <nav id="tabs-container" class="hidden flex overflow-x-auto hide-scrollbar bg-white shadow-sm border-b z-20 sticky top-[72px] px-2 py-1">
-        <!-- Tabs injected here -->
+        <!-- הלשוניות ייוצרו כאן -->
     </nav>
 
     <main id="app-content" class="p-4 max-w-3xl mx-auto">
@@ -81,6 +82,7 @@
         </div>
     </main>
 
+    <!-- מודל להודעות מאובטחות -->
     <div id="custom-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 transform scale-95 transition-transform duration-300" id="modal-content-box">
             <h3 id="modal-title" class="text-2xl font-extrabold mb-2 text-gray-800"></h3>
@@ -92,6 +94,7 @@
         </div>
     </div>
 
+    <!-- מודל לתצוגת מסמכים ותמונות בגדול -->
     <div id="image-modal" class="fixed inset-0 bg-black/90 z-[60] hidden flex flex-col items-center justify-center p-4 backdrop-blur-md">
         <button onclick="closeImageModal()" class="absolute top-6 right-6 text-white text-4xl hover:text-gray-300"><i class="fas fa-times"></i></button>
         <img id="full-screen-img" src="" alt="Document" class="max-w-full max-h-[75vh] rounded-xl shadow-2xl object-contain">
@@ -122,21 +125,20 @@
 
         // Data Definitions
         const families = {
-            mishmar: { title: "משפחת פרידמן (משמר)", members: ["יוני", "חנה", "ליאור", "אייל", "הילה", "יובל", "ציוד כללי פרידמן משמר"] },
-            adora: { title: "משפחת פרידמן (אדורה)", members: ["עוזיאל", "שרונה", "להבה", "אליה", "דביר", "הלל", "ציוד כללי פרידמן אדורה"] },
+            mishmar: { title: "משפחת פרידמן משמר", members: ["יוני", "חנה", "ליאור", "אייל", "הילה", "יובל", "ציוד כללי פרידמן משמר"] },
+            adora: { title: "משפחת פרידמן אדורה", members: ["עוזיאל", "שרונה", "להבה", "אליה", "דביר", "הלל", "ציוד כללי פרידמן אדורה"] },
             shared: { title: "ציוד משותף", members: ["ציוד כללי משותף"] }
         };
 
         const allPeople = [...families.mishmar.members, ...families.adora.members, ...families.shared.members];
         const activeFamilyMembers = allPeople.filter(p => !p.startsWith("ציוד"));
 
-        let appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {}, planned: {} }, checklists: {}, chores: {}, locations: {}, pantry: {}, gallery: {}, schedule: {}, games: { scores: {}, currentCountryCity: {} } };
+        let appData = { items: {}, avatars: {}, documents: {}, wallet: { expenses: {}, planned: {} }, checklists: {}, chores: {}, locations: {}, pantry: {}, gallery: {}, schedule: {}, emergencyContacts: {}, games: { scores: {}, currentCountryCity: {} } };
         
         let currentView = 'dashboard'; 
         let currentGroup = null; 
         let currentTab = null;
         let currentUploadDocType = "";
-        let currentCustomDocName = "";
 
         db.ref('/').on('value', (snapshot) => {
             const data = snapshot.val();
@@ -147,6 +149,8 @@
                 if (!appData.wallet.expenses) appData.wallet.expenses = {};
                 if (!appData.games) appData.games = { scores: { mishmar: 0, adora: 0 }, currentCountryCity: {} };
                 if (!appData.games.scores) appData.games.scores = { mishmar: 0, adora: 0 };
+                if (!appData.locations) appData.locations = {};
+                if (!appData.emergencyContacts) appData.emergencyContacts = {};
             }
             generateInitialData();
             document.getElementById('sync-status').innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מחובר ומעודכן';
@@ -203,7 +207,6 @@
             const homeBtn = document.getElementById('home-btn');
             const progressContainer = document.getElementById('progress-container');
 
-            // Hide/Show headers
             if (currentView === 'dashboard') {
                 homeBtn.classList.add('hidden');
                 tabsContainer.classList.add('hidden');
@@ -236,20 +239,20 @@
         function renderDashboard(content) {
             let html = `
                 <div class="text-center mb-8 mt-2">
-                    <img src="https://cdn-icons-png.flaticon.com/512/2034/2034031.png" class="w-24 h-24 mx-auto mb-4 drop-shadow-md anim-pulse" alt="Caravan">
+                    <div class="w-24 h-24 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-5xl mx-auto mb-4 drop-shadow-md anim-pulse"><i class="fas fa-caravan"></i></div>
                     <h2 class="text-3xl font-extrabold text-gray-800 tracking-tight">מסע קרוואנים 2026</h2>
-                    <p class="text-gray-500 mt-2 text-lg font-medium">בוחרים לאן נכנסים:</p>
                 </div>
                 
-                <div class="grid grid-cols-1 gap-4 mb-6">
+                <h3 class="font-extrabold text-gray-700 mb-4 px-2 text-lg">רשימות ציוד ואריזה</h3>
+                <div class="grid grid-cols-1 gap-4 mb-8">
                     <div onclick="navigate('mishmar', 'mishmar')" class="menu-card bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl p-5 shadow-lg text-white cursor-pointer flex items-center justify-between">
-                        <div class="flex items-center gap-4"><div class="bg-white/20 p-3 rounded-2xl"><i class="fas fa-backpack text-2xl"></i></div><div><h3 class="font-extrabold text-xl">ציוד משמר</h3><p class="text-blue-100 text-sm">6 נפשות</p></div></div><i class="fas fa-chevron-left opacity-70"></i>
+                        <div class="flex items-center gap-4"><div class="bg-white/20 p-3 rounded-2xl"><i class="fas fa-backpack text-2xl"></i></div><div><h3 class="font-extrabold text-xl">ציוד משפחת פרידמן משמר</h3><p class="text-blue-100 text-sm">6 נפשות + ציוד כללי</p></div></div><i class="fas fa-chevron-left opacity-70"></i>
                     </div>
                     <div onclick="navigate('adora', 'adora')" class="menu-card bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-3xl p-5 shadow-lg text-white cursor-pointer flex items-center justify-between">
-                        <div class="flex items-center gap-4"><div class="bg-white/20 p-3 rounded-2xl"><i class="fas fa-suitcase-rolling text-2xl"></i></div><div><h3 class="font-extrabold text-xl">ציוד אדורה</h3><p class="text-indigo-100 text-sm">6 נפשות</p></div></div><i class="fas fa-chevron-left opacity-70"></i>
+                        <div class="flex items-center gap-4"><div class="bg-white/20 p-3 rounded-2xl"><i class="fas fa-suitcase-rolling text-2xl"></i></div><div><h3 class="font-extrabold text-xl">ציוד משפחת פרידמן אדורה</h3><p class="text-indigo-100 text-sm">6 נפשות + ציוד כללי</p></div></div><i class="fas fa-chevron-left opacity-70"></i>
                     </div>
                     <div onclick="navigate('shared', 'shared')" class="menu-card bg-gradient-to-r from-teal-500 to-teal-600 rounded-3xl p-5 shadow-lg text-white cursor-pointer flex items-center justify-between">
-                        <div class="flex items-center gap-4"><div class="bg-white/20 p-3 rounded-2xl"><i class="fas fa-box-open text-2xl"></i></div><div><h3 class="font-extrabold text-xl">ציוד משותף</h3><p class="text-teal-100 text-sm">מזון ומשחקים</p></div></div><i class="fas fa-chevron-left opacity-70"></i>
+                        <div class="flex items-center gap-4"><div class="bg-white/20 p-3 rounded-2xl"><i class="fas fa-box-open text-2xl"></i></div><div><h3 class="font-extrabold text-xl">ציוד משותף</h3><p class="text-teal-100 text-sm">מזון, פנאי ומשחקים</p></div></div><i class="fas fa-chevron-left opacity-70"></i>
                     </div>
                 </div>
 
@@ -257,11 +260,11 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div onclick="navigate('caravan')" class="menu-card bg-white rounded-3xl p-5 shadow-md border border-gray-100 text-center cursor-pointer flex flex-col items-center gap-3">
                         <div class="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-steering-wheel"></i></div>
-                        <span class="font-bold text-gray-800">קרוואן</span>
+                        <span class="font-bold text-gray-800">ניהול קרוואן</span>
                     </div>
                     <div onclick="navigate('wallet')" class="menu-card bg-white rounded-3xl p-5 shadow-md border border-gray-100 text-center cursor-pointer flex flex-col items-center gap-3">
                         <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-wallet"></i></div>
-                        <span class="font-bold text-gray-800">ארנק</span>
+                        <span class="font-bold text-gray-800">ארנק משותף</span>
                     </div>
                     <div onclick="navigate('map')" class="menu-card bg-white rounded-3xl p-5 shadow-md border border-gray-100 text-center cursor-pointer flex flex-col items-center gap-3">
                         <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-map-marked-alt"></i></div>
@@ -281,7 +284,7 @@
                     </div>
                     <div onclick="navigate('pantry')" class="menu-card bg-white rounded-3xl p-5 shadow-md border border-gray-100 text-center cursor-pointer flex flex-col items-center gap-3">
                         <div class="w-14 h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-shopping-basket"></i></div>
-                        <span class="font-bold text-gray-800">מזווה</span>
+                        <span class="font-bold text-gray-800">מזווה ומקרר</span>
                     </div>
                     <div onclick="navigate('emergency')" class="menu-card bg-white rounded-3xl p-5 shadow-md border border-gray-100 text-center cursor-pointer flex flex-col items-center gap-3">
                         <div class="w-14 h-14 bg-red-600 text-white rounded-full flex items-center justify-center text-2xl shadow-lg"><i class="fas fa-first-aid"></i></div>
@@ -808,6 +811,13 @@
         }
         function deleteExpense(id) { showModal('מחיקה', 'למחוק הוצאה?', true, () => db.ref(`wallet/expenses/${id}`).remove()); }
 
+        // פונקציית המחיקה חייבת להיות גלובלית ומוגדרת כראוי
+        function deleteLocation(id) { 
+            showModal('מחיקה', 'למחוק יעד זה?', true, () => {
+                db.ref(`locations/${id}`).remove();
+            }); 
+        }
+
         function renderMap() {
             const content = document.getElementById('app-content');
             const locs = appData.locations || {};
@@ -821,7 +831,7 @@
                 
                 <div class="bg-white rounded-3xl shadow-md overflow-hidden mb-8 border border-gray-200">
                     <iframe src="https://www.google.com/maps/d/embed?mid=1Q_h6V_K_nB5eY2T_sQ5A_Wv_o_Q" width="100%" height="350" class="border-0"></iframe>
-                    <div class="p-3 text-center bg-gray-50 border-t text-xs text-gray-500 font-bold">המפה המלאה נטענת מגוגל (הדגמה)</div>
+                    <div class="p-3 text-center bg-gray-50 border-t text-xs text-gray-500 font-bold">כאן תופיע המפה המלאה שלכם מגוגל</div>
                 </div>
 
                 <div class="bg-red-50 rounded-3xl shadow-inner p-6 mb-8 border border-red-100">
@@ -870,7 +880,6 @@
             if(!name || !url) return showModal('שגיאה', 'יש למלא שם יעד וקישור לניווט.');
             db.ref(`locations`).push({ name, url, type });
         }
-        function deleteLocation(id) { showModal('מחיקה', 'למחוק יעד זה?', true, () => db.ref(`locations/${id}`).remove()); }
 
         const gameDict = {
             country: ["ישראל", "איטליה", "אוסטריה", "קרואטיה", "אנגליה", "צרפת", "גרמניה", "ספרד", "יוון", "ארהב", "ברזיל", "ארגנטינה", "יפן", "סין", "הודו", "רוסיה", "קנדה", "מקסיקו", "מצרים", "טורקיה", "שוויץ", "שוודיה", "נורווגיה", "דנמרק", "הולנד", "בלגיה"],
@@ -973,7 +982,7 @@
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-200 text-center">
                         <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 rotate-3"><i class="fas fa-globe-americas"></i></div>
                         <h4 class="font-extrabold text-xl text-gray-800 mb-2">ארץ עיר חכם</h4>
-                        <p class="text-gray-500 text-sm mb-5">המערכת בודקת ארצות, ערים, חיות ועוד!</p>
+                        <p class="text-gray-500 text-sm mb-5">המערכת בודקת ארצות, ערים, חיות, צבעים ועוד!</p>
                         
                         <button onclick="rollLetter()" class="bg-emerald-600 text-white w-full py-3.5 rounded-xl font-bold shadow-md hover:bg-emerald-700 transition text-lg mb-5"><i class="fas fa-dice mr-2"></i> הגרל אות</button>
                         
@@ -1028,7 +1037,6 @@
             const el = document.getElementById('current-letter');
             document.getElementById('city-country-box').classList.remove('hidden');
             
-            // נקה שדות
             document.querySelectorAll('[id^="cc-"]').forEach(inp => { inp.value = ''; inp.classList.remove('border-red-500', 'border-green-500'); });
             
             const interval = setInterval(() => {
@@ -1045,55 +1053,71 @@
 
         function checkCityCountry() {
             const letter = appData.games.currentCountryCity.letter;
-            if(!letter) return alert("הגרל אות קודם!");
+            if(!letter) return;
             
             let points = 0;
-            let resultsHTML = `<div class="text-right">`;
+            let resultsHTML = `<div class="text-right mt-4 bg-gray-50 p-4 rounded-xl text-sm max-h-60 overflow-y-auto">`;
             
-            const checkDict = (word, dictName) => {
-                if(!gameDict[dictName]) return true; // פתוח אם אין מילון
-                return gameDict[dictName].includes(word);
-            };
-
-            ['ארץ', 'עיר', 'חי', 'צומח', 'דומם', 'ילד', 'ילדה', 'מקצוע'].forEach(cat => {
-                const inputEl = document.getElementById(`cc-${cat}`);
-                const word = inputEl.value.trim();
+            document.querySelectorAll('[id^="cc-"]').forEach(inp => {
+                const cat = inp.getAttribute('data-cat');
+                const val = inp.value.trim();
                 let isCorrect = false;
                 let reason = "";
 
-                if(!word) { reason = "לא מולא"; }
-                else if(!word.startsWith(letter)) { reason = "מתחיל באות שגויה"; }
-                else {
-                    let dictMatch = true;
-                    if(cat === 'ארץ') dictMatch = checkDict(word, 'country');
-                    if(cat === 'עיר') dictMatch = checkDict(word, 'city');
-                    if(cat === 'חי') dictMatch = checkDict(word, 'animal');
-                    if(cat === 'דומם') dictMatch = checkDict(word, 'object');
-                    if(cat === 'מקצוע') dictMatch = checkDict(word, 'profession');
-
-                    if(!dictMatch) { reason = "לא נמצא במילון המערכת!"; }
-                    else { isCorrect = true; points++; }
+                if(val === "") {
+                    reason = "לא הוזן ערך";
+                } else if(!val.startsWith(letter)) {
+                    reason = `לא מתחיל באות ${letter}`;
+                } else if(val.length < 2) {
+                    reason = "מילה קצרה מדי";
+                } else {
+                    if(cat === 'ארץ') {
+                        isCorrect = gameDict.country.includes(val);
+                        reason = isCorrect ? "V" : "לא במילון הארצות";
+                    } else if(cat === 'עיר') {
+                        isCorrect = gameDict.city.includes(val);
+                        reason = isCorrect ? "V" : "לא במילון הערים";
+                    } else if(cat === 'חי') {
+                        isCorrect = gameDict.animal.includes(val);
+                        reason = isCorrect ? "V" : "לא במילון החיות";
+                    } else if(cat === 'צבע') {
+                        isCorrect = gameDict.color.includes(val);
+                        reason = isCorrect ? "V" : "לא במילון הצבעים";
+                    } else if(cat === 'דומם') {
+                        isCorrect = gameDict.object.includes(val);
+                        reason = isCorrect ? "V" : "לא במילון הדומם/חפצים";
+                    } else if(cat === 'מקצוע') {
+                        isCorrect = gameDict.profession.includes(val);
+                        reason = isCorrect ? "V" : "לא במילון המקצועות";
+                    } else {
+                        isCorrect = true; 
+                        reason = "V (לבדוק בעל פה)";
+                    }
                 }
 
-                inputEl.classList.remove('border-gray-200');
                 if(isCorrect) {
-                    inputEl.classList.add('border-green-500', 'bg-green-50');
+                    inp.classList.add('border-green-500');
+                    inp.classList.remove('border-red-500');
+                    points++;
+                    resultsHTML += `<p class="text-green-600 font-bold"><i class="fas fa-check"></i> ${cat}: ${val}</p>`;
                 } else {
-                    inputEl.classList.add('border-red-500', 'bg-red-50');
-                    if(word) resultsHTML += `<p class="text-sm text-red-600 mb-1 font-bold">❌ ${cat}: ${reason}</p>`;
+                    inp.classList.add('border-red-500');
+                    inp.classList.remove('border-green-500');
+                    resultsHTML += `<p class="text-red-500"><i class="fas fa-times"></i> ${cat}: ${val ? val : '-'} (${reason})</p>`;
                 }
             });
             
             resultsHTML += `</div>`;
-            
-            showModal(`השגת ${points} נקודות!`, `הוסף אותן כעת למשפחה שלך!\n\n` + (points < 8 ? "פירוט טעויות:" : "מושלם!"), true, () => {
-                // המשתמש יוסיף לעצמו דרך הכפתורים בחוץ
-            });
-            document.getElementById('modal-message').innerHTML += resultsHTML; // Hack to inject HTML into message
+            showModal(`בדיקה הושלמה!`, `הרווחתם ${points} נקודות. הוסיפו אותן למשפחה שלכם!`, false);
+            document.getElementById('modal-message').innerHTML += resultsHTML;
         }
 
         function renderEmergency() {
             const content = document.getElementById('app-content');
+            const contacts = appData.emergencyContacts || {};
+            const caravanPhone = contacts.caravan || 'הזן מספר';
+            const insurancePhone = contacts.insurance || 'הזן מספר';
+
             content.innerHTML = `
                 <div class="text-center mb-8 mt-2">
                     <div class="w-20 h-20 bg-red-600 text-white rounded-full flex items-center justify-center text-4xl mx-auto mb-4 shadow-lg"><i class="fas fa-first-aid"></i></div>
@@ -1103,15 +1127,47 @@
 
                 <div class="bg-white rounded-3xl shadow-md overflow-hidden mb-6 border border-gray-200">
                     <div class="bg-red-50 px-5 py-4 border-b border-red-100 flex items-center">
-                        <h3 class="font-bold text-red-800 text-lg"><i class="fas fa-phone-alt mr-2"></i> מספרי חירום אירופה</h3>
+                        <h3 class="font-bold text-red-800 text-lg"><i class="fas fa-phone-alt mr-2"></i> מספרי חירום חיוניים</h3>
                     </div>
                     <ul class="divide-y divide-gray-50 p-2">
-                        <li class="p-3 flex justify-between items-center"><span class="font-bold text-gray-800">חירום כללי (משטרה/אמבולנס)</span><a href="tel:112" class="bg-red-100 text-red-700 px-4 py-1.5 rounded-lg font-extrabold text-xl">112</a></li>
-                        <li class="p-3 flex justify-between items-center"><span class="font-bold text-gray-800">חברת השכרת קרוואנים</span><span class="text-gray-500 text-sm">הזן במקום</span></li>
-                        <li class="p-3 flex justify-between items-center"><span class="font-bold text-gray-800">ביטוח רפואי (מוקד חו"ל)</span><span class="text-gray-500 text-sm">הזן במקום</span></li>
+                        <li class="p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                            <span class="font-bold text-gray-800">חירום כללי (משטרה/אמבולנס)</span>
+                            <button onclick="confirmCall('חירום כללי', '112')" class="bg-red-600 hover:bg-red-700 text-white px-8 py-2.5 rounded-xl font-extrabold text-2xl transition shadow-md w-full sm:w-auto dir-ltr"><i class="fas fa-phone mr-2"></i> 112</button>
+                        </li>
+                        <li class="p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-gray-800">חברת השכרת קרוואנים</span>
+                                <button onclick="editEmergencyNumber('caravan', '${caravanPhone}')" class="text-blue-500 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-sm font-bold transition"><i class="fas fa-pen"></i> ערוך</button>
+                            </div>
+                            <button onclick="confirmCall('חברת השכרת קרוואנים', '${caravanPhone}')" class="${caravanPhone !== 'הזן מספר' ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} px-6 py-2.5 rounded-xl font-bold text-xl transition w-full sm:w-auto dir-ltr"><i class="fas fa-phone mr-2"></i> ${caravanPhone}</button>
+                        </li>
+                        <li class="p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-gray-800">ביטוח רפואי (מוקד חו"ל)</span>
+                                <button onclick="editEmergencyNumber('insurance', '${insurancePhone}')" class="text-blue-500 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-sm font-bold transition"><i class="fas fa-pen"></i> ערוך</button>
+                            </div>
+                            <button onclick="confirmCall('ביטוח רפואי', '${insurancePhone}')" class="${insurancePhone !== 'הזן מספר' ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} px-6 py-2.5 rounded-xl font-bold text-xl transition w-full sm:w-auto dir-ltr"><i class="fas fa-phone mr-2"></i> ${insurancePhone}</button>
+                        </li>
                     </ul>
                 </div>
             `;
+        }
+
+        function confirmCall(name, number) {
+            if (!number || number === 'הזן מספר') {
+                showModal('חסר מספר', 'אנא לחץ על כפתור "ערוך" כדי להזין את מספר הטלפון.');
+                return;
+            }
+            showModal('אישור חיוג', `האם לחייג כעת אל:\n${name} (${number})?`, true, () => {
+                window.location.href = `tel:${number}`;
+            });
+        }
+
+        function editEmergencyNumber(key, currentNumber) {
+            const newNum = prompt("הזן מספר טלפון (כולל קידומת בינלאומית אם צריך):", currentNumber !== 'הזן מספר' ? currentNumber : '');
+            if (newNum !== null && newNum.trim() !== '') {
+                db.ref(`emergencyContacts/${key}`).set(newNum.trim());
+            }
         }
 
         function renderPantry() {
