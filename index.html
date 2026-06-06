@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -6,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase Libraries (v8 for simple HTML integration) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -33,8 +33,7 @@
             <h1 class="text-xl font-bold"><i class="fas fa-caravan mr-2"></i> קרוואנים 2026</h1>
             <div class="flex gap-2">
                 <button onclick="exportToExcel()" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition shadow" title="ייצוא לאקסל"><i class="fas fa-file-excel mr-1"></i> אקסל</button>
-                <button onclick="switchUser()" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition shadow" title="החלף משתמש"><i class="fas fa-user mr-1"></i> משתמש</button>
-                <button id="editToggleBtn" onclick="toggleEditMode()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full text-sm font-semibold transition shadow" style="display:none;">
+                <button id="editToggleBtn" onclick="toggleEditMode()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full text-sm font-semibold transition shadow">
                     <i class="fas fa-pen mr-1"></i> עריכה
                 </button>
             </div>
@@ -85,21 +84,6 @@
         </div>
     </div>
 
-    <!-- User Selection Modal -->
-    <div id="user-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm text-center transform transition-all scale-100">
-            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 text-3xl">
-                <i class="fas fa-hand-wave"></i>
-            </div>
-            <h2 class="text-3xl font-bold mb-2 text-gray-800">ברוכים הבאים!</h2>
-            <p class="text-gray-500 mb-6 text-lg">מי אורז/ת עכשיו?</p>
-            <select id="user-select" class="w-full p-4 border-2 border-gray-200 rounded-xl mb-6 text-xl bg-gray-50 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all cursor-pointer">
-                <!-- Options populated by JS -->
-            </select>
-            <button onclick="saveUser()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 transition shadow-lg">היכנס למערכת</button>
-        </div>
-    </div>
-
     <script>
         // ==========================================
         //  הגדרות Firebase
@@ -130,7 +114,6 @@
         ];
         
         let appData = { items: {}, avatars: {} };
-        let currentUser = null;
         let currentTab = people[0];
         let isEditMode = false;
 
@@ -150,13 +133,13 @@
             generateInitialData();
 
             syncStatus.innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מסונכרן';
-            checkUserAndRender();
+            // טעינה ישירה של האפליקציה (ללא מסך משתמש)
+            renderApp();
         }, (error) => {
             syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> שגיאת חיבור';
             showModal('שגיאה', 'לא ניתן להתחבר לענן. בדקו חיבור לאינטרנט.');
         });
 
-        // פונקציית מודל (תחליף ל-alert)
         function showModal(title, message, showCancel = false, onOk = null) {
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-message').innerText = message;
@@ -166,7 +149,6 @@
             
             cancelBtn.style.display = showCancel ? 'block' : 'none';
             
-            // איפוס מאזינים
             const newOkBtn = okBtn.cloneNode(true);
             okBtn.parentNode.replaceChild(newOkBtn, okBtn);
             const newCancelBtn = cancelBtn.cloneNode(true);
@@ -185,7 +167,6 @@
         }
 
         function renderApp() {
-            document.getElementById('editToggleBtn').style.display = 'block';
             renderTabs();
             renderContent();
             updateTotalProgress();
@@ -220,7 +201,7 @@
                 `;
                 btn.onclick = () => {
                     currentTab = person;
-                    checkUserAndRender();
+                    renderApp(); // קריאה ישירה לרינדור
                 };
                 container.appendChild(btn);
             });
@@ -338,7 +319,7 @@
                     html += `
                     <li class="item-row p-4 flex justify-between items-center ${bgClass}">
                         <div class="flex items-center gap-4 flex-1 cursor-pointer" onclick="toggleItem('${currentTab}', '${item.id}')">
-                            <div class="relative flex items-center justify-center w-8 h-8 rounded-lg border-2 ${item.packed ? 'border-green-500 bg-green-500' : 'border-gray-300 bg-white'} transition-colors">
+                            <div class="relative flex items-center justify-center w-8 h-8 rounded-lg border-2 ${item.packed ? 'border-green-500 bg-green-500' : 'border-gray-300 bg-white'} transition-colors flex-shrink-0">
                                 ${item.packed ? '<i class="fas fa-check text-white text-sm"></i>' : ''}
                             </div>
                             <div>
@@ -363,9 +344,9 @@
                     <li class="p-4 bg-gray-50 border-t border-dashed border-gray-300">
                         <div class="flex flex-col gap-3">
                             <input type="text" id="new-name-${category}" placeholder="שם הפריט החדש" class="w-full p-3 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-400 shadow-sm">
-                            <div class="flex gap-2">
-                                <input type="text" id="new-amount-${category}" placeholder="כמות" class="w-1/3 p-3 border border-gray-300 rounded-lg text-base shadow-sm">
-                                <input type="text" id="new-note-${category}" placeholder="הערה (אופציונלי)" class="w-2/3 p-3 border border-gray-300 rounded-lg text-base shadow-sm">
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input type="text" id="new-amount-${category}" placeholder="כמות" class="w-full sm:w-1/3 p-3 border border-gray-300 rounded-lg text-base shadow-sm">
+                                <input type="text" id="new-note-${category}" placeholder="הערה (אופציונלי)" class="w-full sm:w-2/3 p-3 border border-gray-300 rounded-lg text-base shadow-sm">
                             </div>
                             <button onclick="addNewItem('${currentTab}', '${category}')" class="w-full bg-green-500 text-white px-5 py-3 rounded-lg font-bold shadow-md hover:bg-green-600 transition"><i class="fas fa-plus mr-1"></i> הוסף פריט</button>
                         </div>
@@ -461,7 +442,7 @@
 
             const percent = total === 0 ? 0 : Math.round((packed / total) * 100);
             document.getElementById('total-progress-bar').style.width = `${percent}%`;
-            document.getElementById('total-progress-text').innerText = `התקדמות כללית: ${percent}% (${packed}/${total} נארז)`;
+            document.getElementById('total-progress-text').innerText = `התקדמות כללית: ${percent}% (${packed}/${total} פריטים נארזו)`;
         }
 
         function getBaseListForPerson(personName) {
@@ -491,25 +472,27 @@
             ];
 
             // תוספות דת
-            if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(personName)) {
-                list.push({ category: "דת ורוח", name: "תפילין", amount: "1", note: "לא לשכוח!" });
+            if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל", "הלל"].includes(personName)) {
                 list.push({ category: "דת ורוח", name: "כיפות", amount: "3", note: "" });
                 list.push({ category: "דת ורוח", name: "ציצית", amount: "3", note: "" });
+            }
+            if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(personName)) {
+                list.push({ category: "דת ורוח", name: "תפילין", amount: "1", note: "לא לשכוח!" });
             }
             if (["עוזיאל", "יוני"].includes(personName)) {
                 list.push({ category: "דת ורוח", name: "טלית", amount: "1", note: "לשבתות" });
             }
 
             // תוספות מיוחדות
-            if (personName === "הילה") {
+            if (personName === "הילה" || personName === "להבה") {
                 list.push({ category: "ביגוד יומיום", name: "גוזיות", amount: "5", note: "" });
             }
 
             // תוספות בנות/נשים לשבת
             if (["חנה", "שרונה", "הילה", "להבה", "הלל", "יובל"].includes(personName)) {
-                list.push({ category: "ביגוד שבת", name: "שמלות / חצאיות וחולצות", amount: "2", note: "ל-3 שבתות בטיול" });
+                list.push({ category: "ביגוד שבת", name: "שמלות / חצאיות וחולצות", amount: "2", note: "לשבתות בטיול" });
             } else {
-                list.push({ category: "ביגוד שבת", name: "חולצות מכופתרות", amount: "2", note: "ל-3 שבתות" });
+                list.push({ category: "ביגוד שבת", name: "חולצות מכופתרות", amount: "2", note: "לשבתות" });
                 list.push({ category: "ביגוד שבת", name: "מכנסיים חגיגיים", amount: "2", note: "" });
             }
 
@@ -539,9 +522,11 @@
                          itemsArray = [
                             { category: "לינה", name: "סדינים ציפות וכריות", amount: "לפי כמות מיטות", note: "לארוז בצ'ימידנים רכים" },
                             { category: "לינה", name: "שמיכות פליז/מעבר", amount: "לכולם", note: "קר בלילות באוסטריה" },
+                            { category: "לינה", name: "כריות שינה", amount: "לכולם", note: "מהבית" },
                             { category: "שבת וכשרות", name: "כלים מפלסטיק קשיח / חד פעמי", amount: "לכולם", note: "" },
                             { category: "שבת וכשרות", name: "סירים ומחבתות", amount: "3", note: "מוטבלים" },
                             { category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לוודא תאימות מתח לקרוואן" },
+                            { category: "שבת וכשרות", name: "נרונים, כוס קידוש", amount: "1", note: "" },
                             { category: "מסמכים", name: "דרכונים ורישיון בינלאומי", amount: "לכולם", note: "" }
                         ];
                     } else if (person === "ציוד כללי משותף") {
