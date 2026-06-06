@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -11,6 +12,12 @@
 
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        .tab-active { border-bottom: 4px solid #4f46e5; color: #4f46e5; font-weight: bold; background-color: #f8fafc; }
+        .tab-inactive { color: #6b7280; }
+        .tab-inactive:hover { background-color: #f3f4f6; }
+        .item-row { transition: all 0.2s ease; }
+        .item-row:hover { background-color: #f9fafb; }
+        .packed-text { text-decoration: line-through; color: #9ca3af; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .avatar-container { position: relative; display: inline-block; cursor: pointer; transition: transform 0.2s; }
@@ -21,7 +28,6 @@
         .doc-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .check-toggle { transition: all 0.3s; }
         .check-toggle.active { background-color: #10b981; border-color: #10b981; }
-        .packed-text { text-decoration: line-through; color: #9ca3af; }
         
         /* משחקים אנימציות */
         @keyframes roll {
@@ -40,18 +46,22 @@
             <h1 class="text-xl font-bold"><i class="fas fa-caravan mr-2"></i> קרוואנים 2026</h1>
             <div class="flex gap-2">
                 <button id="home-btn" onclick="goHome()" class="hidden text-xs bg-indigo-500 hover:bg-indigo-600 px-3 py-1.5 rounded-full font-bold transition shadow"><i class="fas fa-home mr-1"></i> ראשי</button>
-                <button onclick="exportToExcel()" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition shadow" title="ייצוא לאקסל"><i class="fas fa-file-excel"></i></button>
+                <button onclick="exportToExcel()" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition shadow" title="ייצוא לאקסל"><i class="fas fa-file-excel mr-1"></i> אקסל</button>
             </div>
         </div>
-        <div class="flex justify-between items-center text-sm mb-1 mt-3">
-            <span id="sync-status" class="text-blue-200"><i class="fas fa-sync fa-spin mr-1"></i> מתחבר לענן...</span>
-            <span id="total-progress-text" class="font-bold">אריזה כללית: 0%</span>
-        </div>
-        <div class="w-full bg-indigo-900 rounded-full h-2.5 shadow-inner">
-            <div id="total-progress-bar" class="bg-green-400 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+        <!-- פס התקדמות יוסתר במסך הראשי ויוצג רק ברשימות -->
+        <div id="header-progress-container" class="hidden">
+            <div class="flex justify-between items-center text-sm mb-1 mt-3">
+                <span id="sync-status" class="text-blue-200"><i class="fas fa-sync fa-spin mr-1"></i> מתחבר לענן...</span>
+                <span id="total-progress-text" class="font-bold">התקדמות כללית: 0%</span>
+            </div>
+            <div class="w-full bg-indigo-900 rounded-full h-2.5 shadow-inner">
+                <div id="total-progress-bar" class="bg-green-400 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
         </div>
     </header>
 
+    <!-- מסך פתיחה / דאשבורד -->
     <div id="dashboard-screen" class="p-4 max-w-3xl mx-auto hidden">
         <div class="text-center mb-6 mt-2">
             <h2 class="text-2xl font-black text-gray-800">לאן הולכים עכשיו?</h2>
@@ -100,8 +110,10 @@
         </button>
     </div>
 
+    <!-- שורת לשוניות למשפחות -->
     <nav id="tabs-container" class="hidden overflow-x-auto hide-scrollbar bg-white shadow-sm border-b z-10 sticky top-[90px] px-2 py-1 flex"></nav>
 
+    <!-- אזור תוכן ראשי -->
     <main id="app-content" class="p-4 max-w-3xl mx-auto">
         <div class="text-center mt-20" id="loading-spinner">
             <i class="fas fa-spinner fa-spin text-5xl text-indigo-500"></i>
@@ -109,6 +121,7 @@
         </div>
     </main>
 
+    <!-- Modal Elements -->
     <div id="custom-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 transform transition-all">
             <h3 id="modal-title" class="text-xl font-bold mb-3 text-gray-800"></h3>
@@ -129,10 +142,14 @@
         </div>
     </div>
 
+    <!-- Hidden inputs for file uploads -->
     <input type="file" id="doc-upload-input" class="hidden" accept="image/*" onchange="handleDocumentUpload(event)">
     <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="handleAvatarUpload(event)">
 
     <script>
+        // ==========================================
+        //  הגדרות Firebase - הדבק את המפתח שלך כאן!
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyCYd3UQO4d1OQN23quXTwMj1WK2wq0chX4",
             authDomain: "tiyul-f886a.firebaseapp.com",
@@ -147,11 +164,12 @@
         try {
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         } catch (e) {
-            document.getElementById('loading-text').innerText = "שגיאה באתחול: " + e.message;
+            document.getElementById('loading-text').innerText = "שגיאה באתחול האפליקציה: " + e.message;
         }
 
         const db = firebase.database();
 
+        // חלוקה לקבוצות הניהול
         const groups = {
             mishmar: ["יוני", "חנה", "ליאור", "אייל", "הילה", "יובל", "ציוד כללי פרידמן משמר"],
             adora: ["עוזיאל", "שרונה", "להבה", "אליה", "דביר", "הלל", "ציוד כללי פרידמן אדורה"],
@@ -168,6 +186,8 @@
         let isUploadingCustomDoc = false;
 
         const syncStatus = document.getElementById('sync-status');
+
+        // האזנה לענן
         db.ref('/').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -185,9 +205,12 @@
             }
             
             generateInitialData();
-            syncStatus.innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מסונכרן';
+            if(document.getElementById('sync-status')) {
+                syncStatus.innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מסונכרן';
+            }
             updateTotalProgress();
             
+            // טעינה ראשונית מסתיימת - עבור למסך הבית אם אנחנו עוד בטעינה
             if(document.getElementById('loading-spinner')) {
                 document.getElementById('loading-spinner').remove();
                 goHome(); 
@@ -195,10 +218,13 @@
                 renderApp(); 
             }
         }, (error) => {
-            syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> שגיאת חיבור';
+            if(document.getElementById('sync-status')) {
+                syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> שגיאת חיבור';
+            }
             console.error(error);
         });
 
+        // === פונקציות עזר ===
         function showModal(title, message, showCancel = false, onOk = null) {
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-message').innerText = message;
@@ -215,22 +241,29 @@
 
             newOkBtn.onclick = () => { modal.classList.add('hidden'); if (onOk) onOk(); };
             newCancelBtn.onclick = () => modal.classList.add('hidden');
+
             modal.classList.remove('hidden');
         }
 
+        // === ניווט ראשי ===
         function openModule(moduleName) {
             document.getElementById('dashboard-screen').classList.add('hidden');
             const tabsContainer = document.getElementById('tabs-container');
+            const headerProgress = document.getElementById('header-progress-container');
             document.getElementById('home-btn').classList.remove('hidden');
 
             if (groups[moduleName]) {
+                // נכנסו ללשונית אריזה עם אנשים
                 activeTabGroup = groups[moduleName];
                 currentTab = activeTabGroup[0];
                 tabsContainer.classList.remove('hidden');
+                headerProgress.classList.remove('hidden');
             } else {
+                // נכנסו לפיצ'ר (מפה, קרוואן, ארנק...)
                 activeTabGroup = [];
                 currentTab = moduleName;
                 tabsContainer.classList.add('hidden');
+                headerProgress.classList.add('hidden');
             }
             renderApp();
         }
@@ -238,6 +271,7 @@
         function goHome() {
             document.getElementById('dashboard-screen').classList.remove('hidden');
             document.getElementById('tabs-container').classList.add('hidden');
+            document.getElementById('header-progress-container').classList.add('hidden');
             document.getElementById('app-content').innerHTML = '';
             document.getElementById('home-btn').classList.add('hidden');
             currentTab = '';
@@ -245,7 +279,9 @@
         }
 
         function renderApp() {
-            if(activeTabGroup.length > 0) renderTabs();
+            if(activeTabGroup.length > 0) {
+                renderTabs();
+            }
             
             if (currentTab === 'caravan') renderCaravan();
             else if (currentTab === 'wallet') renderWallet();
@@ -258,19 +294,23 @@
         function renderTabs() {
             const container = document.getElementById('tabs-container');
             container.innerHTML = '';
+
             activeTabGroup.forEach(person => {
                 const isActive = person === currentTab;
                 let total = 0, packed = 0;
                 
                 if(appData.items[person]) {
                     Object.values(appData.items[person]).forEach(item => {
-                        total++; if(item.packed) packed++;
+                        total++;
+                        if(item.packed) packed++;
                     });
                 }
                 
                 const isDone = (packed === total && total > 0);
+                
                 const btn = document.createElement('button');
                 btn.className = `px-5 py-3 whitespace-nowrap text-sm flex-shrink-0 transition-colors border-b-2 ${isActive ? 'border-indigo-600 text-indigo-700 font-bold bg-indigo-50/50' : 'border-transparent text-gray-500 hover:bg-gray-50'}`;
+                
                 btn.innerHTML = `
                     <div class="flex flex-col items-center gap-1">
                         <span class="text-base">${person}</span>
@@ -282,13 +322,19 @@
             });
         }
 
-        // --- מאגר נתונים למשחקים ---
+        // =========================================
+        //  מודול משחקים מורחב (הגדרות ארץ עיר)
+        // =========================================
         const musicWords = [
             "אהבה","שמש","ים","לב","אור","לילה","יום","שמחה","עיניים","פרח","שמיים","מים","רוח","אש","אדמה","דרך","חלום","כוכב","ילד","עולם","שיר","מנגינה","בוקר","ערב","גשם","שלג","הר","עץ","ציפור","פרפר","חבר","אמא","אבא","בית","רחוב","עיר","ארץ","כחול","אדום","ירוק","לבן","שחור","זהב","כסף","זמן","שעון","רגע","שנה","חודש","שבוע","תקווה","שלום","חיוך","דמעה","צחוק","בכי","ריקוד","קפיצה","ריצה","הליכה","מבט","קול","שקט","רעש","מילה","סיפור","ספר","מכתב","תמונה","צבע","מכונית","רכבת","מטוס","אונייה","סירה","כביש","שביל","דלת","חלון","קיר","גג","חדר","מיטה","כיסא","שולחן","אוכל","מים","לחם","יין","חלב","דבש","מתוק","מר","חמוץ","מלוח","חם","קר","גדול","קטן","ארוך","קצר","גבוה","נמוך","מהר","לאט","חזק","חלש","יפה","מכוער","טוב","רע","חכם","טיפש","חדש","ישן","צעיר","זקן","ראשון","אחרון","אחד","שניים","שלושה","מאה","אלף","מיליון","חיים","מוות","לידה","יום הולדת","חג","שבת","ראשון","אמת","שקר","סוד","חידה","תשובה","שאלה","סיבה","תוצאה","כוח","חולשה","אומץ","פחד","גיבור","מלך","מלכה","נסיך","נסיכה","מלאך","שד","רוח","נשמה","גוף","ראש","יד","רגל","עין","אוזן","אף","פה","שן","שיער","פנים","גב","בטן","לב","דם","עור","עצם","שריר","כאב","תרופה","רופא","חולה","בריא","משוגע","נורמלי","רגיל","מיוחד","זר","מוכר","חבר","אויב","מלחמה","קרב","ניצחון","הפסד","משחק","צעצוע","בובה","כדור","חבל","אבן","עץ","ברזל","זהב","כסף","נחושת","זכוכית","פלסטיק","נייר","ספר","מחברת","עט","עיפרון","מחשב","טלפון","מסך","מקלדת","עכבר","שיר","פזמון","זמר","זמרת","להקה","כלי","גיטרה","פסנתר","תוף","חליל","כינור"
         ];
 
-        const eretzIrCategories = ["ארץ", "עיר", "חי", "צומח", "דומם", "ילד", "ילדה", "מקצוע", "מאכל", "צבע", "כלי תחבורה", "אישיות מפורסמת", "מותג / חברה"];
+        const eretzIrCategories = ["ארץ", "עיר", "חי", "צומח", "דומם", "ילד", "ילדה", "מקצוע", "מאכל", "צבע", "כלי תחבורה", "אישיות מפורסמת", "מותג או חברה"];
         const hebrewLetters = ["א","ב","ג","ד","ה","ו","ז","ח","ט","י","כ","ל","מ","נ","ס","ע","פ","צ","ק","ר","ש","ת"];
+
+        // מילונים קטנים לבדיקת ארץ עיר אוטומטית (ארצות וצבעים בלבד לדיוק מירבי)
+        const countriesList = ['אוגנדה', 'אוזבקיסטן', 'אוסטריה', 'אוסטרליה', 'אוקראינה', 'אורוגוואי', 'איחוד האמירויות', 'איטליה', 'איי בהאמה', 'אינדונזיה', 'איסלנד', 'איראן', 'אירלנד', 'אל סלוודור', 'אלבניה', 'אלגריה', 'אנגולה', 'אנדורה', 'אסטוניה', 'אפגניסטן', 'אקוודור', 'ארגנטינה', 'אריתריאה', 'ארמניה', 'ארצות הברית', 'אתיופיה', 'בולגריה', 'בוליביה', 'בוסניה', 'בוטסואנה', 'בחריין', 'בלגיה', 'בליז', 'בלארוס', 'בנגלדש', 'ברבדוס', 'ברזיל', 'בריטניה', 'גאורגיה', 'גאנה', 'גואטמלה', 'גינאה', 'גמביה', 'גמייקה', 'גרמניה', 'דנמרק', 'דרום אפריקה', 'דרום קוריאה', 'האיטי', 'הודו', 'הולנד', 'הונגריה', 'הונדורס', 'הפיליפינים', 'וייטנאם', 'ונצואלה', 'זמביה', 'זימבבואה', 'חוף השנהב', 'טורקיה', 'טורקמניסטן', 'טנזניה', 'יוון', 'יפן', 'ירדן', 'ישראל', 'כווית', 'לאוס', 'לבנון', 'לוב', 'לוקסמבורג', 'לטביה', 'ליבריה', 'ליטא', 'ליכטנשטיין', 'מדגסקר', 'מוזמביק', 'מולדובה', 'מונגוליה', 'מונקו', 'מיאנמר', 'מלאווי', 'מלדיביים', 'מלזיה', 'מלטה', 'מצרים', 'מקדוניה', 'מקסיקו', 'מרוקו', 'נורווגיה', 'ניגריה', 'ניו זילנד', 'ניקרגואה', 'נפאל', 'סודאן', 'סומליה', 'סוריה', 'סיירה לאון', 'סין', 'סינגפור', 'סלובניה', 'סלובקיה', 'סנגל', 'ספרד', 'סרביה', 'סרי לנקה', 'עומאן', 'עיראק', 'ערב הסעודית', 'פולין', 'פורטוגל', 'פיג', 'פינלנד', 'פנמה', 'פקיסטן', 'פרגוואי', 'פרו', 'צאד', 'צילה', 'צכיה', 'צרפת', 'קובה', 'קולומביה', 'קוסטה ריקה', 'קזחסטן', 'קטר', 'קמבודיה', 'קמרון', 'קנדה', 'קניה', 'קפריסין', 'קרואטיה', 'רואנדה', 'רומניה', 'רוסיה', 'שוודיה', 'שווייץ', 'תאילנד', 'תוניסיה', 'תימן'];
+        const colorsList = ['אדום', 'אפור', 'בורדו', 'בלונד', 'ברונזה', 'ורוד', 'זהב', 'חום', 'חרדל', 'טורקיז', 'ירוק', 'כסף', 'כחול', 'כתום', 'לבן', 'לילך', 'מגנטה', 'נחושת', 'סגול', 'פוקסיה', 'צהוב', 'ציאן', 'שחור', 'תכלת', 'ארגמן', 'שני', 'פנינה', 'קרם', 'בז'];
 
         const triviaQuestions = [
             { q: "איזה כלי שחמט יכול לזוז באלכסון בלבד?", options: ["צריח", "סוס", "רץ", "מלך"], a: 2 },
@@ -310,7 +356,10 @@
             { q: "מה שמו של הילד מעץ שהאף שלו מתארך כשהוא משקר?", options: ["פיטר פן", "פינוקיו", "במבי", "דמבו"], a: 1 },
             { q: "איזה חוש פועל באמצעות האף?", options: ["ראייה", "שמיעה", "מישוש", "ריח"], a: 3 },
             { q: "מה צבע התפוח המורעל ששלגיה אכלה?", options: ["ירוק", "צהוב", "אדום", "שחור"], a: 2 },
-            { q: "מאיזו עיר מתחילה בדרך כלל טיסת אל על לאיטליה?", options: ["חיפה", "תל אביב (נתבג)", "אילת", "ירושלים"], a: 1 }
+            { q: "מאיזו עיר מתחילה בדרך כלל טיסת אל על לאיטליה?", options: ["חיפה", "תל אביב (נתבג)", "אילת", "ירושלים"], a: 1 },
+            { q: "מאיזו עיר הגיעה במקור הפיצה?", options: ["רומא", "נאפולי", "פירנצה", "ונציה"], a: 1 },
+            { q: "מהו המטבע הרשמי באוסטריה?", options: ["שילינג", "פרנק", "אירו", "דולר"], a: 2 },
+            { q: "איזו עיר ידועה כ'עיר התעלות' באיטליה?", options: ["רומא", "מילאנו", "ונציה", "טורינו"], a: 2 }
         ];
 
         let activeGame = '';
@@ -326,8 +375,9 @@
                 </div>
 
                 <!-- Scoreboard -->
-                <div class="bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl shadow-lg p-1 mb-8">
-                    <div class="bg-white rounded-xl p-4 flex justify-between items-center text-center">
+                <div class="bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl shadow-lg p-1 mb-6 relative">
+                    <button onclick="resetGameScores()" class="absolute top-2 right-2 text-white/70 hover:text-white bg-black/20 p-2 rounded-full text-xs" title="איפוס תוצאות"><i class="fas fa-redo"></i></button>
+                    <div class="bg-white rounded-xl p-4 flex justify-between items-center text-center mt-6">
                         <div class="flex-1">
                             <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">משמר</p>
                             <p class="text-3xl font-black text-indigo-600">${scores.mishmar || 0}</p>
@@ -354,7 +404,7 @@
                     </button>
                     <button onclick="activeGame='eretzir'; renderGamesDashboard()" class="bg-white p-5 rounded-2xl shadow-sm border border-blue-200 hover:bg-blue-50 transition text-right flex items-center gap-4">
                         <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl"><i class="fas fa-globe"></i></div>
-                        <div><h3 class="font-bold text-gray-800 text-lg">ארץ עיר מורחב</h3><p class="text-sm text-gray-500">מגלגלים אות ומתחילים לרוץ על הקטגוריות.</p></div>
+                        <div><h3 class="font-bold text-gray-800 text-lg">ארץ עיר חכם</h3><p class="text-sm text-gray-500">המערכת בודקת תשובות ומחלקת ניקוד!</p></div>
                     </button>
                 </div>`;
             } else if (activeGame === 'trivia') {
@@ -387,10 +437,10 @@
                 html += `
                 <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bold text-blue-800 text-xl"><i class="fas fa-globe"></i> ארץ עיר קרוואנים</h3>
+                        <h3 class="font-bold text-blue-800 text-xl"><i class="fas fa-globe"></i> ארץ עיר חכם</h3>
                         <button onclick="activeGame=''; renderGamesDashboard()" class="text-gray-500 hover:bg-gray-200 p-2 rounded-full text-sm"><i class="fas fa-arrow-right"></i> חזור</button>
                     </div>
-                    <p class="text-gray-600 mb-6 text-sm">גלגלו אות, ונסו להשלים כמה שיותר מהר את כל הקטגוריות בעל פה!</p>
+                    <p class="text-gray-600 mb-6 text-sm">המערכת תבדוק את התשובות ותחלק נקודות!</p>
                     <button onclick="rollEretzIr()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-lg transition transform hover:scale-105 active:scale-95 w-full">
                         <i class="fas fa-dice mr-2"></i> גלגל אות!
                     </button>
@@ -401,10 +451,23 @@
             content.innerHTML = html;
         }
 
-        function addScore(family) {
+        function addScoreAmount(family, amount) {
             const currentScore = appData.games.scores[family] || 0;
-            db.ref(`games/scores/${family}`).set(currentScore + 1);
-            document.getElementById('game-area').innerHTML = `<p class="text-green-600 font-bold text-lg mt-4 animate-bounce">הנקודה נרשמה למשפחת ${family === 'mishmar' ? 'משמר' : 'אדורה'}! 🏆</p>`;
+            db.ref(`games/scores/${family}`).set(currentScore + amount);
+            document.getElementById('game-area').innerHTML += `<p class="text-green-600 font-bold text-lg mt-4 animate-bounce">נוספו ${amount} נקודות ל${family === 'mishmar' ? 'משמר' : 'אדורה'}! 🏆</p>`;
+            setTimeout(() => renderGamesDashboard(), 2500);
+        }
+
+        function addScore(family) {
+            addScoreAmount(family, 1);
+        }
+
+        function resetGameScores() {
+            showModal('איפוס משחקים', 'לאפס את הניקוד של שתי המשפחות?', true, () => {
+                db.ref('games/scores/mishmar').set(0);
+                db.ref('games/scores/adora').set(0);
+                setTimeout(() => renderGamesDashboard(), 500);
+            });
         }
 
         // טריוויה
@@ -419,7 +482,7 @@
             ).join('');
 
             area.innerHTML = `
-                <div class="bg-white p-5 rounded-xl shadow border border-gray-100 text-right">
+                <div class="bg-white p-5 rounded-xl shadow border border-gray-100 text-right mt-4">
                     <p class="text-lg font-bold text-gray-800 mb-4">${qObj.q}</p>
                     <div class="flex flex-col gap-2">${optionsHtml}</div>
                 </div>
@@ -429,7 +492,7 @@
         function answerTrivia(selectedIdx, correctIdx) {
             if(selectedIdx === correctIdx) {
                 document.getElementById('game-area').innerHTML = `
-                    <div class="bg-green-100 p-5 rounded-xl border border-green-200 text-center animate-pulse">
+                    <div class="bg-green-100 p-5 rounded-xl border border-green-200 text-center animate-pulse mt-4">
                         <p class="text-xl font-bold text-green-700 mb-4">🎉 תשובה נכונה! 🎉</p>
                         <p class="text-sm font-bold text-gray-600 mb-3">מי ענה נכון?</p>
                         <div class="flex gap-3 justify-center">
@@ -440,7 +503,7 @@
                 `;
             } else {
                 document.getElementById('game-area').innerHTML = `
-                    <div class="bg-red-50 p-5 rounded-xl border border-red-200 text-center">
+                    <div class="bg-red-50 p-5 rounded-xl border border-red-200 text-center mt-4">
                         <p class="text-lg font-bold text-red-600 mb-2">אופס... טעות! 😢</p>
                         <button onclick="startTriviaQuestion()" class="text-gray-500 underline text-sm mt-2">נסו שאלה אחרת</button>
                     </div>
@@ -455,7 +518,7 @@
             area.classList.remove('hidden');
             
             area.innerHTML = `
-                <div class="bg-white p-6 rounded-xl shadow border border-pink-200 text-center">
+                <div class="bg-white p-6 rounded-xl shadow border border-pink-200 text-center mt-4">
                     <p class="text-sm text-gray-500 mb-2">השלימו שיר עם המילה:</p>
                     <p class="text-5xl font-black text-pink-600 mb-6 drop-shadow-md">"${randomWord}"</p>
                     <div class="border-t pt-4">
@@ -469,43 +532,101 @@
             `;
         }
 
-        // ארץ עיר
+        // ארץ עיר משודרג
         function rollEretzIr() {
             const area = document.getElementById('game-area');
             area.classList.remove('hidden');
             
             let counter = 0;
-            area.innerHTML = `<div class="text-6xl font-black text-blue-600 mb-4 rolling-text">א</div>`;
+            area.innerHTML = `<div class="text-6xl font-black text-blue-600 mt-4 mb-4 rolling-text">א</div>`;
             
             const interval = setInterval(() => {
-                area.innerHTML = `<div class="text-6xl font-black text-blue-600 mb-4 rolling-text">${hebrewLetters[Math.floor(Math.random() * hebrewLetters.length)]}</div>`;
+                area.innerHTML = `<div class="text-6xl font-black text-blue-600 mt-4 mb-4 rolling-text">${hebrewLetters[Math.floor(Math.random() * hebrewLetters.length)]}</div>`;
                 counter++;
                 if(counter > 15) {
                     clearInterval(interval);
                     const finalLetter = hebrewLetters[Math.floor(Math.random() * hebrewLetters.length)];
-                    let catHtml = eretzIrCategories.map(cat => 
-                        `<div class="bg-blue-50 border border-blue-100 p-2 rounded text-sm font-bold text-blue-800">${cat}</div>`
+                    
+                    let inputsHtml = eretzIrCategories.map(cat => 
+                        `<div class="flex items-center gap-2 mb-2">
+                            <label class="w-1/3 text-sm font-bold text-blue-800 text-right">${cat}</label>
+                            <input type="text" id="eretz-ir-${cat}" class="w-2/3 p-2 border border-blue-200 rounded outline-none focus:border-blue-500" placeholder="הקלד כאן...">
+                        </div>`
                     ).join('');
                     
                     area.innerHTML = `
-                        <div class="bg-white p-6 rounded-xl shadow border border-blue-200 text-center">
+                        <div class="bg-white p-6 rounded-xl shadow border border-blue-200 text-center mt-4">
                             <p class="text-sm text-gray-500 mb-2">האות שנבחרה:</p>
                             <p class="text-6xl font-black text-blue-600 mb-6 bg-blue-50 inline-block px-6 py-2 rounded-2xl border-2 border-blue-200">${finalLetter}</p>
-                            <p class="font-bold text-gray-700 mb-3 border-b pb-2">קטגוריות למילוי:</p>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-right">
-                                ${catHtml}
+                            <p class="text-xs text-red-500 mb-4 font-bold">המערכת בודקת אות ראשונה ומילון ארצות/צבעים.</p>
+                            <div class="text-right border-t pt-4">
+                                ${inputsHtml}
                             </div>
-                            <div class="mt-6 border-t pt-4 flex gap-3 justify-center">
-                                <button onclick="addScore('mishmar')" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded text-sm font-bold transition">+ נקודה למשמר</button>
-                                <button onclick="addScore('adora')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-bold transition">+ נקודה לאדורה</button>
-                            </div>
+                            <button onclick="checkEretzIr('${finalLetter}')" class="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg w-full transition">
+                                <i class="fas fa-check-circle mr-2"></i> בדוק תוצאות וקבל ניקוד!
+                            </button>
                         </div>
                     `;
                 }
             }, 100);
         }
 
+        function checkEretzIr(letter) {
+            let points = 0;
+            let html = '<div class="bg-white p-6 rounded-xl shadow border border-blue-200 text-center mt-4">';
+            html += '<h3 class="font-bold text-xl text-gray-800 mb-4">תוצאות הבדיקה:</h3><ul class="text-right space-y-2 mb-6 border-b pb-4">';
 
+            eretzIrCategories.forEach(cat => {
+                let inputVal = document.getElementById(`eretz-ir-${cat}`).value.trim();
+                let isValid = false;
+                let reason = "";
+
+                if(inputVal.length > 1) {
+                    if(inputVal.charAt(0) !== letter) {
+                        reason = `לא מתחיל ב-${letter}`;
+                    } else {
+                        if(cat === 'ארץ' && !countriesList.includes(inputVal)) {
+                            reason = "לא במילון הארצות";
+                        } else if(cat === 'צבע' && !colorsList.includes(inputVal)) {
+                            reason = "לא במילון הצבעים";
+                        } else {
+                            isValid = true;
+                        }
+                    }
+                } else if(inputVal.length > 0) {
+                    reason = "קצר מדי";
+                }
+
+                if(isValid) {
+                    points++;
+                    html += `<li><i class="fas fa-check text-green-500 mr-2"></i> <b>${cat}:</b> ${inputVal} <span class="text-green-600 font-bold">(+1)</span></li>`;
+                } else if(inputVal.length > 0) {
+                    html += `<li><i class="fas fa-times text-red-500 mr-2"></i> <b>${cat}:</b> <span class="line-through">${inputVal}</span> <span class="text-xs text-red-400">(${reason})</span></li>`;
+                } else {
+                    html += `<li class="text-gray-400"><i class="fas fa-minus mr-2"></i> <b>${cat}:</b> ריק</li>`;
+                }
+            });
+
+            html += `</ul><div class="p-3 bg-blue-100 rounded-lg border border-blue-200">`;
+            html += `<p class="text-2xl font-black text-blue-800 mb-2">סך הכל: ${points} נקודות!</p>`;
+            
+            if(points > 0) {
+                html += `<p class="text-sm text-blue-600 mt-2 mb-3 font-bold">לאיזו משפחה להוסיף את הניקוד?</p>`;
+                html += `<div class="flex gap-3 justify-center">
+                            <button onclick="addScoreAmount('mishmar', ${points})" class="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-lg font-bold shadow transition hover:bg-indigo-700">משמר</button>
+                            <button onclick="addScoreAmount('adora', ${points})" class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-bold shadow transition hover:bg-blue-700">אדורה</button>
+                         </div>`;
+            } else {
+                html += `<button onclick="renderGamesDashboard()" class="mt-2 text-gray-500 underline">חזור למשחקים</button>`;
+            }
+            
+            html += `</div></div>`;
+            document.getElementById('game-area').innerHTML = html;
+        }
+
+        // =========================================
+        //  מודול מפה חכמה
+        // =========================================
         function renderMap() {
             const content = document.getElementById('app-content');
             const locations = appData.locations || {};
@@ -525,10 +646,10 @@
                 </div>
 
                 <div class="bg-slate-50 rounded-2xl shadow-inner p-5 mb-8 border border-slate-200">
-                    <h3 class="font-bold text-slate-800 mb-4 text-lg"><i class="fas fa-location-arrow mr-2 text-red-400"></i> מועדפים לניווט מהיר (Waze/Google)</h3>
+                    <h3 class="font-bold text-slate-800 mb-4 text-lg"><i class="fas fa-location-arrow mr-2 text-red-400"></i> מועדפים לניווט מהיר</h3>
                     
                     <div class="flex flex-col gap-3 mb-6">
-                        <input type="text" id="loc-name" placeholder="שם המקום (למשל: חניון אוסטריה, סופר כשר מילאנו)" class="w-full p-3 border border-slate-300 rounded-lg outline-none">
+                        <input type="text" id="loc-name" placeholder="שם המקום (למשל: חניון אוסטריה)" class="w-full p-3 border border-slate-300 rounded-lg outline-none">
                         <input type="text" id="loc-url" placeholder="הדבק קישור גוגל מפות (Share Link)" class="w-full p-3 border border-slate-300 rounded-lg outline-none text-left" dir="ltr">
                         <button onclick="addLocation()" class="bg-red-500 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-red-600 transition">הוסף מקום לניווט</button>
                     </div>
@@ -565,10 +686,14 @@
             if(!name || !url) return showModal('שגיאה', 'יש להזין שם וקישור לניווט.');
             db.ref(`locations`).push({ name, url });
         }
+
         function deleteLocation(key) {
             showModal('מחיקה', 'למחוק מיקום זה?', true, () => db.ref(`locations/${key}`).remove());
         }
 
+        // =========================================
+        //  מודול תורנויות
+        // =========================================
         function renderChores() {
             const content = document.getElementById('app-content');
             const chores = appData.chores || {};
@@ -581,9 +706,9 @@
                 
                 <div class="bg-purple-50 rounded-2xl shadow-inner p-5 mb-8 border border-purple-100">
                     <h3 class="font-bold text-purple-800 mb-4"><i class="fas fa-plus-circle mr-1"></i> הוספת תורנות חדשה</h3>
-                    <div class="flex gap-2">
+                    <div class="flex flex-col gap-3">
                         <input type="text" id="new-chore-name" placeholder="למשל: שטיפת כלים, ריקון פח..." class="w-full p-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400">
-                        <button onclick="addChore()" class="bg-purple-600 text-white px-6 rounded-lg font-bold shadow hover:bg-purple-700 transition">הוסף</button>
+                        <button onclick="addChore()" class="bg-purple-600 text-white p-3 rounded-lg font-bold shadow hover:bg-purple-700 transition">הוסף תורנות</button>
                     </div>
                 </div>
 
@@ -606,8 +731,8 @@
                                 <option value="" ${!c.assignee ? 'selected' : ''}>-- ללא שיבוץ --</option>
                                 ${activeFamilyMembers.map(m => `<option value="${m}" ${c.assignee === m ? 'selected' : ''}>${m}</option>`).join('')}
                             </select>
-                            <button onclick="editChore('${key}', '${c.name.replace(/'/g, "\\'")}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition"><i class="fas fa-pen"></i></button>
-                            <button onclick="deleteChore('${key}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
+                            <button onclick="editChore('${key}', '${c.name.replace(/'/g, "\\'")}')" class="text-blue-500 bg-blue-50 p-2 rounded-lg transition"><i class="fas fa-pen"></i></button>
+                            <button onclick="deleteChore('${key}')" class="text-red-500 bg-red-50 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>`;
                 });
@@ -628,6 +753,9 @@
         }
         function deleteChore(id) { showModal('מחיקה', 'למחוק את התורנות הזו?', true, () => db.ref(`chores/${id}`).remove()); }
 
+        // =========================================
+        //  מודול קרוואן
+        // =========================================
         function renderCaravan() {
             const content = document.getElementById('app-content');
             const depList = appData.checklists.departure || [];
@@ -680,6 +808,9 @@
             });
         }
 
+        // =========================================
+        //  מודול ארנק משותף
+        // =========================================
         function renderWallet() {
             const content = document.getElementById('app-content');
             const expenses = appData.wallet.expenses || {};
@@ -819,6 +950,9 @@
         }
         function deleteExpense(expenseId) { showModal('מחיקת הוצאה', 'האם למחוק הוצאה זו מהארנק?', true, () => db.ref(`wallet/expenses/${expenseId}`).remove()); }
 
+        // =========================================
+        //  העלאת תמונות ומסמכים
+        // =========================================
         function handleAvatarUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -902,6 +1036,9 @@
             }
         }
 
+        // =========================================
+        //  רשימות אריזה (הליבה)
+        // =========================================
         function renderContent() {
             const content = document.getElementById('app-content');
             const personItems = appData.items[currentTab] || {};
@@ -928,7 +1065,6 @@
                     </div>
                     <div class="p-4 grid grid-cols-2 sm:grid-cols-3 gap-3">`;
                 
-                // Fixed Docs
                 predefinedDocs.forEach(doc => {
                     const hasDoc = !!personDocs[doc.id];
                     if (hasDoc) {
@@ -938,7 +1074,6 @@
                     }
                 });
 
-                // Custom Uploaded Docs
                 Object.keys(personDocs).forEach(docKey => {
                     const isPredefined = predefinedDocs.some(d => d.id === docKey);
                     if(!isPredefined) {
@@ -1056,6 +1191,9 @@
             link.download = "רשימת_אריזה_קרוואנים.csv"; link.click();
         }
 
+        // =========================================
+        //  אתחול נתונים אוטומטי (הזרקת רשימות)
+        // =========================================
         function generateInitialData() {
             if (!appData.chores || Object.keys(appData.chores || {}).length === 0) {
                 db.ref('chores').set([
