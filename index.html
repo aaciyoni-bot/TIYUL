@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>רשימת אריזה - טיול קרוואנים</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        body { font-family: 'Heebo', sans-serif; background-color: #f3f4f6; }
+        .checkbox-custom:checked + div { text-decoration: line-through; color: #9ca3af; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // נתונים משותפים לקיצור קוד
+        const generateAdultClothes = (isFemale, shabbatNote) => [
+            { category: 'ביגוד יומיום', items: [
+                { id: 'd1', name: 'חולצות קצרות', qty: '8' },
+                { id: 'd2', name: 'מכנסיים קצרים', qty: '5' },
+                { id: 'd3', name: 'מכנסיים ארוכים קלים', qty: '3' },
+                { id: 'd4', name: 'לבנים / תחתונים', qty: '10' },
+                { id: 'd5', name: 'זוגות גרביים', qty: '8' },
+                { id: 'd6', name: 'פיג\'מה / בגדי שינה', qty: '2' },
+            ]},
+            { category: 'ביגוד חם (אוסטריה)', items: [
+                { id: 'w1', name: 'מעיל פליז / סופטשל', qty: '1', note: 'חובה לפסגות' },
+                { id: 'w2', name: 'חולצות ארוכות דקות', qty: '2', note: 'שיטת הבצל' },
+                { id: 'w3', name: 'כובע גרב וכפפות', qty: '1' },
+            ]},
+            { category: 'ביגוד שבת', items: isFemale ? [
+                { id: 's1', name: 'שמלות / חצאיות וחולצות', qty: '2', note: shabbatNote },
+            ] : [
+                { id: 's1', name: 'חולצות מכופתרות', qty: '2', note: shabbatNote },
+                { id: 's2', name: 'מכנסיים חגיגיים', qty: '2' },
+            ]},
+            { category: 'הנעלה', items: [
+                { id: 'sh1', name: 'נעלי הליכה סגורות', qty: '1', note: 'לטיולים רגליים' },
+                { id: 'sh2', name: 'סנדלים נוחים', qty: '1' },
+                { id: 'sh3', name: 'כפכפים', qty: '1', note: 'למקלחות ובריכה' },
+            ]},
+            { category: 'מים ושמש', items: [
+                { id: 'sw1', name: 'בגדי ים', qty: '2', note: 'לווילה ולקרואטיה' },
+                { id: 'sw2', name: 'חולצת UV', qty: '1' },
+                { id: 'sw3', name: 'כובע שמש', qty: '1' },
+            ]},
+            { category: 'היגיינה', items: [
+                { id: 'h1', name: 'תיק רחצה אישי', qty: '1', note: 'שמפו, מברשת, דאודורנט' },
+                { id: 'h2', name: 'מגבת רחצה', qty: '1', note: 'מומלץ מיקרופייבר' },
+                { id: 'h3', name: 'מגבת פנים', qty: '1' },
+                { id: 'h4', name: 'מגבת בריכה/ים', qty: '1' },
+            ]}
+        ];
+
+        const tabsData = [
+            { id: 'yoni', name: 'יוני', icon: '👨', color: 'blue',
+              categories: generateAdultClothes(false, 'ל-3 שבתות') },
+            { id: 'chana', name: 'חנה', icon: '👩', color: 'purple',
+              categories: generateAdultClothes(true, 'ל-3 שבתות') },
+            { id: 'lior', name: 'ליאור (16)', icon: '🧑', color: 'green',
+              categories: generateAdultClothes(false, 'ל-3 שבתות') },
+            { id: 'eyal', name: 'אייל (13)', icon: '👦', color: 'orange',
+              categories: generateAdultClothes(false, 'ל-3 שבתות') },
+            { id: 'hila', name: 'הילה (12)', icon: '👧', color: 'pink',
+              categories: generateAdultClothes(true, 'ל-3 שבתות') },
+            { id: 'yuval', name: 'יובל (2)', icon: '👶', color: 'yellow',
+              categories: [
+                  { category: 'ביגוד יומיום', items: [
+                      { id: 'y_d1', name: 'חולצות / בגדי גוף', qty: '10' },
+                      { id: 'y_d2', name: 'מכנסיים קצרים', qty: '8' },
+                      { id: 'y_d3', name: 'מכנסיים ארוכים', qty: '5' },
+                      { id: 'y_d4', name: 'תחתונים / גופיות תחתונות', qty: '12' },
+                      { id: 'y_d5', name: 'זוגות גרביים', qty: '10' },
+                      { id: 'y_d6', name: 'פיג\'מות / אוברול', qty: '3' },
+                  ]},
+                  { category: 'ביגוד חם (אוסטריה)', items: [
+                      { id: 'y_w1', name: 'מעיל פליז/סופטשל', qty: '2' },
+                      { id: 'y_w2', name: 'חולצות ארוכות (בסיס)', qty: '4' },
+                      { id: 'y_w3', name: 'כובע גרב וכפפות', qty: '1' },
+                  ]},
+                  { category: 'מים והנעלה', items: [
+                      { id: 'y_s1', name: 'בגדי ים', qty: '3' },
+                      { id: 'y_s2', name: 'חולצות UV', qty: '2' },
+                      { id: 'y_s3', name: 'כובע שמש', qty: '2' },
+                      { id: 'y_sh1', name: 'נעלי הליכה', qty: '1' },
+                      { id: 'y_sh2', name: 'סנדלים', qty: '1' },
+                  ]},
+                  { category: 'ציוד תינוקות ורחצה', items: [
+                      { id: 'y_b1', name: 'חיתולים / פולאפס', qty: 'חבילה 1', note: 'להשלים קנייה עם הקרוואן' },
+                      { id: 'y_b2', name: 'מגבונים', qty: '5 חבילות' },
+                      { id: 'y_b3', name: 'משחת החתלה/סבון', qty: '1' },
+                      { id: 'y_b4', name: 'בקבוקים/כוס פטל', qty: '2' },
+                      { id: 'y_b5', name: 'מוצצים', qty: '3' },
+                      { id: 'y_b6', name: 'מנשא גב/טיולון', qty: '1', note: 'מנשא חובה למסלולים' },
+                      { id: 'y_b7', name: 'מגבת רחצה / קפוצ\'ון', qty: '1' },
+                  ]}
+              ]},
+            { id: 'general', name: 'ציוד כללי', icon: '🚐', color: 'slate',
+              categories: [
+                  { category: 'לינה בקרוואן', items: [
+                      { id: 'g_l1', name: 'סדינים, ציפות, כריות', qty: '6 סטים', note: 'לארוז בצ\'ימידנים רכים' },
+                      { id: 'g_l2', name: 'שמיכות פליז/מעבר', qty: '6 יח\'', note: 'קר בלילות באוסטריה' },
+                  ]},
+                  { category: 'שבת וכשרות', items: [
+                      { id: 'g_k1', name: 'כלים (צלחות/כוסות/סכו"ם)', qty: 'ל-6 איש', note: 'פלסטיק קשיח/רב פעמי' },
+                      { id: 'g_k2', name: 'סירים ומחבתות', qty: '2-3', note: 'מוטבלים מהבית' },
+                      { id: 'g_k3', name: 'פלטת שבת', qty: '1', note: 'לוודא תאימות לחשמל בקרוואן' },
+                      { id: 'g_k4', name: 'מיחם/תרמוס', qty: '1' },
+                      { id: 'g_k5', name: 'ערכת שבת', qty: 'ערכה 1', note: 'נרונים, הבדלה, קידוש, כיסוי חלה' },
+                      { id: 'g_k6', name: 'עזרי מטבח', qty: 'ערכה 1', note: 'סכין חיתוך, קרש, קופסאות, פותחן' },
+                  ]},
+                  { category: 'עזרה ראשונה ותרופות', items: [
+                      { id: 'g_m1', name: 'תרופות מרשם', qty: 'ל-22 ימים', note: 'מלאי לכל התקופה' },
+                      { id: 'g_m2', name: 'משככי כאבים/חום', qty: 'מלאי', note: 'למבוגרים + סירופ/נרות ליובל' },
+                      { id: 'g_m3', name: 'כדורים נגד בחילות', qty: 'חבילה', note: 'קריטי לדולומיטים/אוסטריה' },
+                      { id: 'g_m4', name: 'ערכת חובש', qty: 'ערכה', note: 'פלסטרים, חיטוי, אלטוש, קרם הגנה' },
+                  ]},
+                  { category: 'טכנולוגיה ומסמכים', items: [
+                      { id: 'g_t1', name: 'דרכונים ורישיון נהיגה בינ"ל', qty: 'לכולם', note: 'חובה ל-22/6 למילאנו' },
+                      { id: 'g_t2', name: 'מטענים ניידים וכבלים', qty: 'מספר יח\'' },
+                      { id: 'g_t3', name: 'מתאמי חשמל', qty: '3-4' },
+                  ]}
+              ]}
+        ];
+
+        const colorMap = {
+            blue: { bg: 'bg-blue-100', text: 'text-blue-800', tabActive: 'bg-blue-600 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-blue-50', check: 'text-blue-600', ring: 'focus:ring-blue-500' },
+            purple: { bg: 'bg-purple-100', text: 'text-purple-800', tabActive: 'bg-purple-600 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-purple-50', check: 'text-purple-600', ring: 'focus:ring-purple-500' },
+            green: { bg: 'bg-emerald-100', text: 'text-emerald-800', tabActive: 'bg-emerald-600 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-emerald-50', check: 'text-emerald-600', ring: 'focus:ring-emerald-500' },
+            orange: { bg: 'bg-orange-100', text: 'text-orange-800', tabActive: 'bg-orange-500 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-orange-50', check: 'text-orange-500', ring: 'focus:ring-orange-500' },
+            pink: { bg: 'bg-pink-100', text: 'text-pink-800', tabActive: 'bg-pink-500 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-pink-50', check: 'text-pink-500', ring: 'focus:ring-pink-500' },
+            yellow: { bg: 'bg-amber-100', text: 'text-amber-800', tabActive: 'bg-amber-500 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-amber-50', check: 'text-amber-500', ring: 'focus:ring-amber-500' },
+            slate: { bg: 'bg-slate-200', text: 'text-slate-800', tabActive: 'bg-slate-700 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-slate-100', check: 'text-slate-700', ring: 'focus:ring-slate-500' },
+    };
+
+    // ==========================================
+    //  הגדרות Firebase - הדבק את המפתח שלך כאן!
+    // ==========================================
+    const firebaseConfig = {
+        apiKey: "הדבק_כאן_את_ה_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        // שים לב! חובה לוודא שיש לך כאן את שורת ה-databaseURL כדי שזה יעבוד עם Realtime Database
+        databaseURL: "https://YOUR_PROJECT-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    // אתחול Firebase רק אם הוא טרם אותחל
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    // יצירת משתנה גישה למסד הנתונים (Realtime Database)
+    const db = firebase.database();
+
+    function App() {
+        const [activeTab, setActiveTab] = React.useState(tabsData[0].id);
+        const [checkedItems, setCheckedItems] = React.useState({});
+        const [isSyncing, setIsSyncing] = React.useState(true);
+        const [showConfirmReset, setShowConfirmReset] = React.useState(false);
+
+        // התחברות למסד הנתונים בענן (Firebase) במקום לאחסון המקומי
+        React.useEffect(() => {
+            const itemsRef = db.ref('caravanTrip/checkedItems');
+            
+            // on() מאזין לכל שינוי שקורה בענן (גם ממכשירים אחרים) ומושך אותו מיידית
+            itemsRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                setCheckedItems(data || {});
+                setIsSyncing(false);
+            });
+
+            // ניקוי ההאזנה בעת סגירת האפליקציה
+            return () => itemsRef.off();
+        }, []);
+
+        const activeData = tabsData.find(t => t.id === activeTab);
+        const theme = colorMap[activeData.color];
+
+        const handleCheck = (itemId) => {
+            const fullId = `${activeTab}_${itemId}`;
+            const newValue = !checkedItems[fullId];
+            
+            // 1. עדכון אופטימי - קודם מעדכנים את המסך שלנו שירגיש מהיר
+            setCheckedItems(prev => ({
+                ...prev,
+                [fullId]: newValue
+            }));
+
+            // 2. שליחת העדכון לענן כדי שכל השאר יראו
+            db.ref(`caravanTrip/checkedItems/${fullId}`).set(newValue);
+        };
+
+        const calculateProgress = (tabId) => {
+                const tab = tabsData.find(t => t.id === tabId);
+                let total = 0;
+                let checked = 0;
+                tab.categories.forEach(cat => {
+                    cat.items.forEach(item => {
+                        total++;
+                        if (checkedItems[`${tabId}_${item.id}`]) checked++;
+                    });
+                });
+                return total === 0 ? 0 : Math.round((checked / total) * 100);
+            };
+
+            return (
+            <div className="max-w-4xl mx-auto p-4 md:p-6 mb-16">
+                <header className="text-center mb-8">
+                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2">🚐 רשימת אריזה אינטראקטיבית</h1>
+                    <p className="text-slate-500 text-lg mb-4">טיול קרוואנים: איטליה, אוסטריה, קרואטיה (18.6 - 9.7)</p>
+                    
+                    {/* חיווי סטטוס התחברות לענן */}
+                    {isSyncing ? (
+                        <span className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-800 text-sm font-semibold rounded-full shadow-sm">
+                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            מסתנכרן עם הענן...
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-semibold rounded-full shadow-sm">
+                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                            מחובר ומסונכרן
+                        </span>
+                    )}
+                </header>
+
+                {/* Tabs Navigation */}
+                    <div className="flex overflow-x-auto hide-scrollbar space-x-2 space-x-reverse mb-6 pb-2">
+                        {tabsData.map(tab => {
+                            const tTheme = colorMap[tab.color];
+                            const isActive = activeTab === tab.id;
+                            const progress = calculateProgress(tab.id);
+                            
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex-shrink-0 px-5 py-3 rounded-2xl font-bold transition-all duration-200 shadow-sm border border-gray-100 flex flex-col items-center gap-1 ${isActive ? tTheme.tabActive + ' shadow-md scale-105' : tTheme.tabInactive}`}
+                                >
+                                    <span className="text-2xl">{tab.icon}</span>
+                                    <span>{tab.name}</span>
+                                    {/* Progress indicator dot/bar */}
+                                    <div className="w-full h-1.5 bg-black/10 rounded-full mt-1 overflow-hidden">
+                                        <div className="h-full bg-white/80 rounded-full" style={{width: `${progress}%`}}></div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Active Content Area */}
+                    <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 p-1">
+                        <div className={`p-4 md:p-6 ${theme.bg} bg-opacity-20 rounded-2xl`}>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className={`text-2xl font-bold ${theme.text} flex items-center gap-2`}>
+                                    <span className="text-3xl">{activeData.icon}</span>
+                                    הציוד של {activeData.name}
+                                </h2>
+                                <span className={`font-semibold bg-white px-3 py-1 rounded-full text-sm shadow-sm ${theme.text}`}>
+                                    {calculateProgress(activeTab)}% נארז
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                {activeData.categories.map((cat, idx) => (
+                                    <div key={idx} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-50">
+                                        <h3 className={`text-lg font-bold mb-4 border-b-2 pb-2 ${theme.text}`} style={{borderColor: 'currentColor'}}>
+                                            {cat.category}
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {cat.items.map(item => {
+                                                const fullId = `${activeTab}_${item.id}`;
+                                                const isChecked = !!checkedItems[fullId];
+                                                
+                                                return (
+                                                    <label key={item.id} className="flex items-start gap-3 cursor-pointer group">
+                                                        <div className="relative flex items-center pt-1">
+                                                            <input 
+                                                                type="checkbox" 
+                                                                className={`peer sr-only checkbox-custom`}
+                                                                checked={isChecked}
+                                                                onChange={() => handleCheck(item.id)}
+                                                            />
+                                                            <div className={`w-6 h-6 rounded-md border-2 border-gray-300 bg-white transition-colors peer-checked:${theme.tabActive.split(' ')[0]} peer-checked:border-transparent flex items-center justify-center`}>
+                                                                <svg className={`w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div className={`flex-1 transition-colors ${isChecked ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                                                            <div className="flex justify-between items-start">
+                                                                <span className="font-semibold text-[15px]">{item.name}</span>
+                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-600 mr-2 shrink-0 ${isChecked ? 'opacity-50' : ''}`}>
+                                                                    {item.qty}
+                                                                </span>
+                                                            </div>
+                                                            {item.note && (
+                                                                <div className={`text-sm mt-0.5 ${isChecked ? 'text-gray-300' : 'text-gray-500'}`}>
+                                                                    {item.note}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 text-center flex flex-col items-center gap-3">
+                        {!showConfirmReset ? (
+                            <button 
+                                onClick={() => setShowConfirmReset(true)}
+                                className="text-sm text-red-500 hover:text-red-700 underline font-semibold transition-colors"
+                            >
+                                איפוס כל הרשימות (מחיקת V לכולם)
+                            </button>
+                        ) : (
+                            <div className="bg-red-50 p-4 md:p-5 rounded-2xl border border-red-200 shadow-sm">
+                                <p className="text-red-800 font-bold mb-3">האם אתה בטוח? הפעולה תמחק את הסימונים בכל המכשירים!</p>
+                                <div className="flex gap-3 justify-center">
+                                    <button 
+                                        onClick={() => {
+                                            // איפוס מוחלט של הענן!
+                                            db.ref('caravanTrip/checkedItems').set({});
+                                            setShowConfirmReset(false);
+                                        }}
+                                        className="bg-red-600 text-white px-5 py-2 rounded-xl font-bold hover:bg-red-700 shadow-sm transition-all"
+                                    >
+                                        כן, מחק הכל
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowConfirmReset(false)}
+                                        className="bg-white text-gray-700 px-5 py-2 rounded-xl font-bold border border-gray-300 hover:bg-gray-50 transition-all"
+                                    >
+                                        ביטול
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
