@@ -1,102 +1,104 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>רשימת אריזה - משפחת קרוואנים</title>
-    <!-- Tailwind CSS -->
+    <title>טיול קרוואנים - משפחות פרידמן</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap');
-        body { font-family: 'Assistant', sans-serif; background-color: #f3f4f6; }
-        
-        /* Custom Scrollbar for tabs */
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .tab-active { border-bottom: 4px solid #3b82f6; color: #1d4ed8; font-weight: bold; background-color: #eff6ff;}
-        .tab-inactive { border-bottom: 4px solid transparent; color: #6b7280; }
-        
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Loader */
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle;}
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
-
-    <!-- Firebase v8 Compatibility SDKs -->
+    <!-- Firebase Libraries (v8 for simple HTML integration) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        .tab-active { border-bottom: 4px solid #4f46e5; color: #4f46e5; font-weight: bold; }
+        .tab-inactive { color: #6b7280; }
+        .item-row { transition: all 0.2s ease; }
+        .item-row:hover { background-color: #f9fafb; }
+        .packed-text { text-decoration: line-through; color: #9ca3af; }
+        /* Custom scrollbar for tabs */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Avatar styling */
+        .avatar-container { position: relative; display: inline-block; }
+        .avatar-img { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 3px solid #4f46e5; background-color: #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .avatar-edit-btn { position: absolute; bottom: 0; right: 0; background-color: #4f46e5; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: 2px solid white; }
+    </style>
 </head>
-<body class="text-gray-800">
+<body class="bg-gray-100 text-gray-800 pb-20 select-none">
 
-    <!-- מנגנון למניעת מסך לבן והצגת שגיאות -->
-    <div id="error-screen" class="hidden fixed inset-0 bg-red-50 p-6 z-50 overflow-y-auto">
-        <h1 class="text-2xl font-bold text-red-600 mb-4"><i class="fas fa-exclamation-triangle"></i> שגיאה באפליקציה</h1>
-        <p class="mb-4">קרתה תקלה שטוענת מסך לבן. להלן פרטי השגיאה (נא לצלם מסך):</p>
-        <pre id="error-details" class="bg-white p-4 rounded border text-sm text-left dir-ltr overflow-x-auto text-red-500"></pre>
-    </div>
-
-    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-lg flex flex-col relative">
-        
-        <!-- Header -->
-        <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-md sticky top-0 z-20">
-            <div class="flex justify-between items-center mb-2">
-                <h1 class="text-xl font-bold"><i class="fas fa-caravan mr-2"></i> טיול קרוואנים 2024</h1>
-                <button id="editToggleBtn" onclick="toggleEditMode()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full text-sm font-semibold transition">
+    <header class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-4 shadow-md sticky top-0 z-20">
+        <div class="flex justify-between items-center mb-2">
+            <h1 class="text-xl font-bold"><i class="fas fa-caravan mr-2"></i> קרוואנים 2026 - פרידמן</h1>
+            <div class="flex gap-2">
+                <button onclick="exportToExcel()" class="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded-full transition" title="ייצוא לאקסל"><i class="fas fa-file-excel"></i></button>
+                <button onclick="switchUser()" class="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded-full transition" title="החלף משתמש"><i class="fas fa-user"></i></button>
+                <button id="editToggleBtn" onclick="toggleEditMode()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full text-sm font-semibold transition" style="display:none;">
                     <i class="fas fa-pen"></i> עריכה
                 </button>
             </div>
-            <div class="flex justify-between items-center text-sm">
-                <span id="sync-status"><i class="loader mr-1"></i> מתחבר לענן...</span>
-                <span id="total-progress-text">התקדמות: 0%</span>
-            </div>
-            <!-- Progress Bar -->
-            <div class="w-full bg-blue-900/50 rounded-full h-2 mt-2">
-                <div id="total-progress-bar" class="bg-green-400 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-        </header>
+        </div>
+        <div class="flex justify-between items-center text-sm mb-1">
+            <span id="sync-status" class="text-blue-200"><i class="fas fa-sync fa-spin mr-1"></i> מתחבר לענן...</span>
+            <span id="total-progress-text" class="font-bold">התקדמות כללית: 0%</span>
+        </div>
+        <div class="w-full bg-indigo-900 rounded-full h-2.5">
+            <div id="total-progress-bar" class="bg-green-400 h-2.5 rounded-full" style="width: 0%"></div>
+        </div>
+    </header>
 
-        <!-- Custom Modal instead of alert/confirm -->
-        <div id="custom-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center fade-in">
-            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-11/12 text-center">
-                <h3 id="modal-title" class="text-lg font-bold mb-2"></h3>
-                <p id="modal-message" class="text-gray-600 mb-6"></p>
-                <div class="flex justify-center gap-3">
-                    <button id="modal-cancel" class="px-4 py-2 bg-gray-200 rounded-lg font-semibold hover:bg-gray-300 transition">ביטול</button>
-                    <button id="modal-confirm" class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">אישור</button>
-                </div>
+    <!-- Tabs Container -->
+    <nav id="tabs-container" class="flex overflow-x-auto hide-scrollbar bg-white shadow-sm border-b z-10 sticky top-[90px] px-2 py-1">
+        <!-- Tabs will be generated here -->
+    </nav>
+
+    <!-- Avatar Section -->
+    <div class="flex justify-center mt-4 mb-2">
+        <div class="avatar-container" onclick="document.getElementById('avatar-upload').click()">
+            <img id="current-avatar" class="avatar-img" src="https://ui-avatars.com/api/?name=User&background=random" alt="Avatar">
+            <div class="avatar-edit-btn"><i class="fas fa-camera"></i></div>
+            <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="handleAvatarUpload(event)">
+        </div>
+    </div>
+    <div class="text-center mb-4">
+        <h2 id="current-person-title" class="text-xl font-bold text-gray-700"></h2>
+    </div>
+
+    <!-- Main Content Area -->
+    <main id="app-content" class="p-4 max-w-3xl mx-auto">
+        <div class="text-center mt-10">
+            <i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
+            <p class="mt-4 text-gray-600">טוען נתונים מהענן...</p>
+        </div>
+    </main>
+
+    <!-- Custom Modal Overlay -->
+    <div id="custom-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 transform transition-all">
+            <h3 id="modal-title" class="text-lg font-bold mb-2 text-gray-800"></h3>
+            <p id="modal-message" class="text-gray-600 mb-6"></p>
+            <div class="flex justify-end gap-3">
+                <button id="modal-cancel-btn" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg hidden">ביטול</button>
+                <button id="modal-ok-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">אישור</button>
             </div>
         </div>
+    </div>
 
-        <!-- Tabs -->
-        <div id="tabs-container" class="flex overflow-x-auto hide-scroll bg-white shadow-sm border-b sticky top-[92px] z-10">
-            <!-- Tabs will be injected here -->
+    <!-- User Selection Modal -->
+    <div id="user-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex flex-col items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm text-center">
+            <h2 class="text-2xl font-bold mb-2 text-blue-600"><i class="fas fa-hand-wave"></i> שלום!</h2>
+            <p class="text-gray-600 mb-6">מי אורז/ת עכשיו?</p>
+            <select id="user-select" class="w-full p-3 border rounded-lg mb-6 text-lg bg-gray-50 focus:ring-2 focus:ring-blue-500">
+                <!-- Options populated by JS -->
+            </select>
+            <button onclick="saveUser()" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold text-lg hover:bg-blue-700 transition shadow-md">כניסה למערכת</button>
         </div>
-
-        <!-- Content Area -->
-        <div id="content-container" class="flex-1 p-4 pb-20 bg-gray-50 overflow-y-auto">
-            <div id="loader-screen" class="text-center mt-20 text-gray-400">
-                <i class="loader border-gray-300 border-t-blue-500 w-10 h-10 mb-4"></i>
-                <p>טוען רשימות מהענן...</p>
-            </div>
-            <div id="lists-wrapper" class="hidden"></div>
-        </div>
-
     </div>
 
     <script>
-        // תפיסת שגיאות גלובלית - מונע מסך לבן!
-        window.onerror = function(msg, url, line, col, error) {
-            document.getElementById('error-screen').classList.remove('hidden');
-            document.getElementById('app').classList.add('hidden');
-            document.getElementById('error-details').innerText = `Error: ${msg}\nLine: ${line}\nCol: ${col}`;
-            return false;
-        };
-
         // ==========================================
         //  הגדרות Firebase
         // ==========================================
@@ -111,319 +113,520 @@
             databaseURL: "https://tiyul-f886a-default-rtdb.europe-west1.firebasedatabase.app" 
         };
 
-        let database;
-        try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            database = firebase.database();
-        } catch (e) {
-            console.error("Firebase init error:", e);
-            throw new Error("שגיאה בהתחברות למסד הנתונים: " + e.message);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
+        const db = firebase.database();
 
-        // ==========================================
-        //  מצב אפליקציה ונתונים
-        // ==========================================
-        let appData = {};
-        let currentTab = "יוני";
+        // הגדרת המשפחות והמשתתפים
+        const people = [
+            "יוני", "חנה", "ליאור (16)", "אייל (13)", "הילה (12)", "יובל (2)", 
+            "ציוד כללי פרידמן משמר", 
+            "עוזיאל", "שרונה", "להבה", "אליה", "דביר", "הלל", 
+            "ציוד כללי פרידמן אדורה", 
+            "ציוד כללי משותף"
+        ];
+        
+        let appData = { items: {}, avatars: {} };
+        let currentUser = null;
+        let currentTab = people[0];
         let isEditMode = false;
-        const dbRef = database.ref('packing_lists');
+        let isDataLoaded = false;
 
-        const people = ["יוני", "חנה", "ליאור (16)", "אייל (13)", "הילה (12)", "יובל (2)", "ציוד כללי"];
-        const icons = {
-            "יוני": "👨", "חנה": "👩", "ליאור (16)": "👦", "אייל (13)": "👦", 
-            "הילה (12)": "👧", "יובל (2)": "👶", "ציוד כללי": "🧳"
-        };
+        // חיווי טעינה
+        const syncStatus = document.getElementById('sync-status');
 
-        // יצירת נתוני בסיס ראשוניים במידה והמסד ריק
-        function createDefaultData() {
-            const data = {};
-            const standardCategories = ["ביגוד יומיום", "ביגוד חם (לאוסטריה)", "ביגוד שבת", "הנעלה", "בריכה וים", "היגיינה ורחצה"];
-            
-            const adultBase = [
-                { id: "i1", name: "חולצות קצרות", amount: "8", note: "", category: "ביגוד יומיום", packed: false },
-                { id: "i2", name: "מכנסיים קצרים", amount: "5", note: "", category: "ביגוד יומיום", packed: false },
-                { id: "i3", name: "מכנסיים ארוכים קלים", amount: "3", note: "", category: "ביגוד יומיום", packed: false },
-                { id: "i4", name: "לבנים וגרביים", amount: "10", note: "", category: "ביגוד יומיום", packed: false },
-                { id: "i5", name: "מעיל פליז / סופטשל", amount: "1", note: "לפסגות", category: "ביגוד חם (לאוסטריה)", packed: false },
-                { id: "i6", name: "חולצות ארוכות (בסיס)", amount: "2", note: "שיטת הבצל", category: "ביגוד חם (לאוסטריה)", packed: false },
-                { id: "i7", name: "כובע גרב וכפפות", amount: "1", note: "", category: "ביגוד חם (לאוסטריה)", packed: false },
-                { id: "i8", name: "נעלי הליכה סגורות", amount: "1", note: "לטיולים", category: "הנעלה", packed: false },
-                { id: "i9", name: "כפכפים", amount: "1", note: "למקלחות", category: "הנעלה", packed: false },
-                { id: "i10", name: "בגדי ים", amount: "2", note: "", category: "בריכה וים", packed: false },
-                { id: "i11", name: "תיק רחצה אישי", amount: "1", note: "שמפו, מברשת", category: "היגיינה ורחצה", packed: false },
-                { id: "i12", name: "מגבת רחצה", amount: "1", note: "מיקרופייבר", category: "היגיינה ורחצה", packed: false }
-            ];
-
-            people.forEach(person => {
-                data[person] = {};
-                let itemsList = [...adultBase.map(item => ({...item, id: Math.random().toString(36).substr(2, 9)}))];
+        db.ref('/').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // העברת נתונים אוטומטית אם יש לשונית ישנה
+                if (data.items && data.items["ציוד כללי (לכולם)"]) {
+                    data.items["ציוד כללי פרידמן משמר"] = data.items["ציוד כללי (לכולם)"];
+                    data.items["ציוד כללי (לכולם)"] = null; // מחיקת הישן
+                    db.ref('items').set(data.items);
+                    return; // הפונקציה תיקרא שוב אוטומטית עם הנתונים המעודכנים
+                }
                 
-                // התאמות אישיות
-                if(person === "יוני" || person.includes("ליאור") || person.includes("אייל")) {
-                    itemsList.push({ id: Math.random().toString(36).substr(2,9), name: "חולצות מכופתרות", amount: "2", note: "לשבת", category: "ביגוד שבת", packed: false });
-                }
-                if(person === "חנה" || person.includes("הילה")) {
-                    itemsList.push({ id: Math.random().toString(36).substr(2,9), name: "שמלות/חצאיות", amount: "2", note: "לשבת", category: "ביגוד שבת", packed: false });
-                }
-                if(person === "יובל (2)") {
-                    itemsList = [
-                        { id: "y1", name: "חולצות קצרות / גוף", amount: "10", note: "", category: "ביגוד יומיום", packed: false },
-                        { id: "y2", name: "מעיל פליז", amount: "2", note: "חובה", category: "ביגוד חם (לאוסטריה)", packed: false },
-                        { id: "y3", name: "חיתולים", amount: "1 חבילה", note: "להשלים בסופר", category: "ציוד תינוקות", packed: false },
-                        { id: "y4", name: "מגבונים", amount: "5 חב'", note: "", category: "ציוד תינוקות", packed: false },
-                        { id: "y5", name: "בקבוקים", amount: "2", note: "", category: "ציוד תינוקות", packed: false },
-                        { id: "y6", name: "מנשא גב / טיולון", amount: "1", note: "חובה לטיולים", category: "ציוד תינוקות", packed: false },
-                    ];
-                }
-                if(person === "ציוד כללי") {
-                    itemsList = [
-                        { id: "g1", name: "סדינים וציפות", amount: "6 סטים", note: "בצ'ימידנים", category: "לינה בקרוואן", packed: false },
-                        { id: "g2", name: "שמיכות פליז", amount: "6", note: "קר בלילות", category: "לינה בקרוואן", packed: false },
-                        { id: "g3", name: "כלים חד/רב פעמי", amount: "ל-6", note: "חלבי ובשרי", category: "שבת וכשרות", packed: false },
-                        { id: "g4", name: "סירים", amount: "2-3", note: "מוטבלים", category: "שבת וכשרות", packed: false },
-                        { id: "g5", name: "פלטת שבת", amount: "1", note: "לבדוק ממיר מתח", category: "שבת וכשרות", packed: false },
-                        { id: "g6", name: "נרונים והבדלה", amount: "1", note: "ל-3 שבתות", category: "שבת וכשרות", packed: false },
-                        { id: "g7", name: "תרופות מרשם", amount: "ל-22 יום", note: "", category: "עזרה ראשונה", packed: false },
-                        { id: "g8", name: "כדורים נגד בחילות", amount: "1", note: "לכבישים מפותלים", category: "עזרה ראשונה", packed: false },
-                        { id: "g9", name: "דרכונים", amount: "לכולם", note: "", category: "טכנולוגיה ומסמכים", packed: false },
-                        { id: "g10", name: "מתאמי חשמל אירופה", amount: "3", note: "", category: "טכנולוגיה ומסמכים", packed: false }
-                    ];
-                }
+                appData.items = data.items || {};
+                appData.avatars = data.avatars || {};
+            } else {
+                appData = { items: {}, avatars: {} };
+                generateInitialData();
+            }
 
-                // המרה למבנה של אובייקט (עבור Firebase)
-                itemsList.forEach(item => {
-                    data[person][item.id] = item;
-                });
-            });
-            return data;
+            syncStatus.innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מסונכרן';
+            isDataLoaded = true;
+            checkUserAndRender();
+        }, (error) => {
+            syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> שגיאת חיבור';
+            showModal('שגיאה', 'לא ניתן להתחבר לענן. בדקו חיבור לאינטרנט.');
+        });
+
+        function showModal(title, message, showCancel = false, onOk = null) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            const modal = document.getElementById('custom-modal');
+            const cancelBtn = document.getElementById('modal-cancel-btn');
+            const okBtn = document.getElementById('modal-ok-btn');
+            
+            cancelBtn.style.display = showCancel ? 'block' : 'none';
+            
+            // Remove old listeners to prevent multiple fires
+            const newOkBtn = okBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            newOkBtn.onclick = () => {
+                modal.classList.add('hidden');
+                if (onOk) onOk();
+            };
+            
+            newCancelBtn.onclick = () => {
+                modal.classList.add('hidden');
+            };
+
+            modal.classList.remove('hidden');
         }
 
-        // האזנה לשינויים ב-Firebase
-        dbRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            document.getElementById('loader-screen').classList.add('hidden');
-            document.getElementById('lists-wrapper').classList.remove('hidden');
-            document.getElementById('sync-status').innerHTML = `<i class="fas fa-cloud-check text-green-300 mr-1"></i> מסונכרן`;
-            
-            if (!data) {
-                // מסד ריק - נטעין נתוני ברירת מחדל
-                const defaultData = createDefaultData();
-                dbRef.set(defaultData);
+        function checkUserAndRender() {
+            currentUser = localStorage.getItem('caravanUser');
+            if (!currentUser) {
+                showUserModal();
             } else {
-                appData = data;
+                const selectBtn = document.getElementById('editToggleBtn');
+                // חנה או שרונה יכולות לערוך לכולם. השאר רק לעצמם ולציוד הכללי
+                if (currentUser === 'חנה' || currentUser === 'שרונה' || currentTab === currentUser || currentTab.includes('ציוד כללי')) {
+                    selectBtn.style.display = 'block';
+                } else {
+                    selectBtn.style.display = 'none';
+                    isEditMode = false; 
+                }
                 renderTabs();
                 renderContent();
                 updateTotalProgress();
             }
-        }, (error) => {
-            console.error("Firebase read error: ", error);
-            document.getElementById('sync-status').innerHTML = `<i class="fas fa-wifi text-red-300 mr-1"></i> שגיאת רשת`;
-        });
+        }
+
+        function showUserModal() {
+            const select = document.getElementById('user-select');
+            select.innerHTML = '';
+            people.forEach(person => {
+                // אל תאפשר לבחור "ציוד כללי" כמשתמש
+                if (!person.includes('ציוד כללי')) {
+                    select.innerHTML += `<option value="${person}">${person}</option>`;
+                }
+            });
+            document.getElementById('user-modal').classList.remove('hidden');
+        }
+
+        function saveUser() {
+            const select = document.getElementById('user-select');
+            currentUser = select.value;
+            localStorage.setItem('caravanUser', currentUser);
+            currentTab = currentUser;
+            document.getElementById('user-modal').classList.add('hidden');
+            checkUserAndRender();
+        }
+
+        function switchUser() {
+            localStorage.removeItem('caravanUser');
+            showUserModal();
+        }
 
         function renderTabs() {
             const container = document.getElementById('tabs-container');
             container.innerHTML = '';
+
             people.forEach(person => {
-                const btn = document.createElement('button');
-                btn.className = `flex-shrink-0 px-4 py-3 text-sm transition-colors whitespace-nowrap outline-none ${currentTab === person ? 'tab-active' : 'tab-inactive'}`;
+                const isActive = person === currentTab;
+                const tabClass = isActive ? 'tab-active' : 'tab-inactive';
                 
-                // חישוב התקדמות אישית לטאב
+                // חישוב התקדמות אישית ללשונית
                 let total = 0, packed = 0;
-                if(appData[person]) {
-                    Object.values(appData[person]).forEach(item => {
+                if(appData.items[person]) {
+                    Object.values(appData.items[person]).forEach(item => {
                         total++;
                         if(item.packed) packed++;
                     });
                 }
-                const isDone = total > 0 && total === packed;
-                const checkMark = isDone ? `<i class="fas fa-check-circle text-green-500 ml-1"></i>` : '';
+                const progressText = total > 0 ? `(${packed}/${total})` : '';
+                const progressColor = (packed === total && total > 0) ? 'text-green-500' : '';
 
-                btn.innerHTML = `${icons[person]} ${person} ${checkMark}`;
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-3 whitespace-nowrap text-sm flex-shrink-0 transition-colors ${tabClass}`;
+                btn.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <span>${person}</span>
+                        <span class="text-xs ${progressColor}">${progressText}</span>
+                    </div>
+                `;
                 btn.onclick = () => {
                     currentTab = person;
-                    renderTabs();
-                    renderContent();
+                    checkUserAndRender();
                 };
                 container.appendChild(btn);
             });
         }
 
-        function renderContent() {
-            const wrapper = document.getElementById('lists-wrapper');
-            wrapper.innerHTML = '';
-            wrapper.className = "fade-in";
+        function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-            const personData = appData[currentTab] || {};
-            
-            // קיבוץ לפי קטגוריות
-            const categories = {};
-            Object.values(personData).forEach(item => {
-                if(!categories[item.category]) categories[item.category] = [];
-                categories[item.category].push(item);
-            });
-
-            // אם אין קטגוריות (רשימה ריקה) נציג קטגוריה כללית עבור הוספה
-            if(Object.keys(categories).length === 0 && isEditMode) {
-                categories["חדש"] = [];
+            // בדיקה שזה תמונה
+            if (!file.type.startsWith('image/')) {
+                showModal('שגיאה', 'אנא בחרו קובץ תמונה חוקי.');
+                return;
             }
 
-            Object.keys(categories).forEach(category => {
-                const catDiv = document.createElement('div');
-                catDiv.className = "mb-6 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden";
-                
-                // כותרת קטגוריה
-                const catHeader = document.createElement('div');
-                catHeader.className = "bg-gray-50 px-4 py-2 border-b border-gray-100 text-sm font-bold text-gray-700";
-                catHeader.innerText = category;
-                catDiv.appendChild(catHeader);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // כיווץ התמונה למקסימום 150x150 כדי לא להעמיס על הפיירבייס
+                    const canvas = document.createElement('canvas');
+                    const MAX_SIZE = 150;
+                    let width = img.width;
+                    let height = img.height;
 
-                // פריטים
-                categories[category].forEach(item => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = `flex items-center justify-between p-4 border-b border-gray-50 transition-colors ${item.packed ? 'bg-green-50/50' : 'hover:bg-gray-50'}`;
-                    
-                    const leftSide = document.createElement('div');
-                    leftSide.className = "flex items-center gap-3 flex-1";
-                    
-                    // כפתור מחיקה במצב עריכה או צ'קבוקס
-                    if (isEditMode) {
-                        const delBtn = document.createElement('button');
-                        delBtn.className = "text-red-400 hover:text-red-600 p-2 -ml-2 transition";
-                        delBtn.innerHTML = `<i class="fas fa-trash-alt"></i>`;
-                        delBtn.onclick = () => confirmDelete(currentTab, item.id, item.name);
-                        leftSide.appendChild(delBtn);
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
                     } else {
-                        const checkbox = document.createElement('div');
-                        checkbox.className = `w-6 h-6 rounded border-2 flex items-center justify-center cursor-pointer transition-colors ${item.packed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`;
-                        checkbox.innerHTML = item.packed ? `<i class="fas fa-check text-xs"></i>` : '';
-                        checkbox.onclick = () => togglePacked(currentTab, item.id, item.packed);
-                        leftSide.appendChild(checkbox);
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
                     }
 
-                    const textDiv = document.createElement('div');
-                    textDiv.innerHTML = `<div class="font-semibold text-gray-800 ${item.packed && !isEditMode ? 'line-through text-gray-400' : ''}">${item.name}</div>
-                                         <div class="text-xs text-gray-500 mt-0.5"><span class="font-bold text-blue-600">${item.amount}</span> ${item.note ? '• ' + item.note : ''}</div>`;
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
                     
-                    leftSide.appendChild(textDiv);
-                    itemDiv.appendChild(leftSide);
-                    catDiv.appendChild(itemDiv);
+                    // המרה ל-Base64 באיכות בינונית
+                    const base64String = canvas.toDataURL('image/jpeg', 0.7);
+
+                    // שמירה לענן
+                    if (!appData.avatars) appData.avatars = {};
+                    appData.avatars[currentTab] = base64String;
+                    db.ref('avatars/' + currentTab).set(base64String).then(() => {
+                        document.getElementById('current-avatar').src = base64String;
+                    });
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function renderContent() {
+            const content = document.getElementById('app-content');
+            const personItems = appData.items[currentTab] || {};
+            
+            // Update Avatar View
+            const avatarImg = document.getElementById('current-avatar');
+            const titleElem = document.getElementById('current-person-title');
+            
+            if (appData.avatars && appData.avatars[currentTab]) {
+                avatarImg.src = appData.avatars[currentTab];
+            } else {
+                // דיפולט אווטאר
+                avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentTab)}&background=random&color=fff`;
+            }
+            titleElem.innerText = `הרשימה של ${currentTab}`;
+
+            // Group items by category
+            const grouped = {};
+            Object.keys(personItems).forEach(key => {
+                const item = personItems[key];
+                if (!grouped[item.category]) grouped[item.category] = [];
+                grouped[item.category].push({ id: key, ...item });
+            });
+
+            if (Object.keys(grouped).length === 0) {
+                let html = `<div class="text-center p-8 bg-white rounded-lg shadow"><p class="text-gray-500 mb-4">הרשימה ריקה.</p>`;
+                if(isEditMode) {
+                     html += `
+                     <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 class="font-bold mb-2">הוספת פריט ראשון</h4>
+                        <input type="text" id="new-cat-empty" placeholder="קטגוריה (למשל: ביגוד)" class="w-full p-2 border rounded mb-2 text-sm">
+                        <input type="text" id="new-name-empty" placeholder="שם הפריט" class="w-full p-2 border rounded mb-2 text-sm">
+                        <input type="text" id="new-amount-empty" placeholder="כמות" class="w-full p-2 border rounded mb-2 text-sm">
+                        <button onclick="addNewItemEmpty()" class="w-full bg-blue-600 text-white p-2 rounded text-sm font-bold">הוסף פריט</button>
+                     </div>`;
+                }
+                html += `</div>`;
+                content.innerHTML = html;
+                return;
+            }
+
+            let html = '';
+            for (const [category, items] of Object.entries(grouped)) {
+                html += `
+                <div class="bg-white rounded-xl shadow-sm mb-6 overflow-hidden border border-gray-100">
+                    <div class="bg-indigo-50 px-4 py-3 border-b border-indigo-100 flex justify-between items-center">
+                        <h3 class="font-bold text-indigo-800 text-lg">${category}</h3>
+                        <span class="text-xs bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full">${items.length} פריטים</span>
+                    </div>
+                    <ul class="divide-y divide-gray-100">
+                `;
+
+                items.forEach(item => {
+                    const checked = item.packed ? 'checked' : '';
+                    const textClass = item.packed ? 'packed-text' : 'text-gray-800';
+                    const bgClass = item.packed ? 'bg-gray-50' : '';
+                    
+                    html += `
+                    <li class="item-row p-4 flex justify-between items-center ${bgClass}">
+                        <div class="flex items-center gap-3 flex-1" onclick="toggleItem('${currentTab}', '${item.id}')">
+                            <input type="checkbox" ${checked} class="w-6 h-6 text-indigo-600 rounded focus:ring-indigo-500" onclick="event.stopPropagation(); toggleItem('${currentTab}', '${item.id}')">
+                            <div>
+                                <p class="font-semibold ${textClass} text-lg">${item.name}</p>
+                                <p class="text-xs text-gray-500 mt-1"><i class="fas fa-hashtag mr-1"></i>כמות: ${item.amount} ${item.note ? `| <i class="fas fa-info-circle mr-1"></i>${item.note}` : ''}</p>
+                            </div>
+                        </div>
+                    `;
+
+                    if (isEditMode) {
+                        html += `
+                        <div class="flex gap-2 mr-2">
+                            <button onclick="editItem('${currentTab}', '${item.id}')" class="text-blue-500 bg-blue-100 p-2 rounded-lg hover:bg-blue-200"><i class="fas fa-pen"></i></button>
+                            <button onclick="deleteItem('${currentTab}', '${item.id}')" class="text-red-500 bg-red-100 p-2 rounded-lg hover:bg-red-200"><i class="fas fa-trash"></i></button>
+                        </div>`;
+                    }
+                    html += `</li>`;
                 });
 
                 if (isEditMode) {
-                    const addForm = document.createElement('div');
-                    addForm.className = "p-3 bg-blue-50/50 border-t border-blue-100 flex gap-2 flex-col";
-                    addForm.innerHTML = `
-                        <div class="flex gap-2">
-                            <input type="text" id="new_name_${category.replace(/\s+/g, '')}" placeholder="שם הפריט" class="flex-1 p-2 border rounded text-sm outline-none focus:border-blue-400">
-                            <input type="text" id="new_amount_${category.replace(/\s+/g, '')}" placeholder="כמות" class="w-20 p-2 border rounded text-sm outline-none focus:border-blue-400">
+                    html += `
+                    <li class="p-4 bg-gray-50 border-t border-dashed border-gray-300">
+                        <div class="flex gap-2 flex-col sm:flex-row">
+                            <input type="text" id="new-name-${category}" placeholder="שם הפריט" class="flex-1 p-2 border rounded text-sm">
+                            <input type="text" id="new-amount-${category}" placeholder="כמות" class="w-full sm:w-20 p-2 border rounded text-sm">
+                            <input type="text" id="new-note-${category}" placeholder="הערה (לא חובה)" class="flex-1 p-2 border rounded text-sm">
+                            <button onclick="addNewItem('${currentTab}', '${category}')" class="bg-green-500 text-white px-4 py-2 rounded text-sm font-bold shadow hover:bg-green-600"><i class="fas fa-plus"></i></button>
                         </div>
-                        <div class="flex gap-2">
-                            <input type="text" id="new_note_${category.replace(/\s+/g, '')}" placeholder="הערה (אופציונלי)" class="flex-1 p-2 border rounded text-sm outline-none focus:border-blue-400">
-                            <button onclick="addNewItem('${currentTab}', '${category}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold shadow-sm hover:bg-blue-700"><i class="fas fa-plus"></i></button>
-                        </div>
-                    `;
-                    catDiv.appendChild(addForm);
+                    </li>`;
                 }
 
-                wrapper.appendChild(catDiv);
-            });
-            
-            // כפתור הוספת קטגוריה חדשה במצב עריכה
-            if (isEditMode) {
-                const newCatDiv = document.createElement('div');
-                newCatDiv.className = "mt-4 p-4 border-2 border-dashed border-gray-300 rounded-xl text-center cursor-pointer hover:bg-gray-100 text-gray-500 transition";
-                newCatDiv.innerHTML = `<i class="fas fa-plus-circle mr-1"></i> הוסף קטגוריה חדשה`;
-                newCatDiv.onclick = () => {
-                    const catName = prompt("שם הקטגוריה החדשה:");
-                    if(catName && catName.trim() !== "") {
-                        // Create a dummy item to establish category
-                        addNewItemDirectly(currentTab, catName, "פריט חדש", "1", "");
-                    }
-                };
-                wrapper.appendChild(newCatDiv);
+                html += `</ul></div>`;
             }
-        }
-
-        function togglePacked(person, itemId, currentState) {
-            dbRef.child(person).child(itemId).update({ packed: !currentState });
-        }
-
-        function addNewItem(person, category) {
-            const cleanCat = category.replace(/\s+/g, '');
-            const nameEl = document.getElementById(`new_name_${cleanCat}`);
-            const amountEl = document.getElementById(`new_amount_${cleanCat}`);
-            const noteEl = document.getElementById(`new_note_${cleanCat}`);
-            
-            if(!nameEl.value.trim()) return;
-
-            addNewItemDirectly(person, category, nameEl.value, amountEl.value || "1", noteEl.value);
-        }
-
-        function addNewItemDirectly(person, category, name, amount, note) {
-            const newItemRef = dbRef.child(person).push();
-            newItemRef.set({
-                id: newItemRef.key,
-                name: name.trim(),
-                amount: amount.trim(),
-                note: note.trim(),
-                category: category,
-                packed: false
-            });
-        }
-
-        // תחליף ל-confirm() באמצעות מודאל מותאם אישית
-        let deleteAction = null;
-        function confirmDelete(person, itemId, itemName) {
-            document.getElementById('modal-title').innerText = "מחיקת פריט";
-            document.getElementById('modal-message').innerText = `האם למחוק את "${itemName}" מכל המכשירים?`;
-            document.getElementById('custom-modal').classList.remove('hidden');
-            
-            deleteAction = () => {
-                dbRef.child(person).child(itemId).remove();
-                closeModal();
-            };
-        }
-
-        document.getElementById('modal-cancel').onclick = closeModal;
-        document.getElementById('modal-confirm').onclick = () => {
-            if(deleteAction) deleteAction();
-        };
-
-        function closeModal() {
-            document.getElementById('custom-modal').classList.add('hidden');
-            deleteAction = null;
+            content.innerHTML = html;
         }
 
         function toggleEditMode() {
             isEditMode = !isEditMode;
             const btn = document.getElementById('editToggleBtn');
-            if(isEditMode) {
-                btn.classList.replace('bg-white/20', 'bg-red-500');
-                btn.classList.add('text-white');
-                btn.innerHTML = `<i class="fas fa-check"></i> סיום`;
-            } else {
-                btn.classList.replace('bg-red-500', 'bg-white/20');
-                btn.classList.remove('text-white');
-                btn.innerHTML = `<i class="fas fa-pen"></i> עריכה`;
-            }
+            btn.innerHTML = isEditMode ? '<i class="fas fa-check"></i> סיום עריכה' : '<i class="fas fa-pen"></i> עריכה';
+            btn.classList.toggle('bg-red-500', isEditMode);
+            btn.classList.toggle('text-white', isEditMode);
             renderContent();
+        }
+
+        function toggleItem(person, itemId) {
+            if(isEditMode) return;
+            const currentState = appData.items[person][itemId].packed;
+            db.ref(`items/${person}/${itemId}/packed`).set(!currentState);
+        }
+
+        function deleteItem(person, itemId) {
+            showModal('מחיקת פריט', 'האם אתם בטוחים שברצונכם למחוק פריט זה?', true, () => {
+                db.ref(`items/${person}/${itemId}`).remove();
+            });
+        }
+
+        function addNewItem(person, category) {
+            const nameInput = document.getElementById(`new-name-${category}`);
+            const amountInput = document.getElementById(`new-amount-${category}`);
+            const noteInput = document.getElementById(`new-note-${category}`);
+            
+            if(!nameInput.value.trim()) {
+                showModal('שגיאה', 'חובה להזין שם פריט');
+                return;
+            }
+
+            const newItem = {
+                category: category,
+                name: nameInput.value.trim(),
+                amount: amountInput.value.trim() || "1",
+                note: noteInput.value.trim(),
+                packed: false
+            };
+
+            db.ref(`items/${person}`).push(newItem);
+        }
+
+        function addNewItemEmpty() {
+            const cat = document.getElementById('new-cat-empty').value.trim() || 'כללי';
+            const name = document.getElementById('new-name-empty').value.trim();
+            const amount = document.getElementById('new-amount-empty').value.trim() || "1";
+            
+            if(!name) {
+                showModal('שגיאה', 'חובה להזין שם פריט');
+                return;
+            }
+
+            const newItem = { category: cat, name: name, amount: amount, note: "", packed: false };
+            db.ref(`items/${currentTab}`).push(newItem);
+        }
+
+        function editItem(person, itemId) {
+            const item = appData.items[person][itemId];
+            const newName = prompt("ערוך שם פריט:", item.name);
+            if (newName === null) return; 
+            const newAmount = prompt("ערוך כמות:", item.amount);
+            if (newAmount === null) return;
+            const newNote = prompt("ערוך הערה:", item.note);
+            if (newNote === null) return;
+
+            const updates = {
+                name: newName.trim() || item.name,
+                amount: newAmount.trim() || item.amount,
+                note: newNote.trim()
+            };
+
+            db.ref(`items/${person}/${itemId}`).update(updates);
         }
 
         function updateTotalProgress() {
             let total = 0, packed = 0;
-            
-            Object.values(appData).forEach(personItems => {
-                Object.values(personItems).forEach(item => {
-                    total++;
-                    if(item.packed) packed++;
+            if(appData.items) {
+                Object.values(appData.items).forEach(personItems => {
+                    Object.values(personItems).forEach(item => {
+                        total++;
+                        if(item.packed) packed++;
+                    });
                 });
-            });
+            }
 
             const percent = total === 0 ? 0 : Math.round((packed / total) * 100);
             document.getElementById('total-progress-bar').style.width = `${percent}%`;
-            document.getElementById('total-progress-text').innerText = `התקדמות כללית: ${percent}%`;
+            document.getElementById('total-progress-text').innerText = `התקדמות כללית: ${percent}% (${packed}/${total})`;
+        }
+
+        function getBaseListForPerson(personName) {
+            let list = [
+                { category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8", note: "" },
+                { category: "ביגוד יומיום", name: "מכנסיים קצרים", amount: "5", note: "" },
+                { category: "ביגוד יומיום", name: "מכנסיים ארוכים", amount: "3", note: "" },
+                { category: "ביגוד יומיום", name: "לבנים / תחתונים", amount: "10", note: "" },
+                { category: "ביגוד יומיום", name: "גרביים", amount: "8", note: "" },
+                { category: "ביגוד יומיום", name: "פיג'מה", amount: "2", note: "" },
+                
+                { category: "ביגוד חם (לאוסטריה)", name: "מעיל פליז / סופטשל", amount: "1", note: "חובה לפסגות" },
+                { category: "ביגוד חם (לאוסטריה)", name: "חולצות ארוכות (בסיס)", amount: "2", note: "שיטת הבצל" },
+                { category: "ביגוד חם (לאוסטריה)", name: "כובע גרב וכפפות", amount: "1", note: "" },
+                
+                { category: "הנעלה", name: "נעלי הליכה / ספורט", amount: "1", note: "" },
+                { category: "הנעלה", name: "סנדלים נוחים", amount: "1", note: "" },
+                { category: "הנעלה", name: "כפכפים", amount: "1", note: "למקלחות ולבריכה" },
+                
+                { category: "בריכה וים", name: "בגדי ים", amount: "2", note: "" },
+                { category: "בריכה וים", name: "כובע שמש", amount: "1", note: "" },
+                
+                { category: "היגיינה ורחצה", name: "תיק רחצה אישי", amount: "1", note: "מברשת שיניים, דאודורנט" },
+                { category: "היגיינה ורחצה", name: "מגבת רחצה", amount: "1", note: "רצוי מיקרופייבר" },
+                { category: "היגיינה ורחצה", name: "מגבת בריכה", amount: "1", note: "" }
+            ];
+
+            // תוספות דת
+            if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור (16)", "אייל (13)"].includes(personName)) {
+                list.push({ category: "דת ורוח", name: "תפילין", amount: "1", note: "לא לשכוח!" });
+                list.push({ category: "דת ורוח", name: "כיפות", amount: "3", note: "" });
+            }
+            if (personName === "עוזיאל" || personName === "יוני") {
+                list.push({ category: "דת ורוח", name: "טלית", amount: "1", note: "" });
+            }
+
+            // תוספות בנות/נשים לשבת
+            if (["חנה", "שרונה", "הילה (12)", "להבה", "הלל", "יובל (2)"].includes(personName)) {
+                list.push({ category: "ביגוד שבת", name: "שמלות / חצאיות וחולצות", amount: "2", note: "ל-3 שבתות" });
+            } else {
+                list.push({ category: "ביגוד שבת", name: "חולצות מכופתרות", amount: "2", note: "ל-3 שבתות" });
+                list.push({ category: "ביגוד שבת", name: "מכנסיים חגיגיים", amount: "2", note: "" });
+            }
+
+            return list;
+        }
+
+        function generateInitialData() {
+            const initialData = {};
+            
+            people.forEach(person => {
+                if (person === "ציוד כללי פרידמן משמר" || person === "ציוד כללי פרידמן אדורה") {
+                    initialData[person] = [
+                        { category: "לינה בקרוואן", name: "סדינים ציפות וכריות", amount: "6 סטים", note: "לארוז בצ'ימידנים רכים" },
+                        { category: "לינה בקרוואן", name: "שמיכות פליז/מעבר", amount: "6 שמיכות", note: "קר בלילות בהרים" },
+                        { category: "שבת וכשרות", name: "כלים מפלסטיק קשיח", amount: "סט לכולם", note: "" },
+                        { category: "שבת וכשרות", name: "סירים ומחבתות", amount: "2-3", note: "מוטבלים מראש" },
+                        { category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לוודא תאימות מתח" },
+                        { category: "עזרה ראשונה", name: "תרופות מרשם ומשככי כאבים", amount: "1", note: "לכל הטיול" },
+                        { category: "מסמכים", name: "דרכונים ורישיון נהיגה בינלאומי", amount: "לכולם", note: "חובה לאיסוף הקרוואן" }
+                    ];
+                } else if (person === "ציוד כללי משותף") {
+                    initialData[person] = [
+                        { category: "פנאי", name: "משחק אליאס", amount: "1", note: "" },
+                        { category: "פנאי", name: "קלפים וטאקי", amount: "1", note: "" },
+                        { category: "אוכל משותף", name: "פקל קפה", amount: "1", note: "" }
+                    ];
+                } else if (person === "יובל (2)") {
+                    initialData[person] = [
+                        { category: "ציוד תינוקות", name: "חיתולים", amount: "1 חבילה", note: "להתחלה" },
+                        { category: "ציוד תינוקות", name: "מגבונים", amount: "5 חבילות", note: "" },
+                        { category: "ציוד תינוקות", name: "מנשא גב / טיולון", amount: "1", note: "חובה למסלולים" },
+                        { category: "ציוד תינוקות", name: "בקבוקים ומוצצים", amount: "מספר יחידות", note: "" }
+                    ];
+                } else {
+                    initialData[person] = getBaseListForPerson(person);
+                }
+            });
+
+            const parsedData = {};
+            for (const [person, itemsArray] of Object.entries(initialData)) {
+                parsedData[person] = {};
+                itemsArray.forEach((item, index) => {
+                    const id = `item_${Date.now()}_${index}`;
+                    parsedData[person][id] = { ...item, packed: false };
+                });
+            }
+
+            db.ref('items').set(parsedData);
+        }
+
+        function exportToExcel() {
+            if (!appData.items || Object.keys(appData.items).length === 0) {
+                showModal('שגיאה', 'אין נתונים לייצוא');
+                return;
+            }
+
+            let csvContent = "\uFEFF"; 
+            csvContent += "עבור,קטגוריה,פריט,כמות,הערות,נארז?\n";
+
+            people.forEach(person => {
+                if(appData.items[person]) {
+                    Object.values(appData.items[person]).forEach(item => {
+                        const name = (item.name || "").replace(/"/g, '""');
+                        const category = (item.category || "").replace(/"/g, '""');
+                        const amount = (item.amount || "").replace(/"/g, '""');
+                        const note = (item.note || "").replace(/"/g, '""');
+                        const packed = item.packed ? "כן" : "לא";
+
+                        csvContent += `"${person}","${category}","${name}","${amount}","${note}","${packed}"\n`;
+                    });
+                }
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "רשימת_אריזה_קרוואנים_2026.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
     </script>
