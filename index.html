@@ -184,43 +184,11 @@
             modal.classList.remove('hidden');
         }
 
-        function checkUserAndRender() {
-            currentUser = localStorage.getItem('caravanUser');
-            if (!currentUser) {
-                showUserModal();
-            } else {
-                // כולם יכולים לערוך לכולם!
-                document.getElementById('editToggleBtn').style.display = 'block';
-                
-                renderTabs();
-                renderContent();
-                updateTotalProgress();
-            }
-        }
-
-        function showUserModal() {
-            const select = document.getElementById('user-select');
-            select.innerHTML = '';
-            people.forEach(person => {
-                if (!person.includes('ציוד כללי')) {
-                    select.innerHTML += `<option value="${person}">${person}</option>`;
-                }
-            });
-            document.getElementById('user-modal').classList.remove('hidden');
-        }
-
-        function saveUser() {
-            const select = document.getElementById('user-select');
-            currentUser = select.value;
-            localStorage.setItem('caravanUser', currentUser);
-            currentTab = currentUser;
-            document.getElementById('user-modal').classList.add('hidden');
-            checkUserAndRender();
-        }
-
-        function switchUser() {
-            localStorage.removeItem('caravanUser');
-            showUserModal();
+        function renderApp() {
+            document.getElementById('editToggleBtn').style.display = 'block';
+            renderTabs();
+            renderContent();
+            updateTotalProgress();
         }
 
         function renderTabs() {
