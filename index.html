@@ -1,489 +1,432 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>רשימת אריזה - טיול קרוואנים</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>רשימת אריזה - משפחת קרוואנים</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap');
+        body { font-family: 'Assistant', sans-serif; background-color: #f3f4f6; }
+        
+        /* Custom Scrollbar for tabs */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .tab-active { border-bottom: 4px solid #3b82f6; color: #1d4ed8; font-weight: bold; background-color: #eff6ff;}
+        .tab-inactive { border-bottom: 4px solid transparent; color: #6b7280; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Loader */
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+
+    <!-- Firebase v8 Compatibility SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-    <style>
-        body { font-family: 'Heebo', sans-serif; background-color: #f3f4f6; }
-        .checkbox-custom:checked + div { text-decoration: line-through; color: #9ca3af; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="text-gray-800">
 
-    <script type="text/babel">
-        // נתונים משותפים לקיצור קוד
-        const generateAdultClothes = (isFemale, shabbatNote) => [
-            { category: 'ביגוד יומיום', items: [
-                { id: 'd1', name: 'חולצות קצרות', qty: '8' },
-                { id: 'd2', name: 'מכנסיים קצרים', qty: '5' },
-                { id: 'd3', name: 'מכנסיים ארוכים קלים', qty: '3' },
-                { id: 'd4', name: 'לבנים / תחתונים', qty: '10' },
-                { id: 'd5', name: 'זוגות גרביים', qty: '8' },
-                { id: 'd6', name: 'פיג\'מה / בגדי שינה', qty: '2' },
-            ]},
-            { category: 'ביגוד חם (אוסטריה)', items: [
-                { id: 'w1', name: 'מעיל פליז / סופטשל', qty: '1', note: 'חובה לפסגות' },
-                { id: 'w2', name: 'חולצות ארוכות דקות', qty: '2', note: 'שיטת הבצל' },
-                { id: 'w3', name: 'כובע גרב וכפפות', qty: '1' },
-            ]},
-            { category: 'ביגוד שבת', items: isFemale ? [
-                { id: 's1', name: 'שמלות / חצאיות וחולצות', qty: '2', note: shabbatNote },
-            ] : [
-                { id: 's1', name: 'חולצות מכופתרות', qty: '2', note: shabbatNote },
-                { id: 's2', name: 'מכנסיים חגיגיים', qty: '2' },
-            ]},
-            { category: 'הנעלה', items: [
-                { id: 'sh1', name: 'נעלי הליכה סגורות', qty: '1', note: 'לטיולים רגליים' },
-                { id: 'sh2', name: 'סנדלים נוחים', qty: '1' },
-                { id: 'sh3', name: 'כפכפים', qty: '1', note: 'למקלחות ובריכה' },
-            ]},
-            { category: 'מים ושמש', items: [
-                { id: 'sw1', name: 'בגדי ים', qty: '2', note: 'לווילה ולקרואטיה' },
-                { id: 'sw2', name: 'חולצת UV', qty: '1' },
-                { id: 'sw3', name: 'כובע שמש', qty: '1' },
-            ]},
-            { category: 'היגיינה', items: [
-                { id: 'h1', name: 'תיק רחצה אישי', qty: '1', note: 'שמפו, מברשת, דאודורנט' },
-                { id: 'h2', name: 'מגבת רחצה', qty: '1', note: 'מומלץ מיקרופייבר' },
-                { id: 'h3', name: 'מגבת פנים', qty: '1' },
-                { id: 'h4', name: 'מגבת בריכה/ים', qty: '1' },
-            ]}
-        ];
+    <!-- מנגנון למניעת מסך לבן והצגת שגיאות -->
+    <div id="error-screen" class="hidden fixed inset-0 bg-red-50 p-6 z-50 overflow-y-auto">
+        <h1 class="text-2xl font-bold text-red-600 mb-4"><i class="fas fa-exclamation-triangle"></i> שגיאה באפליקציה</h1>
+        <p class="mb-4">קרתה תקלה שטוענת מסך לבן. להלן פרטי השגיאה (נא לצלם מסך):</p>
+        <pre id="error-details" class="bg-white p-4 rounded border text-sm text-left dir-ltr overflow-x-auto text-red-500"></pre>
+    </div>
 
-        // שינוי שם המשתנה מ-tabsData ל-defaultTabsData
-        const defaultTabsData = [
-            { id: 'yoni', name: 'יוני', icon: '👨', color: 'blue',
-              categories: generateAdultClothes(false, 'ל-3 שבתות') },
-            { id: 'chana', name: 'חנה', icon: '👩', color: 'purple',
-              categories: generateAdultClothes(true, 'ל-3 שבתות') },
-            { id: 'lior', name: 'ליאור (16)', icon: '🧑', color: 'green',
-              categories: generateAdultClothes(false, 'ל-3 שבתות') },
-            { id: 'eyal', name: 'אייל (13)', icon: '👦', color: 'orange',
-              categories: generateAdultClothes(false, 'ל-3 שבתות') },
-            { id: 'hila', name: 'הילה (12)', icon: '👧', color: 'pink',
-              categories: generateAdultClothes(true, 'ל-3 שבתות') },
-            { id: 'yuval', name: 'יובל (2)', icon: '👶', color: 'yellow',
-              categories: [
-                  { category: 'ביגוד יומיום', items: [
-                      { id: 'y_d1', name: 'חולצות / בגדי גוף', qty: '10' },
-                      { id: 'y_d2', name: 'מכנסיים קצרים', qty: '8' },
-                      { id: 'y_d3', name: 'מכנסיים ארוכים', qty: '5' },
-                      { id: 'y_d4', name: 'תחתונים / גופיות תחתונות', qty: '12' },
-                      { id: 'y_d5', name: 'זוגות גרביים', qty: '10' },
-                      { id: 'y_d6', name: 'פיג\'מות / אוברול', qty: '3' },
-                  ]},
-                  { category: 'ביגוד חם (אוסטריה)', items: [
-                      { id: 'y_w1', name: 'מעיל פליז/סופטשל', qty: '2' },
-                      { id: 'y_w2', name: 'חולצות ארוכות (בסיס)', qty: '4' },
-                      { id: 'y_w3', name: 'כובע גרב וכפפות', qty: '1' },
-                  ]},
-                  { category: 'מים והנעלה', items: [
-                      { id: 'y_s1', name: 'בגדי ים', qty: '3' },
-                      { id: 'y_s2', name: 'חולצות UV', qty: '2' },
-                      { id: 'y_s3', name: 'כובע שמש', qty: '2' },
-                      { id: 'y_sh1', name: 'נעלי הליכה', qty: '1' },
-                      { id: 'y_sh2', name: 'סנדלים', qty: '1' },
-                  ]},
-                  { category: 'ציוד תינוקות ורחצה', items: [
-                      { id: 'y_b1', name: 'חיתולים / פולאפס', qty: 'חבילה 1', note: 'להשלים קנייה עם הקרוואן' },
-                      { id: 'y_b2', name: 'מגבונים', qty: '5 חבילות' },
-                      { id: 'y_b3', name: 'משחת החתלה/סבון', qty: '1' },
-                      { id: 'y_b4', name: 'בקבוקים/כוס פטל', qty: '2' },
-                      { id: 'y_b5', name: 'מוצצים', qty: '3' },
-                      { id: 'y_b6', name: 'מנשא גב/טיולון', qty: '1', note: 'מנשא חובה למסלולים' },
-                      { id: 'y_b7', name: 'מגבת רחצה / קפוצ\'ון', qty: '1' },
-                  ]}
-              ]},
-            { id: 'general', name: 'ציוד כללי', icon: '🚐', color: 'slate',
-              categories: [
-                  { category: 'לינה בקרוואן', items: [
-                      { id: 'g_l1', name: 'סדינים, ציפות, כריות', qty: '6 סטים', note: 'לארוז בצ\'ימידנים רכים' },
-                      { id: 'g_l2', name: 'שמיכות פליז/מעבר', qty: '6 יח\'', note: 'קר בלילות באוסטריה' },
-                  ]},
-                  { category: 'שבת וכשרות', items: [
-                      { id: 'g_k1', name: 'כלים (צלחות/כוסות/סכו"ם)', qty: 'ל-6 איש', note: 'פלסטיק קשיח/רב פעמי' },
-                      { id: 'g_k2', name: 'סירים ומחבתות', qty: '2-3', note: 'מוטבלים מהבית' },
-                      { id: 'g_k3', name: 'פלטת שבת', qty: '1', note: 'לוודא תאימות לחשמל בקרוואן' },
-                      { id: 'g_k4', name: 'מיחם/תרמוס', qty: '1' },
-                      { id: 'g_k5', name: 'ערכת שבת', qty: 'ערכה 1', note: 'נרונים, הבדלה, קידוש, כיסוי חלה' },
-                      { id: 'g_k6', name: 'עזרי מטבח', qty: 'ערכה 1', note: 'סכין חיתוך, קרש, קופסאות, פותחן' },
-                  ]},
-                  { category: 'עזרה ראשונה ותרופות', items: [
-                      { id: 'g_m1', name: 'תרופות מרשם', qty: 'ל-22 ימים', note: 'מלאי לכל התקופה' },
-                      { id: 'g_m2', name: 'משככי כאבים/חום', qty: 'מלאי', note: 'למבוגרים + סירופ/נרות ליובל' },
-                      { id: 'g_m3', name: 'כדורים נגד בחילות', qty: 'חבילה', note: 'קריטי לדולומיטים/אוסטריה' },
-                      { id: 'g_m4', name: 'ערכת חובש', qty: 'ערכה', note: 'פלסטרים, חיטוי, אלטוש, קרם הגנה' },
-                  ]},
-                  { category: 'טכנולוגיה ומסמכים', items: [
-                      { id: 'g_t1', name: 'דרכונים ורישיון נהיגה בינ"ל', qty: 'לכולם', note: 'חובה ל-22/6 למילאנו' },
-                      { id: 'g_t2', name: 'מטענים ניידים וכבלים', qty: 'מספר יח\'' },
-                      { id: 'g_t3', name: 'מתאמי חשמל', qty: '3-4' },
-                  ]}
-              ]}
-        ];
+    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-lg flex flex-col relative">
+        
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-md sticky top-0 z-20">
+            <div class="flex justify-between items-center mb-2">
+                <h1 class="text-xl font-bold"><i class="fas fa-caravan mr-2"></i> טיול קרוואנים 2024</h1>
+                <button id="editToggleBtn" onclick="toggleEditMode()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full text-sm font-semibold transition">
+                    <i class="fas fa-pen"></i> עריכה
+                </button>
+            </div>
+            <div class="flex justify-between items-center text-sm">
+                <span id="sync-status"><i class="loader mr-1"></i> מתחבר לענן...</span>
+                <span id="total-progress-text">התקדמות: 0%</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full bg-blue-900/50 rounded-full h-2 mt-2">
+                <div id="total-progress-bar" class="bg-green-400 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </header>
 
-        const colorMap = {
-            blue: { bg: 'bg-blue-100', text: 'text-blue-800', tabActive: 'bg-blue-600 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-blue-50', check: 'text-blue-600', ring: 'focus:ring-blue-500' },
-            purple: { bg: 'bg-purple-100', text: 'text-purple-800', tabActive: 'bg-purple-600 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-purple-50', check: 'text-purple-600', ring: 'focus:ring-purple-500' },
-            green: { bg: 'bg-emerald-100', text: 'text-emerald-800', tabActive: 'bg-emerald-600 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-emerald-50', check: 'text-emerald-600', ring: 'focus:ring-emerald-500' },
-            orange: { bg: 'bg-orange-100', text: 'text-orange-800', tabActive: 'bg-orange-500 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-orange-50', check: 'text-orange-500', ring: 'focus:ring-orange-500' },
-            pink: { bg: 'bg-pink-100', text: 'text-pink-800', tabActive: 'bg-pink-500 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-pink-50', check: 'text-pink-500', ring: 'focus:ring-pink-500' },
-            yellow: { bg: 'bg-amber-100', text: 'text-amber-800', tabActive: 'bg-amber-500 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-amber-50', check: 'text-amber-500', ring: 'focus:ring-amber-500' },
-            slate: { bg: 'bg-slate-200', text: 'text-slate-800', tabActive: 'bg-slate-700 text-white', tabInactive: 'bg-white text-gray-500 hover:bg-slate-100', check: 'text-slate-700', ring: 'focus:ring-slate-500' },
-        };
-
-    // ==========================================
-    //  הגדרות Firebase - הדבק את המפתח שלך כאן!
-    // ==========================================
-    const firebaseConfig = {
-        apiKey: "AIzaSyCYd3UQO4d1OQN23quXTwMj1WK2wq0chX4",
-        authDomain: "tiyul-f886a.firebaseapp.com",
-        projectId: "tiyul-f886a",
-        storageBucket: "tiyul-f886a.firebasestorage.app",
-        messagingSenderId: "644534839473",
-        appId: "1:644534839473:web:f7632f361d24183e161a90",
-        measurementId: "G-D54PY1YFPQ",
-        // חובה להוסיף את ה-URL של מסד הנתונים:
-        databaseURL: "https://tiyul-f886a-default-rtdb.europe-west1.firebasedatabase.app" 
-    };
-
-    // אתחול Firebase רק אם הוא טרם אותחל
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    // יצירת משתנה גישה למסד הנתונים (Realtime Database)
-    const db = firebase.database();
-
-    function App() {
-        // טעינת הנתונים למשתני State - עכשיו גם הרשימה עצמה דינמית!
-        const [appData, setAppData] = React.useState(null);
-        const [activeTab, setActiveTab] = React.useState('yoni');
-        const [checkedItems, setCheckedItems] = React.useState({});
-        const [isSyncing, setIsSyncing] = React.useState(true);
-        const [showConfirmReset, setShowConfirmReset] = React.useState(false);
-        const [isEditMode, setIsEditMode] = React.useState(false);
-        const [newItemInputs, setNewItemInputs] = React.useState({});
-
-        // התחברות למסד הנתונים בענן (Firebase)
-        React.useEffect(() => {
-            const listRef = db.ref('caravanTrip/appData');
-            const itemsRef = db.ref('caravanTrip/checkedItems');
-            
-            // משיכת מבנה הרשימות מהענן
-            listRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    setAppData(data);
-                } else {
-                    // אם המסד ריק, נאתחל אותו עם הרשימה המקורית שלנו
-                    listRef.set(defaultTabsData);
-                }
-            });
-
-            // משיכת סטטוס ה-V מהענן
-            itemsRef.on('value', (snapshot) => {
-                setCheckedItems(snapshot.val() || {});
-                setIsSyncing(false);
-            });
-
-            return () => {
-                listRef.off();
-                itemsRef.off();
-            };
-        }, []);
-
-        // ממתין לטעינת הנתונים הראשונית מהענן
-        if (!appData) {
-            return (
-                <div className="flex justify-center items-center h-screen flex-col gap-4">
-                    <svg className="animate-spin h-10 w-10 text-blue-500" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <div className="text-xl font-bold text-gray-600">טוען רשימות מהענן...</div>
-                </div>
-            );
-        }
-
-        const activeData = appData.find(t => t.id === activeTab);
-        const theme = colorMap[activeData.color];
-
-        const handleCheck = (itemId) => {
-            const fullId = `${activeTab}_${itemId}`;
-            const newValue = !checkedItems[fullId];
-            setCheckedItems(prev => ({ ...prev, [fullId]: newValue }));
-            db.ref(`caravanTrip/checkedItems/${fullId}`).set(newValue);
-        };
-
-        const handleDeleteItem = (tabIdx, catIdx, itemId) => {
-            // יצירת עותק עמוק של הנתונים כדי לעדכן את פיירבייס
-            const newData = [...appData];
-            newData[tabIdx].categories[catIdx].items = newData[tabIdx].categories[catIdx].items.filter(item => item.id !== itemId);
-            db.ref('caravanTrip/appData').set(newData);
-            
-            // מחיקת ה-V של הפריט (אם היה)
-            db.ref(`caravanTrip/checkedItems/${appData[tabIdx].id}_${itemId}`).remove();
-        };
-
-        const handleAddItem = (tabIdx, catIdx) => {
-            const inputKey = `${tabIdx}_${catIdx}`;
-            const inputs = newItemInputs[inputKey] || {};
-            if (!inputs.name || inputs.name.trim() === '') return;
-
-            const newItem = {
-                id: `custom_${Date.now()}`,
-                name: inputs.name,
-                qty: inputs.qty || '1',
-                note: inputs.note || ''
-            };
-
-            const newData = [...appData];
-            if (!newData[tabIdx].categories[catIdx].items) {
-                newData[tabIdx].categories[catIdx].items = [];
-            }
-            newData[tabIdx].categories[catIdx].items.push(newItem);
-            
-            db.ref('caravanTrip/appData').set(newData);
-            setNewItemInputs(prev => ({ ...prev, [inputKey]: { name: '', qty: '', note: '' } }));
-        };
-
-        const calculateProgress = (tabId) => {
-            const tab = appData.find(t => t.id === tabId);
-            let total = 0;
-            let checked = 0;
-            if(!tab.categories) return 0;
-            tab.categories.forEach(cat => {
-                if(cat.items) {
-                    cat.items.forEach(item => {
-                        total++;
-                        if (checkedItems[`${tabId}_${item.id}`]) checked++;
-                    });
-                }
-            });
-            return total === 0 ? 0 : Math.round((checked / total) * 100);
-        };
-
-        const tabIndex = appData.findIndex(t => t.id === activeTab);
-
-        return (
-            <div className="max-w-4xl mx-auto p-4 md:p-6 mb-16">
-                <header className="text-center mb-8">
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2">🚐 רשימת אריזה משפחתית</h1>
-                    <p className="text-slate-500 text-lg mb-4">איטליה, אוסטריה, קרואטיה (18.6 - 9.7)</p>
-                    
-                    <div className="flex justify-center items-center gap-4 flex-wrap">
-                        {isSyncing ? (
-                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-800 text-sm font-semibold rounded-full shadow-sm">
-                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                מסתנכרן עם הענן...
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-semibold rounded-full shadow-sm">
-                                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                                מחובר ומסונכרן
-                            </span>
-                        )}
-                        
-                        <button 
-                            onClick={() => setIsEditMode(!isEditMode)}
-                            className={`px-4 py-1.5 rounded-full font-bold text-sm transition-colors shadow-sm border ${isEditMode ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'}`}
-                        >
-                            {isEditMode ? '✅ סיום עריכה' : '✏️ ניהול פריטים'}
-                        </button>
-                    </div>
-                </header>
-
-                {/* Tabs Navigation */}
-                <div className="flex overflow-x-auto hide-scrollbar space-x-2 space-x-reverse mb-6 pb-2">
-                    {appData.map(tab => {
-                        const tTheme = colorMap[tab.color];
-                        const isActive = activeTab === tab.id;
-                        const progress = calculateProgress(tab.id);
-                        
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex-shrink-0 px-5 py-3 rounded-2xl font-bold transition-all duration-200 shadow-sm border border-gray-100 flex flex-col items-center gap-1 ${isActive ? tTheme.tabActive + ' shadow-md scale-105' : tTheme.tabInactive}`}
-                            >
-                                <span className="text-2xl">{tab.icon}</span>
-                                <span>{tab.name}</span>
-                                <div className="w-full h-1.5 bg-black/10 rounded-full mt-1 overflow-hidden">
-                                    <div className="h-full bg-white/80 rounded-full" style={{width: `${progress}%`}}></div>
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* Active Content Area */}
-                <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 p-1">
-                    <div className={`p-4 md:p-6 ${theme.bg} bg-opacity-20 rounded-2xl`}>
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className={`text-2xl font-bold ${theme.text} flex items-center gap-2`}>
-                                <span className="text-3xl">{activeData.icon}</span>
-                                הציוד של {activeData.name}
-                            </h2>
-                            <span className={`font-semibold bg-white px-3 py-1 rounded-full text-sm shadow-sm ${theme.text}`}>
-                                {calculateProgress(activeTab)}% נארז
-                            </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                            {activeData.categories && activeData.categories.map((cat, catIdx) => (
-                                <div key={catIdx} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-50 flex flex-col">
-                                    <h3 className={`text-lg font-bold mb-4 border-b-2 pb-2 ${theme.text}`} style={{borderColor: 'currentColor'}}>
-                                        {cat.category}
-                                    </h3>
-                                    <div className="space-y-3 flex-1">
-                                        {cat.items && cat.items.map(item => {
-                                            const fullId = `${activeTab}_${item.id}`;
-                                            const isChecked = !!checkedItems[fullId];
-                                            
-                                            return (
-                                                <div key={item.id} className="flex items-start gap-3 group relative">
-                                                    <label className="flex-1 flex items-start gap-3 cursor-pointer">
-                                                        <div className="relative flex items-center pt-1">
-                                                            <input 
-                                                                type="checkbox" 
-                                                                className={`peer sr-only checkbox-custom`}
-                                                                checked={isChecked}
-                                                                onChange={() => handleCheck(item.id)}
-                                                                disabled={isEditMode}
-                                                            />
-                                                            <div className={`w-6 h-6 rounded-md border-2 border-gray-300 bg-white transition-colors peer-checked:${theme.tabActive.split(' ')[0]} peer-checked:border-transparent flex items-center justify-center ${isEditMode ? 'opacity-50' : ''}`}>
-                                                                <svg className={`w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                                                                </svg>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <div className={`flex-1 transition-colors ${isChecked && !isEditMode ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
-                                                            <div className="flex justify-between items-start">
-                                                                <span className="font-semibold text-[15px]">{item.name}</span>
-                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-600 mr-2 shrink-0 ${isChecked && !isEditMode ? 'opacity-50' : ''}`}>
-                                                                    {item.qty}
-                                                                </span>
-                                                            </div>
-                                                            {item.note && (
-                                                                <div className={`text-sm mt-0.5 ${isChecked && !isEditMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                                                    {item.note}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </label>
-                                                    
-                                                    {isEditMode && (
-                                                        <button 
-                                                            onClick={() => handleDeleteItem(tabIndex, catIdx, item.id)}
-                                                            className="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg transition-colors ml-1"
-                                                            title="מחק פריט"
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                    
-                                    {/* אזור הוספת פריט חדש - מוצג רק במצב עריכה */}
-                                    {isEditMode && (
-                                        <div className="mt-4 pt-3 border-t border-gray-100 bg-gray-50 p-3 rounded-xl">
-                                            <div className="text-sm font-bold text-gray-700 mb-2">הוסף פריט חדש:</div>
-                                            <div className="flex flex-col gap-2">
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="שם הפריט (למשל: בובה דובי)" 
-                                                    className="w-full text-sm p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                                                    value={newItemInputs[`${tabIndex}_${catIdx}`]?.name || ''}
-                                                    onChange={e => setNewItemInputs(prev => ({...prev, [`${tabIndex}_${catIdx}`]: {...prev[`${tabIndex}_${catIdx}`], name: e.target.value}}))}
-                                                />
-                                                <div className="flex gap-2">
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="כמות (למשל: 2)" 
-                                                        className="w-24 text-sm p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                                                        value={newItemInputs[`${tabIndex}_${catIdx}`]?.qty || ''}
-                                                        onChange={e => setNewItemInputs(prev => ({...prev, [`${tabIndex}_${catIdx}`]: {...prev[`${tabIndex}_${catIdx}`], qty: e.target.value}}))}
-                                                    />
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="הערה (אופציונלי)" 
-                                                        className="flex-1 text-sm p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                                                        value={newItemInputs[`${tabIndex}_${catIdx}`]?.note || ''}
-                                                        onChange={e => setNewItemInputs(prev => ({...prev, [`${tabIndex}_${catIdx}`]: {...prev[`${tabIndex}_${catIdx}`], note: e.target.value}}))}
-                                                    />
-                                                </div>
-                                                <button 
-                                                    onClick={() => handleAddItem(tabIndex, catIdx)}
-                                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors mt-1"
-                                                >
-                                                    + הוסף לקטגוריה
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-8 text-center flex flex-col items-center gap-3">
-                    {!showConfirmReset ? (
-                        <button 
-                            onClick={() => setShowConfirmReset(true)}
-                            className="text-sm text-red-500 hover:text-red-700 underline font-semibold transition-colors"
-                        >
-                            איפוס כל הרשימות (מחיקת V לכולם)
-                        </button>
-                    ) : (
-                        <div className="bg-red-50 p-4 md:p-5 rounded-2xl border border-red-200 shadow-sm">
-                            <p className="text-red-800 font-bold mb-3">האם אתה בטוח? הפעולה תמחק את הסימונים בכל המכשירים!</p>
-                            <div className="flex gap-3 justify-center">
-                                <button 
-                                    onClick={() => {
-                                        db.ref('caravanTrip/checkedItems').set({});
-                                        setShowConfirmReset(false);
-                                    }}
-                                    className="bg-red-600 text-white px-5 py-2 rounded-xl font-bold hover:bg-red-700 shadow-sm transition-all"
-                                >
-                                    כן, מחק הכל
-                                </button>
-                                <button 
-                                    onClick={() => setShowConfirmReset(false)}
-                                    className="bg-white text-gray-700 px-5 py-2 rounded-xl font-bold border border-gray-300 hover:bg-gray-50 transition-all"
-                                >
-                                    ביטול
-                                </button>
-                            </div>
-                        </div>
-                    )}
+        <!-- Custom Modal instead of alert/confirm -->
+        <div id="custom-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center fade-in">
+            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-11/12 text-center">
+                <h3 id="modal-title" class="text-lg font-bold mb-2"></h3>
+                <p id="modal-message" class="text-gray-600 mb-6"></p>
+                <div class="flex justify-center gap-3">
+                    <button id="modal-cancel" class="px-4 py-2 bg-gray-200 rounded-lg font-semibold hover:bg-gray-300 transition">ביטול</button>
+                    <button id="modal-confirm" class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition">אישור</button>
                 </div>
             </div>
-        );
-    }
+        </div>
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+        <!-- Tabs -->
+        <div id="tabs-container" class="flex overflow-x-auto hide-scroll bg-white shadow-sm border-b sticky top-[92px] z-10">
+            <!-- Tabs will be injected here -->
+        </div>
+
+        <!-- Content Area -->
+        <div id="content-container" class="flex-1 p-4 pb-20 bg-gray-50 overflow-y-auto">
+            <div id="loader-screen" class="text-center mt-20 text-gray-400">
+                <i class="loader border-gray-300 border-t-blue-500 w-10 h-10 mb-4"></i>
+                <p>טוען רשימות מהענן...</p>
+            </div>
+            <div id="lists-wrapper" class="hidden"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // תפיסת שגיאות גלובלית - מונע מסך לבן!
+        window.onerror = function(msg, url, line, col, error) {
+            document.getElementById('error-screen').classList.remove('hidden');
+            document.getElementById('app').classList.add('hidden');
+            document.getElementById('error-details').innerText = `Error: ${msg}\nLine: ${line}\nCol: ${col}`;
+            return false;
+        };
+
+        // ==========================================
+        //  הגדרות Firebase
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYd3UQO4d1OQN23quXTwMj1WK2wq0chX4",
+            authDomain: "tiyul-f886a.firebaseapp.com",
+            projectId: "tiyul-f886a",
+            storageBucket: "tiyul-f886a.firebasestorage.app",
+            messagingSenderId: "644534839473",
+            appId: "1:644534839473:web:f7632f361d24183e161a90",
+            measurementId: "G-D54PY1YFPQ",
+            databaseURL: "https://tiyul-f886a-default-rtdb.europe-west1.firebasedatabase.app" 
+        };
+
+        let database;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            database = firebase.database();
+        } catch (e) {
+            console.error("Firebase init error:", e);
+            throw new Error("שגיאה בהתחברות למסד הנתונים: " + e.message);
+        }
+
+        // ==========================================
+        //  מצב אפליקציה ונתונים
+        // ==========================================
+        let appData = {};
+        let currentTab = "יוני";
+        let isEditMode = false;
+        const dbRef = database.ref('packing_lists');
+
+        const people = ["יוני", "חנה", "ליאור (16)", "אייל (13)", "הילה (12)", "יובל (2)", "ציוד כללי"];
+        const icons = {
+            "יוני": "👨", "חנה": "👩", "ליאור (16)": "👦", "אייל (13)": "👦", 
+            "הילה (12)": "👧", "יובל (2)": "👶", "ציוד כללי": "🧳"
+        };
+
+        // יצירת נתוני בסיס ראשוניים במידה והמסד ריק
+        function createDefaultData() {
+            const data = {};
+            const standardCategories = ["ביגוד יומיום", "ביגוד חם (לאוסטריה)", "ביגוד שבת", "הנעלה", "בריכה וים", "היגיינה ורחצה"];
+            
+            const adultBase = [
+                { id: "i1", name: "חולצות קצרות", amount: "8", note: "", category: "ביגוד יומיום", packed: false },
+                { id: "i2", name: "מכנסיים קצרים", amount: "5", note: "", category: "ביגוד יומיום", packed: false },
+                { id: "i3", name: "מכנסיים ארוכים קלים", amount: "3", note: "", category: "ביגוד יומיום", packed: false },
+                { id: "i4", name: "לבנים וגרביים", amount: "10", note: "", category: "ביגוד יומיום", packed: false },
+                { id: "i5", name: "מעיל פליז / סופטשל", amount: "1", note: "לפסגות", category: "ביגוד חם (לאוסטריה)", packed: false },
+                { id: "i6", name: "חולצות ארוכות (בסיס)", amount: "2", note: "שיטת הבצל", category: "ביגוד חם (לאוסטריה)", packed: false },
+                { id: "i7", name: "כובע גרב וכפפות", amount: "1", note: "", category: "ביגוד חם (לאוסטריה)", packed: false },
+                { id: "i8", name: "נעלי הליכה סגורות", amount: "1", note: "לטיולים", category: "הנעלה", packed: false },
+                { id: "i9", name: "כפכפים", amount: "1", note: "למקלחות", category: "הנעלה", packed: false },
+                { id: "i10", name: "בגדי ים", amount: "2", note: "", category: "בריכה וים", packed: false },
+                { id: "i11", name: "תיק רחצה אישי", amount: "1", note: "שמפו, מברשת", category: "היגיינה ורחצה", packed: false },
+                { id: "i12", name: "מגבת רחצה", amount: "1", note: "מיקרופייבר", category: "היגיינה ורחצה", packed: false }
+            ];
+
+            people.forEach(person => {
+                data[person] = {};
+                let itemsList = [...adultBase.map(item => ({...item, id: Math.random().toString(36).substr(2, 9)}))];
+                
+                // התאמות אישיות
+                if(person === "יוני" || person.includes("ליאור") || person.includes("אייל")) {
+                    itemsList.push({ id: Math.random().toString(36).substr(2,9), name: "חולצות מכופתרות", amount: "2", note: "לשבת", category: "ביגוד שבת", packed: false });
+                }
+                if(person === "חנה" || person.includes("הילה")) {
+                    itemsList.push({ id: Math.random().toString(36).substr(2,9), name: "שמלות/חצאיות", amount: "2", note: "לשבת", category: "ביגוד שבת", packed: false });
+                }
+                if(person === "יובל (2)") {
+                    itemsList = [
+                        { id: "y1", name: "חולצות קצרות / גוף", amount: "10", note: "", category: "ביגוד יומיום", packed: false },
+                        { id: "y2", name: "מעיל פליז", amount: "2", note: "חובה", category: "ביגוד חם (לאוסטריה)", packed: false },
+                        { id: "y3", name: "חיתולים", amount: "1 חבילה", note: "להשלים בסופר", category: "ציוד תינוקות", packed: false },
+                        { id: "y4", name: "מגבונים", amount: "5 חב'", note: "", category: "ציוד תינוקות", packed: false },
+                        { id: "y5", name: "בקבוקים", amount: "2", note: "", category: "ציוד תינוקות", packed: false },
+                        { id: "y6", name: "מנשא גב / טיולון", amount: "1", note: "חובה לטיולים", category: "ציוד תינוקות", packed: false },
+                    ];
+                }
+                if(person === "ציוד כללי") {
+                    itemsList = [
+                        { id: "g1", name: "סדינים וציפות", amount: "6 סטים", note: "בצ'ימידנים", category: "לינה בקרוואן", packed: false },
+                        { id: "g2", name: "שמיכות פליז", amount: "6", note: "קר בלילות", category: "לינה בקרוואן", packed: false },
+                        { id: "g3", name: "כלים חד/רב פעמי", amount: "ל-6", note: "חלבי ובשרי", category: "שבת וכשרות", packed: false },
+                        { id: "g4", name: "סירים", amount: "2-3", note: "מוטבלים", category: "שבת וכשרות", packed: false },
+                        { id: "g5", name: "פלטת שבת", amount: "1", note: "לבדוק ממיר מתח", category: "שבת וכשרות", packed: false },
+                        { id: "g6", name: "נרונים והבדלה", amount: "1", note: "ל-3 שבתות", category: "שבת וכשרות", packed: false },
+                        { id: "g7", name: "תרופות מרשם", amount: "ל-22 יום", note: "", category: "עזרה ראשונה", packed: false },
+                        { id: "g8", name: "כדורים נגד בחילות", amount: "1", note: "לכבישים מפותלים", category: "עזרה ראשונה", packed: false },
+                        { id: "g9", name: "דרכונים", amount: "לכולם", note: "", category: "טכנולוגיה ומסמכים", packed: false },
+                        { id: "g10", name: "מתאמי חשמל אירופה", amount: "3", note: "", category: "טכנולוגיה ומסמכים", packed: false }
+                    ];
+                }
+
+                // המרה למבנה של אובייקט (עבור Firebase)
+                itemsList.forEach(item => {
+                    data[person][item.id] = item;
+                });
+            });
+            return data;
+        }
+
+        // האזנה לשינויים ב-Firebase
+        dbRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            document.getElementById('loader-screen').classList.add('hidden');
+            document.getElementById('lists-wrapper').classList.remove('hidden');
+            document.getElementById('sync-status').innerHTML = `<i class="fas fa-cloud-check text-green-300 mr-1"></i> מסונכרן`;
+            
+            if (!data) {
+                // מסד ריק - נטעין נתוני ברירת מחדל
+                const defaultData = createDefaultData();
+                dbRef.set(defaultData);
+            } else {
+                appData = data;
+                renderTabs();
+                renderContent();
+                updateTotalProgress();
+            }
+        }, (error) => {
+            console.error("Firebase read error: ", error);
+            document.getElementById('sync-status').innerHTML = `<i class="fas fa-wifi text-red-300 mr-1"></i> שגיאת רשת`;
+        });
+
+        function renderTabs() {
+            const container = document.getElementById('tabs-container');
+            container.innerHTML = '';
+            people.forEach(person => {
+                const btn = document.createElement('button');
+                btn.className = `flex-shrink-0 px-4 py-3 text-sm transition-colors whitespace-nowrap outline-none ${currentTab === person ? 'tab-active' : 'tab-inactive'}`;
+                
+                // חישוב התקדמות אישית לטאב
+                let total = 0, packed = 0;
+                if(appData[person]) {
+                    Object.values(appData[person]).forEach(item => {
+                        total++;
+                        if(item.packed) packed++;
+                    });
+                }
+                const isDone = total > 0 && total === packed;
+                const checkMark = isDone ? `<i class="fas fa-check-circle text-green-500 ml-1"></i>` : '';
+
+                btn.innerHTML = `${icons[person]} ${person} ${checkMark}`;
+                btn.onclick = () => {
+                    currentTab = person;
+                    renderTabs();
+                    renderContent();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderContent() {
+            const wrapper = document.getElementById('lists-wrapper');
+            wrapper.innerHTML = '';
+            wrapper.className = "fade-in";
+
+            const personData = appData[currentTab] || {};
+            
+            // קיבוץ לפי קטגוריות
+            const categories = {};
+            Object.values(personData).forEach(item => {
+                if(!categories[item.category]) categories[item.category] = [];
+                categories[item.category].push(item);
+            });
+
+            // אם אין קטגוריות (רשימה ריקה) נציג קטגוריה כללית עבור הוספה
+            if(Object.keys(categories).length === 0 && isEditMode) {
+                categories["חדש"] = [];
+            }
+
+            Object.keys(categories).forEach(category => {
+                const catDiv = document.createElement('div');
+                catDiv.className = "mb-6 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden";
+                
+                // כותרת קטגוריה
+                const catHeader = document.createElement('div');
+                catHeader.className = "bg-gray-50 px-4 py-2 border-b border-gray-100 text-sm font-bold text-gray-700";
+                catHeader.innerText = category;
+                catDiv.appendChild(catHeader);
+
+                // פריטים
+                categories[category].forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = `flex items-center justify-between p-4 border-b border-gray-50 transition-colors ${item.packed ? 'bg-green-50/50' : 'hover:bg-gray-50'}`;
+                    
+                    const leftSide = document.createElement('div');
+                    leftSide.className = "flex items-center gap-3 flex-1";
+                    
+                    // כפתור מחיקה במצב עריכה או צ'קבוקס
+                    if (isEditMode) {
+                        const delBtn = document.createElement('button');
+                        delBtn.className = "text-red-400 hover:text-red-600 p-2 -ml-2 transition";
+                        delBtn.innerHTML = `<i class="fas fa-trash-alt"></i>`;
+                        delBtn.onclick = () => confirmDelete(currentTab, item.id, item.name);
+                        leftSide.appendChild(delBtn);
+                    } else {
+                        const checkbox = document.createElement('div');
+                        checkbox.className = `w-6 h-6 rounded border-2 flex items-center justify-center cursor-pointer transition-colors ${item.packed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`;
+                        checkbox.innerHTML = item.packed ? `<i class="fas fa-check text-xs"></i>` : '';
+                        checkbox.onclick = () => togglePacked(currentTab, item.id, item.packed);
+                        leftSide.appendChild(checkbox);
+                    }
+
+                    const textDiv = document.createElement('div');
+                    textDiv.innerHTML = `<div class="font-semibold text-gray-800 ${item.packed && !isEditMode ? 'line-through text-gray-400' : ''}">${item.name}</div>
+                                         <div class="text-xs text-gray-500 mt-0.5"><span class="font-bold text-blue-600">${item.amount}</span> ${item.note ? '• ' + item.note : ''}</div>`;
+                    
+                    leftSide.appendChild(textDiv);
+                    itemDiv.appendChild(leftSide);
+                    catDiv.appendChild(itemDiv);
+                });
+
+                if (isEditMode) {
+                    const addForm = document.createElement('div');
+                    addForm.className = "p-3 bg-blue-50/50 border-t border-blue-100 flex gap-2 flex-col";
+                    addForm.innerHTML = `
+                        <div class="flex gap-2">
+                            <input type="text" id="new_name_${category.replace(/\s+/g, '')}" placeholder="שם הפריט" class="flex-1 p-2 border rounded text-sm outline-none focus:border-blue-400">
+                            <input type="text" id="new_amount_${category.replace(/\s+/g, '')}" placeholder="כמות" class="w-20 p-2 border rounded text-sm outline-none focus:border-blue-400">
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="new_note_${category.replace(/\s+/g, '')}" placeholder="הערה (אופציונלי)" class="flex-1 p-2 border rounded text-sm outline-none focus:border-blue-400">
+                            <button onclick="addNewItem('${currentTab}', '${category}')" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold shadow-sm hover:bg-blue-700"><i class="fas fa-plus"></i></button>
+                        </div>
+                    `;
+                    catDiv.appendChild(addForm);
+                }
+
+                wrapper.appendChild(catDiv);
+            });
+            
+            // כפתור הוספת קטגוריה חדשה במצב עריכה
+            if (isEditMode) {
+                const newCatDiv = document.createElement('div');
+                newCatDiv.className = "mt-4 p-4 border-2 border-dashed border-gray-300 rounded-xl text-center cursor-pointer hover:bg-gray-100 text-gray-500 transition";
+                newCatDiv.innerHTML = `<i class="fas fa-plus-circle mr-1"></i> הוסף קטגוריה חדשה`;
+                newCatDiv.onclick = () => {
+                    const catName = prompt("שם הקטגוריה החדשה:");
+                    if(catName && catName.trim() !== "") {
+                        // Create a dummy item to establish category
+                        addNewItemDirectly(currentTab, catName, "פריט חדש", "1", "");
+                    }
+                };
+                wrapper.appendChild(newCatDiv);
+            }
+        }
+
+        function togglePacked(person, itemId, currentState) {
+            dbRef.child(person).child(itemId).update({ packed: !currentState });
+        }
+
+        function addNewItem(person, category) {
+            const cleanCat = category.replace(/\s+/g, '');
+            const nameEl = document.getElementById(`new_name_${cleanCat}`);
+            const amountEl = document.getElementById(`new_amount_${cleanCat}`);
+            const noteEl = document.getElementById(`new_note_${cleanCat}`);
+            
+            if(!nameEl.value.trim()) return;
+
+            addNewItemDirectly(person, category, nameEl.value, amountEl.value || "1", noteEl.value);
+        }
+
+        function addNewItemDirectly(person, category, name, amount, note) {
+            const newItemRef = dbRef.child(person).push();
+            newItemRef.set({
+                id: newItemRef.key,
+                name: name.trim(),
+                amount: amount.trim(),
+                note: note.trim(),
+                category: category,
+                packed: false
+            });
+        }
+
+        // תחליף ל-confirm() באמצעות מודאל מותאם אישית
+        let deleteAction = null;
+        function confirmDelete(person, itemId, itemName) {
+            document.getElementById('modal-title').innerText = "מחיקת פריט";
+            document.getElementById('modal-message').innerText = `האם למחוק את "${itemName}" מכל המכשירים?`;
+            document.getElementById('custom-modal').classList.remove('hidden');
+            
+            deleteAction = () => {
+                dbRef.child(person).child(itemId).remove();
+                closeModal();
+            };
+        }
+
+        document.getElementById('modal-cancel').onclick = closeModal;
+        document.getElementById('modal-confirm').onclick = () => {
+            if(deleteAction) deleteAction();
+        };
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+            deleteAction = null;
+        }
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const btn = document.getElementById('editToggleBtn');
+            if(isEditMode) {
+                btn.classList.replace('bg-white/20', 'bg-red-500');
+                btn.classList.add('text-white');
+                btn.innerHTML = `<i class="fas fa-check"></i> סיום`;
+            } else {
+                btn.classList.replace('bg-red-500', 'bg-white/20');
+                btn.classList.remove('text-white');
+                btn.innerHTML = `<i class="fas fa-pen"></i> עריכה`;
+            }
+            renderContent();
+        }
+
+        function updateTotalProgress() {
+            let total = 0, packed = 0;
+            
+            Object.values(appData).forEach(personItems => {
+                Object.values(personItems).forEach(item => {
+                    total++;
+                    if(item.packed) packed++;
+                });
+            });
+
+            const percent = total === 0 ? 0 : Math.round((packed / total) * 100);
+            document.getElementById('total-progress-bar').style.width = `${percent}%`;
+            document.getElementById('total-progress-text').innerText = `התקדמות כללית: ${percent}%`;
+        }
+
     </script>
 </body>
 </html>
