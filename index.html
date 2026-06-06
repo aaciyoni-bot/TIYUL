@@ -571,7 +571,7 @@
         }
         function getRequiredDocsForTab(tabName) {
             if (tabName === "ציוד כללי משותף") return [ { id: 'flight', name: 'כרטיסי טיסה', icon: 'fa-plane' }, { id: 'villa', name: 'הזמנת וילה', icon: 'fa-house-user' }, { id: 'caravan', name: 'השכרת קרוואנים', icon: 'fa-caravan' }, { id: 'insurance', name: 'ביטוחים כלליים', icon: 'fa-shield-alt' } ];
-            if (tabName.startsWith("ציוד כללי")) return []; 
+            if (tabName.startsWith("ציוד כללי") || tabName.startsWith("ציוד משמר") || tabName.startsWith("ציוד אדורה")) return []; 
             let docs = [{ id: 'passport', name: 'דרכון', icon: 'fa-passport' }];
             if (["יוני", "חנה", "עוזיאל", "שרונה"].includes(tabName)) { docs.push({ id: 'driver_license', name: 'רישיון נהיגה', icon: 'fa-id-card' }); docs.push({ id: 'int_license', name: 'רישיון בינלאומי', icon: 'fa-globe' }); }
             return docs;
@@ -820,7 +820,7 @@
         }
         function spinLetter() { const letters = "אבגדהוזחטיכלמנסעפצקרשת"; db.ref('games/currentCountryCity/letter').set(letters.charAt(Math.floor(Math.random() * letters.length))); }
         function checkCountryCity(letter) {
-            if(letter === "?") return alert("יש להגריל אות קודם!");
+            if(letter === "?") return showModal('שגיאה', 'יש להגריל אות קודם!');
             const vals = { country: document.getElementById('c_country').value.trim(), color: document.getElementById('c_color').value.trim(), animal: document.getElementById('c_animal').value.trim(), object: document.getElementById('c_object').value.trim(), prof: document.getElementById('c_prof').value.trim() };
             let score = 0; let msgs = [];
             
@@ -837,6 +837,7 @@
             document.getElementById('cc-results').innerHTML = `<h3 class="text-3xl font-black text-green-600 mb-4">סך הכל: ${score} נקודות!</h3><div class="text-right text-gray-600 font-bold space-y-2 bg-white p-4 rounded-xl border">${msgs.join('<br>')}</div><p class="mt-4 text-sm font-bold text-red-500">* שאר הקטגוריות הפתוחות (ילד/ילדה/עיר/צומח) יבדקו על ידי שאר המשפחה בקרוואן!</p>`;
         }
 
+        // --- הזרקת נתונים ראשונית (הפונקציה המתוקנת ללא השגיאה!) ---
         function generateInitialData() {
             if (!appData.chores || Object.keys(appData.chores || {}).length === 0) {
                 db.ref('chores').set([{ name: "שטיפת כלים", assignee: "" }, { name: "ריקון שירותים כימיים", assignee: "" }, { name: "הכנת קפה", assignee: "" }]);
@@ -846,27 +847,52 @@
                 db.ref('checklists/arrival').set([{ task: "ייצוב הקרוואן (צ'וקים)", done: false }, { task: "חיבור לחשמל", done: false }, { task: "פתיחת גז לבישול", done: false }]);
             }
 
-            people.forEach(person => {
-                if (["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות", "📍 מפת מסלול"].includes(person)) return;
-                
+            allPeople.forEach(person => {
                 if (!appData.items[person] || Object.keys(appData.items[person]).length === 0) {
                     let itemsArray = [];
-                    if (!person.startsWith("ציוד כללי")) {
+                    if (!person.startsWith("ציוד כללי") && !person.startsWith("ציוד משמר") && !person.startsWith("ציוד אדורה")) {
                         itemsArray = [
-                            { category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8", note: "יש מכונת כביסה" }, { category: "ביגוד יומיום", name: "מכנסיים", amount: "5", note: "" }, { category: "ביגוד יומיום", name: "לבנים", amount: "10", note: "" }, { category: "ביגוד חורף", name: "מעיל פליז", amount: "1", note: "לאוסטריה" }, { category: "הנעלה", name: "נעלי הליכה סגורות", amount: "1", note: "" }, { category: "בריכה וים", name: "בגדי ים", amount: "2", note: "" }, { category: "היגיינה", name: "תיק רחצה אישי", amount: "1", note: "" }
+                            { category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8", note: "יש מכונת כביסה" }, 
+                            { category: "ביגוד יומיום", name: "מכנסיים", amount: "5", note: "" }, 
+                            { category: "ביגוד יומיום", name: "לבנים", amount: "10", note: "" }, 
+                            { category: "ביגוד חורף", name: "מעיל פליז", amount: "1", note: "לאוסטריה" }, 
+                            { category: "הנעלה", name: "נעלי הליכה סגורות", amount: "1", note: "" }, 
+                            { category: "בריכה וים", name: "בגדי ים", amount: "2", note: "" }, 
+                            { category: "היגיינה", name: "תיק רחצה אישי", amount: "1", note: "" }
                         ];
-                        if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(person)) { itemsArray.push({ category: "דת ורוח", name: "תפילין", amount: "1", note: "" }, { category: "דת ורוח", name: "כיפות וציצית", amount: "3", note: "" }); }
-                        if (["עוזיאל", "יוני"].includes(person)) { itemsArray.push({ category: "דת ורוח", name: "טלית", amount: "1", note: "לשבתות" }); }
-                        if (person === "הילה" || person === "להבה") { itemsArray.push({ category: "ביגוד יומיום", name: "גוזיות", amount: "5", note: "" }); }
-                        if (person === "יובל" || person === "הלל") { itemsArray.push({ category: "ציוד תינוקות", name: "חיתולים", amount: "1", note: "" }, { category: "ציוד תינוקות", name: "מנשא", amount: "1", note: "" }); }
-                    } else if (person.startsWith("ציוד כללי פרידמן")) {
-                        itemsArray = [ { category: "לינה בקרוואן", name: "סדינים וכריות", amount: "6 סטים", note: "" }, { category: "לינה בקרוואן", name: "שמיכות", amount: "6", note: "קר בלילות!" }, { category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לבדוק מתח" }, { category: "שבת וכשרות", name: "מיחם", amount: "1", note: "" }, { category: "שבת וכשרות", name: "נרונים וקידוש", amount: "1 ערכה", note: "" } ];
+                        if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(person)) { 
+                            itemsArray.push({ category: "דת ורוח", name: "תפילין", amount: "1", note: "" }, { category: "דת ורוח", name: "כיפות וציצית", amount: "3", note: "" }); 
+                        }
+                        if (["עוזיאל", "יוני"].includes(person)) { 
+                            itemsArray.push({ category: "דת ורוח", name: "טלית", amount: "1", note: "לשבתות" }); 
+                        }
+                        if (person === "הילה" || person === "להבה") { 
+                            itemsArray.push({ category: "ביגוד יומיום", name: "גוזיות", amount: "5", note: "" }); 
+                        }
+                        if (person === "יובל" || person === "הלל") { 
+                            itemsArray.push({ category: "ציוד תינוקות", name: "חיתולים", amount: "1", note: "" }, { category: "ציוד תינוקות", name: "מנשא", amount: "1", note: "" }); 
+                        }
+                    } else if (person.startsWith("ציוד כללי פרידמן") || person.startsWith("ציוד משמר") || person.startsWith("ציוד אדורה")) {
+                        itemsArray = [ 
+                            { category: "לינה בקרוואן", name: "סדינים וכריות", amount: "6 סטים", note: "" }, 
+                            { category: "לינה בקרוואן", name: "שמיכות", amount: "6", note: "קר בלילות!" }, 
+                            { category: "שבת וכשרות", name: "פלטת שבת", amount: "1", note: "לבדוק מתח" }, 
+                            { category: "שבת וכשרות", name: "מיחם", amount: "1", note: "" }, 
+                            { category: "שבת וכשרות", name: "נרונים וקידוש", amount: "1 ערכה", note: "" } 
+                        ];
                     } else if (person === "ציוד כללי משותף") {
-                        itemsArray = [ { category: "פנאי", name: "אליאס ומשחקים", amount: "1", note: "" }, { category: "אוכל משותף", name: "פקל קפה", amount: "1", note: "" }, { category: "חשמל", name: "מתאמים לאירופה", amount: "4", note: "" } ];
+                        itemsArray = [ 
+                            { category: "פנאי", name: "אליאס ומשחקים", amount: "1", note: "" }, 
+                            { category: "אוכל משותף", name: "פקל קפה", amount: "1", note: "" }, 
+                            { category: "חשמל", name: "מתאמים לאירופה", amount: "4", note: "" } 
+                        ];
                     }
 
                     if(itemsArray.length > 0) {
-                        const personItemsObj = {}; itemsArray.forEach((item, index) => { personItemsObj[`item_${Date.now()}_${index}`] = { ...item, packed: false }; });
+                        const personItemsObj = {}; 
+                        itemsArray.forEach((item, index) => { 
+                            personItemsObj[`item_${Date.now()}_${index}`] = { ...item, packed: false }; 
+                        });
                         db.ref(`items/${person}`).set(personItemsObj);
                     }
                 }
