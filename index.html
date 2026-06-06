@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +8,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -40,9 +41,9 @@
         @keyframes alert-flash { 0%, 100% { background-color: rgba(220, 38, 38, 0.95); } 50% { background-color: rgba(185, 28, 28, 1); transform: scale(1.02); } }
         .sos-flashing { animation: alert-flash 1.5s infinite; }
 
-        .playing-card { background: white; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); width: 80px; height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: 800; font-size: 2.5rem; position: relative; }
-        .playing-card .suit-top { position: absolute; top: 5px; left: 5px; font-size: 1.2rem; line-height: 1; }
-        .playing-card .suit-bottom { position: absolute; bottom: 5px; right: 5px; font-size: 1.2rem; line-height: 1; transform: rotate(180deg); }
+        .playing-card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); width: 100px; height: 140px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: 900; font-size: 3.5rem; position: relative; }
+        .playing-card .suit-top { position: absolute; top: 8px; left: 8px; font-size: 1.5rem; line-height: 1; }
+        .playing-card .suit-bottom { position: absolute; bottom: 8px; right: 8px; font-size: 1.5rem; line-height: 1; transform: rotate(180deg); }
         .card-red { color: #ef4444; }
         .card-black { color: #1f2937; }
     </style>
@@ -54,12 +55,16 @@
             <h1 class="text-xl font-extrabold tracking-wide cursor-pointer flex items-center" onclick="navigate('dashboard')">
                 <i class="fas fa-caravan mr-2 text-2xl"></i> פרידמן 2026
             </h1>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
+                <!-- כפתור זיהוי משתמש -->
+                <button onclick="changeUserIdentity()" id="header-user-btn" class="text-xs bg-indigo-500/50 hover:bg-indigo-500/70 border border-indigo-400 px-3 py-1.5 rounded-full transition shadow backdrop-blur-sm font-bold flex items-center" title="החלף משתמש במכשיר">
+                    <i class="fas fa-user-circle mr-1.5 text-sm"></i> <span id="header-user-name">אורח</span>
+                </button>
                 <button onclick="navigate('dashboard')" id="home-btn" class="hidden text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition shadow backdrop-blur-sm font-bold">
                     <i class="fas fa-home mr-1"></i> ראשי
                 </button>
                 <button onclick="exportToExcel()" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition shadow backdrop-blur-sm font-bold">
-                    <i class="fas fa-file-excel mr-1"></i> יצוא
+                    <i class="fas fa-file-excel"></i>
                 </button>
             </div>
         </div>
@@ -78,7 +83,7 @@
         </div>
     </header>
 
-    <nav id="tabs-container" class="hidden flex overflow-x-auto hide-scrollbar bg-white shadow-sm border-b z-20 sticky top-[72px] px-2 py-1">
+    <nav id="tabs-container" class="hidden flex overflow-x-auto hide-scrollbar bg-white shadow-sm border-b z-20 sticky top-[76px] px-2 py-1">
         <!-- הלשוניות ייוצרו כאן -->
     </nav>
 
@@ -88,6 +93,22 @@
             <p class="mt-4 text-gray-600 font-medium text-lg" id="loading-text">טוען נתונים מהענן...</p>
         </div>
     </main>
+
+    <!-- מסך בחירת משתמש (מופיע פעם אחת) -->
+    <div id="welcome-modal" style="display: none;" class="fixed inset-0 bg-indigo-900/95 z-[100] flex-col items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 text-center border-4 border-indigo-200 transform transition-all">
+            <div class="text-6xl mb-4 bg-indigo-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-inner">👋</div>
+            <h2 class="text-3xl font-extrabold text-gray-800 mb-2">מי מחזיק במכשיר?</h2>
+            <p class="text-gray-500 mb-8 font-medium">כדי שהמערכת תזהה אותך במשחקים ובמקרי חירום, אנא בחר את שמך:</p>
+            <div class="relative">
+                <select id="welcome-user-select" class="w-full p-4 border-2 border-indigo-200 rounded-2xl text-xl font-bold bg-indigo-50 text-indigo-800 mb-8 outline-none focus:ring-4 focus:ring-indigo-300 transition text-center appearance-none cursor-pointer">
+                    <!-- Options populated via JS -->
+                </select>
+                <i class="fas fa-chevron-down absolute left-5 top-5 text-indigo-400 text-xl pointer-events-none"></i>
+            </div>
+            <button onclick="saveUserIdentity()" class="w-full bg-indigo-600 text-white font-black text-2xl py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition transform hover:scale-105">המשך לטיול! 🚐</button>
+        </div>
+    </div>
 
     <!-- מודל רגיל -->
     <div id="custom-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm opacity-0 transition-opacity duration-300">
@@ -172,7 +193,6 @@
         let currentUploadDocType = "";
         let lastSosTimestamp = 0;
 
-        // --- מילונים למשחקים (מערכים אופטימליים) ---
         const dictCountries = ["אוגנדה","אוזבקיסטן","אוסטריה","אוסטרליה","אוקראינה","אורוגוואי","אזרבייג'ן","איחוד האמירויות","איטליה","איי בהאמה","איי מרשל","איי שלמה","אינדונזיה","איסלנד","איראן","אירלנד","אל סלוודור","אלבניה","אלג'יריה","אנגולה","אנדורה","אסטוניה","אפגניסטן","אקוודור","ארגנטינה","אריתריאה","ארמניה","ארצות הברית","אתיופיה","בולגריה","בוליביה","בוסניה והרצגובינה","בוצוואנה","בורונדי","בורקינה פאסו","בחריין","בלארוס","בלגיה","בליז","בנגלדש","בנין","ברבדוס","ברוניי","ברזיל","בריטניה","גאורגיה","גאנה","גבון","גואטמלה","גיאנה","ג'יבוטי","גינאה","גינאה ביסאו","גינאה המשוונית","גמביה","ג'מייקה","גרמניה","גרנדה","דומיניקה","דנמרק","דרום אפריקה","דרום סודאן","האיטי","הודו","הולנד","הונגריה","הונדורס","המלדיביים","הפיליפינים","הרפובליקה הדומיניקנית","הרפובליקה המרכז-אפריקאית","וייטנאם","ונואטו","ונצואלה","זמביה","זימבבואה","חוף השנהב","טג'יקיסטן","טובאלו","טוגו","טונגה","טורקיה","טורקמניסטן","טנזניה","טרינידד וטובגו","יוון","יפן","ירדן","ישראל","כווית","כף ורדה","לאוס","לבנון","לוב","לוקסמבורג","לטביה","ליבריה","ליטא","ליכטנשטיין","לסוטו","מאוריטניה","מאוריציוס","מאלי","מדגסקר","מוזמביק","מולדובה","מונגוליה","מונטנגרו","מונקו","מזרח טימור","מיאנמר","מיקרונזיה","מלאווי","מלזיה","מלטה","מצרים","מקדוניה הצפונית","מקסיקו","מרוקו","נאורו","נורווגיה","ניגריה","ניו זילנד","ניז'ר","ניקרגואה","נמיביה","נפאל","סאו טומה ופרינסיפה","סודאן","סומליה","סוריה","סורינאם","סיירה לאון","סיישל","סין","סינגפור","סלובניה","סלובקיה","סמואה","סנגל","סנט וינסנט והגרנדינים","סנט לוסיה","סנט קיטס ונוויס","סן מרינו","ספרד","סרביה","סרי לנקה","עומאן","עיראק","ערב הסעודית","פולין","פורטוגל","פיג'י","פינלנד","פלאו","פנמה","פפואה גינאה החדשה","פקיסטן","פרגוואי","פרו","צ'אד","צ'ילה","צ'כיה","צרפת","קובה","קולומביה","קומורו","קונגו","קוסטה ריקה","קוריאה הדרומית","קוריאה הצפונית","קזחסטן","קטר","קירגיזסטן","קיריבטי","קמבודיה","קמרון","קנדה","קניה","קפריסין","קרואטיה","רואנדה","רומניה","רוסיה","שוודיה","שווייץ","תאילנד","תוניסיה","תימן"];
         const dictColors = ["אדום","אפור","ארגמן","בורדו","ברונזה","ורוד","זהב","חאקי","חום","חרדל","טורקיז","ירוק","כסף","כחול","כתום","לבן","מג'נטה","סגול","פוקסיה","צהוב","ציאן","שחור","תכלת","תפוח"];
         const dictAnimals = ["אריה","ארנב","איילה","אפרוח","אלפקה","איגואנה","אנפה","אנקונדה","בבון","בואש","בונה","בז","ברדלס","ברבור","ברווז","גורילה","גמל","ג'ירפה","גירית","גמל שלמה","גנו","דולפין","דוב","דוכיפת","דינוזאור","דיונון","דבורה","היפופוטם","הודי","וואלבי","זאב","זברה","זבוב","זיקית","זרזיר","זחל","חזיר","חמור","חתול","חילזון","חולד","חרגול","חסידה","טיגריס","טוקן","טפיר","טווס","טרנטולה","יגואר","ינשוף","יתוש","יעל","יחמור","יערון","כבשה","כלב","כריש","כנר","לוויתן","למור","למה","לביאה","לטאה","לוקוס","מאנטה","מדוזה","מנטה ריי","מרבה רגליים","נמר","נמלה","נחש","נשר","נמיה","נקר","סוס","סרטן","סוריקטה","סלמנדרה","עטלף","עכבר","עכביש","עז","עקרב","עורב","עיט","פיל","פרה","פנדה","פרפר","פינגווין","פנתר","צב","צפרדע","צבוע","ציפור","קוף","קרנף","קנגורו","קואלה","קיפוד","קורמורן","קרפדה","ראם","רחם","רוטווילר","רימה","שועל","שור","שפן","שבלול","שלדג","שפירית","שנבוב","תנין","תנשמת","תולעת","תוכי","תאו"];
@@ -199,13 +219,45 @@
             { q: "איזה סוג של עץ נותן אצטרובלים?", o: ["אלון", "ברוש", "אורן", "זית"], a: 2 }
         ];
 
-        function getMyIdentity() {
-            let name = localStorage.getItem('tiyul_my_identity');
-            if (!name) {
-                name = prompt("כדי לאפשר זיהוי במשחקים, מכ\"ם ומצוקה - מי אתה מבין חברי המשפחה?");
-                if (name) localStorage.setItem('tiyul_my_identity', name.trim());
+        // זיהוי משתמש חכם
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedName = localStorage.getItem('tiyul_my_identity');
+            if (!savedName) {
+                changeUserIdentity();
+            } else {
+                updateHeaderUserName();
             }
-            return name || "משתמש אנונימי";
+        });
+
+        function getMyIdentity() {
+            return localStorage.getItem('tiyul_my_identity');
+        }
+
+        function updateHeaderUserName() {
+            const name = getMyIdentity();
+            if (name) {
+                document.getElementById('header-user-name').innerText = name;
+            }
+        }
+
+        function changeUserIdentity() {
+            const select = document.getElementById('welcome-user-select');
+            select.innerHTML = '<option value="" disabled selected>-- בחר מי אתה מהרשימה --</option>' + 
+                activeFamilyMembers.map(m => `<option value="${m}">${m}</option>`).join('');
+            
+            const modal = document.getElementById('welcome-modal');
+            modal.style.display = 'flex';
+        }
+
+        function saveUserIdentity() {
+            const select = document.getElementById('welcome-user-select');
+            if (!select.value) {
+                showModal('שגיאה', 'אנא בחר מי אתה מתוך הרשימה כדי להמשיך לטיול.');
+                return;
+            }
+            localStorage.setItem('tiyul_my_identity', select.value);
+            updateHeaderUserName();
+            document.getElementById('welcome-modal').style.display = 'none';
         }
 
         db.ref('/').on('value', (snapshot) => {
@@ -213,7 +265,6 @@
                 const data = snapshot.val();
                 if (data) {
                     appData = { ...appData, ...data };
-                    // הבטחת מבני נתונים
                     if (!appData.wallet) appData.wallet = { expenses: {}, planned: {} };
                     if (!appData.wallet.planned) appData.wallet.planned = {};
                     if (!appData.wallet.expenses) appData.wallet.expenses = {};
@@ -221,10 +272,9 @@
                     if (!appData.emergencyContacts) appData.emergencyContacts = { custom: {} };
                     if (!appData.emergency) appData.emergency = { sos: null, liveLocations: {}, ping: 0 };
                     
-                    // בדיקת קריאת מצוקה פתוחה (SOS)
                     const sos = appData.emergency.sos;
                     if (sos && sos.active) {
-                        const myName = localStorage.getItem('tiyul_my_identity');
+                        const myName = getMyIdentity();
                         if (sos.timestamp > lastSosTimestamp && sos.sender !== myName) {
                             document.getElementById('sos-alert-modal').classList.remove('hidden');
                             document.getElementById('sos-sender-name').innerText = `מאת: ${sos.sender}`;
@@ -235,11 +285,10 @@
                         document.getElementById('sos-alert-modal').classList.add('hidden');
                     }
 
-                    // בדיקת בקשת Ping למיקום
                     const pingTime = appData.emergency.ping || 0;
                     const lastHandledPing = Number(localStorage.getItem('last_ping_handled')) || 0;
                     if (pingTime > lastHandledPing && (Date.now() - pingTime) < 30000) {
-                        const myIdentity = localStorage.getItem('tiyul_my_identity');
+                        const myIdentity = getMyIdentity();
                         if (myIdentity && navigator.geolocation) {
                             navigator.geolocation.getCurrentPosition((pos) => {
                                 db.ref(`emergency/liveLocations/${myIdentity}`).set({
@@ -254,9 +303,8 @@
                 }
                 
                 generateInitialData();
-                document.getElementById('sync-status').innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מחובר';
+                document.getElementById('sync-status').innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מחובר ומסונכרן';
                 
-                // עדכון נקודות עליון
                 document.getElementById('pts-m').innerText = appData.games.scores.mishmar || 0;
                 document.getElementById('pts-a').innerText = appData.games.scores.adora || 0;
 
@@ -272,7 +320,10 @@
 
         function triggerSOS() {
             const myName = getMyIdentity();
-            if (!myName || myName === "משתמש אנונימי") return;
+            if (!myName) {
+                changeUserIdentity();
+                return;
+            }
 
             if (navigator.geolocation) {
                 showModal('משדר מצוקה...', '<i class="fas fa-satellite-dish fa-spin text-3xl text-red-500 mb-2"></i><br>מאתר את המיקום המדויק שלך ומשדר למשפחה...', false);
@@ -300,7 +351,10 @@
 
         function updateMyLiveLocation() {
             const myName = getMyIdentity();
-            if (!myName || myName === "משתמש אנונימי") return;
+            if (!myName) {
+                changeUserIdentity();
+                return;
+            }
             if (navigator.geolocation) {
                 showModal('מעדכן מיקום...', 'מחפש לוויינים...', false);
                 navigator.geolocation.getCurrentPosition((pos) => {
@@ -394,11 +448,11 @@
                         <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-wallet"></i></div>
                         <span class="font-bold text-gray-800">ארנק משותף</span>
                     </div>
-                    <div onclick="navigate('map')" class="menu-card bg-white rounded-3xl p-5 shadow-md border border-gray-100 text-center cursor-pointer flex flex-col items-center gap-3">
+                    <div onclick="navigate('map')" class="menu-card bg-white rounded-3xl p-5 shadow-md border border-gray-100 text-center cursor-pointer flex flex-col items-center gap-3 col-span-2">
                         <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-map-marked-alt"></i></div>
                         <span class="font-bold text-gray-800">מפת מסלול</span>
                     </div>
-                    <div onclick="navigate('chores')" class="menu-card bg-white rounded-3xl p-5 shadow-md border border-gray-100 text-center cursor-pointer flex flex-col items-center gap-3">
+                    <div onclick="navigate('chores')" class="menu-card bg-white rounded-3xl p-5 shadow-md border border-gray-100 text-center cursor-pointer flex flex-col items-center gap-3 col-span-2">
                         <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-tasks"></i></div>
                         <span class="font-bold text-gray-800">תורנויות</span>
                     </div>
@@ -558,6 +612,7 @@
             if(!nameInput.value.trim()) return showModal('חסר שם', 'הזן שם לפריט.');
             db.ref(`items/${person}`).push({ category, name: nameInput.value.trim(), amount: amountInput.value.trim() || "1", note: noteInput.value.trim(), packed: false });
         }
+
         function updateGroupProgress() {
             if(!currentGroup) return; let total = 0, packed = 0;
             families[currentGroup].members.forEach(person => { if(appData.items[person]) { Object.values(appData.items[person]).forEach(item => { total++; if(item.packed) packed++; }); } });
@@ -739,6 +794,7 @@
         // --- מלחמת קלפים ---
         function renderCardWar(content) {
             const warData = appData.games.war || { players: {} };
+            const myName = getMyIdentity();
             let html = `<div class="mb-4"><button onclick="navigate('games_console')" class="text-gray-500 font-bold hover:text-gray-800"><i class="fas fa-arrow-right mr-1"></i> חזור לתפריט</button></div><div class="text-center mb-8"><h2 class="text-4xl font-extrabold text-red-600"><i class="fas fa-heart mr-2"></i> מלחמת קלפים</h2></div>`;
             html += `<div class="bg-white rounded-3xl p-8 shadow-2xl text-center border-t-8 border-red-600 mb-8"><p class="text-gray-500 mb-6 font-bold">מי ישלוף את הקלף הגבוה ביותר?</p><div class="flex flex-wrap justify-center gap-6 mb-8 min-h-[150px]">`;
             
@@ -746,11 +802,11 @@
             if(players.length === 0) { html += `<div class="w-full text-center text-gray-400 font-bold text-xl mt-10">השולחן ריק. שלפו קלף!</div>`; } 
             else { players.forEach(p => { const card = warData.players[p]; html += `<div class="flex flex-col items-center anim-pulse"><span class="font-bold mb-2 text-gray-700 bg-gray-100 px-3 py-1 rounded-full text-sm shadow-sm">${p}</span><div class="playing-card ${card.color}"><div class="suit-top">${card.suit}</div><span>${card.val}</span><div class="suit-bottom">${card.suit}</div></div></div>`; }); }
             
-            html += `</div><div class="flex flex-col sm:flex-row gap-3 justify-center"><select id="war-player-name" class="p-4 border border-red-200 rounded-2xl font-bold bg-red-50 outline-none text-lg text-center"><option value="" disabled selected>מי אתה?</option>${activeFamilyMembers.map(m=>`<option value="${m}">${m}</option>`).join('')}</select><button onclick="drawCard()" class="bg-red-600 text-white font-black text-xl px-8 py-4 rounded-2xl shadow-lg hover:bg-red-700 transition"><i class="fas fa-hand-paper mr-2"></i> שלוף קלף!</button></div><button onclick="clearTable()" class="mt-6 text-sm text-gray-400 hover:text-gray-600 underline font-bold">נקה שולחן לסיבוב חדש</button></div>`;
+            html += `</div><div class="flex flex-col sm:flex-row gap-4 justify-center items-center"><div class="bg-red-50 text-red-800 px-6 py-4 rounded-2xl font-bold text-lg border border-red-200 shadow-inner">משחק בתור: <span class="font-black text-red-600">${myName || '?'}</span></div><button onclick="drawCard()" class="bg-red-600 text-white font-black text-xl px-10 py-4 rounded-2xl shadow-lg hover:bg-red-700 transition transform hover:scale-105"><i class="fas fa-hand-paper mr-2"></i> שלוף קלף!</button></div><button onclick="clearTable()" class="mt-8 text-sm text-gray-400 hover:text-gray-600 underline font-bold">נקה שולחן לסיבוב חדש</button></div>`;
             content.innerHTML = html;
         }
         function drawCard() {
-            const name = document.getElementById('war-player-name').value; if(!name) return showModal('שגיאה', 'בחר את שמך.');
+            const name = getMyIdentity(); if(!name) { changeUserIdentity(); return; }
             const suits = [{s:'♥',c:'card-red'},{s:'♦',c:'card-red'},{s:'♣',c:'card-black'},{s:'♠',c:'card-black'}];
             const vals = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
             const rS = suits[Math.floor(Math.random()*suits.length)]; const rV = vals[Math.floor(Math.random()*vals.length)];
@@ -836,7 +892,6 @@
             document.getElementById('cc-results').innerHTML = `<h3 class="text-3xl font-black text-green-600 mb-4">סך הכל: ${score} נקודות!</h3><div class="text-right text-gray-600 font-bold space-y-2 bg-white p-4 rounded-xl border">${msgs.join('<br>')}</div><p class="mt-4 text-sm font-bold text-red-500">* שאר הקטגוריות הפתוחות (ילד/ילדה/עיר/צומח) יבדקו על ידי שאר המשפחה בקרוואן!</p>`;
         }
 
-        // --- הזרקת נתונים ראשונית (הפונקציה המתוקנת ללא השגיאה!) ---
         function generateInitialData() {
             if (!appData.chores || Object.keys(appData.chores || {}).length === 0) {
                 db.ref('chores').set([{ name: "שטיפת כלים", assignee: "" }, { name: "ריקון שירותים כימיים", assignee: "" }, { name: "הכנת קפה", assignee: "" }]);
