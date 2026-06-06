@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>טיול קרוואנים 2026 - משפחות פרידמן</title>
-    <!-- טעינת Tailwind לעיצוב ו-FontAwesome לאייקונים -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- טעינת Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -138,7 +136,6 @@
         </div>
     </div>
 
-    <!-- Hidden file inputs for uploads -->
     <input type="file" id="doc-upload-input" class="hidden" accept="image/*" onchange="handleDocumentUpload(event)">
     <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="handleAvatarUpload(event)">
 
@@ -159,7 +156,6 @@
 
         const db = firebase.database();
 
-        // חלוקה למשפחות ולקבוצות
         const groups = {
             mishmar: ["יוני", "חנה", "ליאור", "אייל", "הילה", "יובל", "ציוד כללי פרידמן משמר"],
             adora: ["עוזיאל", "שרונה", "להבה", "אליה", "דביר", "הלל", "ציוד כללי פרידמן אדורה"],
@@ -232,7 +228,7 @@
             document.getElementById('home-btn').classList.remove('hidden');
 
             if (moduleName === 'games') {
-                activeGame = ''; 
+                activeGame = ''; // Reset game state when opening module
             }
 
             if (groups[moduleName]) {
@@ -304,8 +300,14 @@
         
         const countriesList = ['אוגנדה', 'אוזבקיסטן', 'אוסטריה', 'אוסטרליה', 'אוקראינה', 'אורוגוואי', 'איחוד האמירויות', 'איטליה', 'אינדונזיה', 'איסלנד', 'איראן', 'אירלנד', 'אלבניה', 'אלגריה', 'אנגולה', 'אנדורה', 'אסטוניה', 'אפגניסטן', 'אקוודור', 'ארגנטינה', 'אריתריאה', 'ארמניה', 'ארצות הברית', 'אתיופיה', 'בולגריה', 'בוליביה', 'בוסניה', 'בוטסואנה', 'בחריין', 'בלגיה', 'בליז', 'בלארוס', 'בנגלדש', 'ברזיל', 'בריטניה', 'גאורגיה', 'גאנה', 'גואטמלה', 'גינאה', 'גמייקה', 'גרמניה', 'דנמרק', 'דרום אפריקה', 'דרום קוריאה', 'האיטי', 'הודו', 'הולנד', 'הונגריה', 'הונדורס', 'הפיליפינים', 'וייטנאם', 'ונצואלה', 'זמביה', 'זימבבואה', 'חוף השנהב', 'טורקיה', 'טורקמניסטן', 'טנזניה', 'יוון', 'יפן', 'ירדן', 'ישראל', 'כווית', 'לאוס', 'לבנון', 'לוב', 'לוקסמבורג', 'לטביה', 'ליבריה', 'ליטא', 'ליכטנשטיין', 'מדגסקר', 'מוזמביק', 'מולדובה', 'מונגוליה', 'מונקו', 'מיאנמר', 'מלאווי', 'מלדיביים', 'מלזיה', 'מלטה', 'מצרים', 'מקדוניה', 'מקסיקו', 'מרוקו', 'נורווגיה', 'ניגריה', 'ניו זילנד', 'ניקרגואה', 'נפאל', 'סודאן', 'סומליה', 'סוריה', 'סיירה לאון', 'סין', 'סינגפור', 'סלובניה', 'סלובקיה', 'סנגל', 'ספרד', 'סרביה', 'סרי לנקה', 'עומאן', 'עיראק', 'ערב הסעודית', 'פולין', 'פורטוגל', 'פינלנד', 'פנמה', 'פקיסטן', 'פרגוואי', 'פרו', 'צאד', 'צילה', 'צכיה', 'צרפת', 'קובה', 'קולומביה', 'קוסטה ריקה', 'קזחסטן', 'קטר', 'קמבודיה', 'קמרון', 'קנדה', 'קניה', 'קפריסין', 'קרואטיה', 'רואנדה', 'רומניה', 'רוסיה', 'שוודיה', 'שווייץ', 'תאילנד', 'תוניסיה', 'תימן'];
         const colorsList = ['אדום', 'אפור', 'בורדו', 'בלונד', 'ברונזה', 'ורוד', 'זהב', 'חום', 'חרדל', 'טורקיז', 'ירוק', 'כסף', 'כחול', 'כתום', 'לבן', 'לילך', 'מגנטה', 'נחושת', 'סגול', 'פוקסיה', 'צהוב', 'ציאן', 'שחור', 'תכלת', 'ארגמן', 'שני', 'פנינה', 'קרם', 'בז'];
-        const citiesList = ['ירושלים', 'תל אביב', 'חיפה', 'ראשון לציון', 'פתח תקווה', 'אשדוד', 'נתניה', 'באר שבע', 'בני ברק', 'חולון', 'רמת גן', 'אשקלון', 'רחובות', 'בת ים', 'הרצליה', 'כפר סבא', 'חדרה', 'מודיעין', 'רעננה', 'לוד', 'רמלה', 'נצרת', 'קריית גת', 'נהריה', 'עפולה', 'אילת', 'קריית שמונה', 'צפת', 'טבריה', 'לונדון', 'פריז', 'ניו יורק', 'רומא', 'מדריד', 'ברלין', 'וינה', 'ברצלונה', 'מילאנו', 'ונציה', 'אמסטרדם', 'פראג', 'בודפשט', 'מינכן', 'זלצבורג', 'אינסברוק'];
-        const animalsList = ['אריה', 'דוב', 'פיל', 'נמר', 'זאב', 'שועל', 'כלב', 'חתול', 'עכבר', 'נחש', 'צפרדע', 'סוס', 'חמור', 'פרה', 'כבשה', 'עז', 'גמל', 'נשר', 'ינשוף', 'תוכי', 'יונה', 'דג', 'לויתן', 'דולפין', 'כריש', 'תמנון', 'סרטן', 'עכביש', 'נמלה', 'זבוב', 'יתוש', 'צבי', 'אייל', 'קוף', 'גורילה', 'קרנף', 'היפופוטם', 'תנין', 'צייטה', 'גירפה', 'זברה', 'ארנב', 'חזיר'];
+        const citiesList = ['ירושלים', 'תל אביב', 'חיפה', 'ראשון לציון', 'פתח תקווה', 'אשדוד', 'נתניה', 'באר שבע', 'בני ברק', 'חולון', 'רמת גן', 'אשקלון', 'רחובות', 'בת ים', 'הרצליה', 'כפר סבא', 'חדרה', 'מודיעין', 'רעננה', 'לוד', 'רמלה', 'נצרת', 'קריית גת', 'נהריה', 'עפולה', 'אילת', 'קריית שמונה', 'צפת', 'טבריה', 'לונדון', 'פריז', 'ניו יורק', 'רומא', 'מדריד', 'ברלין', 'וינה', 'ברצלונה', 'מילאנו', 'ונציה', 'אמסטרדם', 'פראג', 'בודפשט', 'מינכן', 'זלצבורג', 'אינסברוק', 'רודוס', 'אתונה', 'דובאי', 'ורשה', 'בוקרשט'];
+        const animalsList = ['אריה', 'דוב', 'פיל', 'נמר', 'זאב', 'שועל', 'כלב', 'חתול', 'עכבר', 'נחש', 'צפרדע', 'סוס', 'חמור', 'פרה', 'כבשה', 'עז', 'גמל', 'נשר', 'ינשוף', 'תוכי', 'יונה', 'דג', 'לויתן', 'דולפין', 'כריש', 'תמנון', 'סרטן', 'עכביש', 'נמלה', 'זבוב', 'יתוש', 'צבי', 'אייל', 'קוף', 'גורילה', 'קרנף', 'היפופוטם', 'תנין', 'צייטה', 'גירפה', 'זברה', 'ארנב', 'חזיר', 'תרנגול', 'ברווז', 'ברבור', 'ינשוף', 'נקר', 'צב'];
+        
+        // מילון מקצועות מורחב
+        const professionsList = ['אופה', 'אדריכל', 'אח', 'אחות', 'אינסטלטור', 'בנאי', 'ברמן', 'גנן', 'דייג', 'דוור', 'דייל', 'וטרינר', 'זמר', 'חייל', 'חקלאי', 'חשמלאי', 'טייס', 'טבח', 'טכנאי', 'ימאי', 'יועץ', 'כבאי', 'כנר', 'ליצן', 'מורה', 'מתכנת', 'מלצר', 'מהנדס', 'מוסכניק', 'מדען', 'מנקה', 'נגר', 'נהג', 'סנדלר', 'סופר', 'ספורטאי', 'עורך דין', 'עיתונאי', 'צלם', 'צייר', 'קבלן', 'קצב', 'קופאי', 'רופא', 'רוקח', 'רקדן', 'שוטר', 'שופט', 'שחקן', 'שומר', 'תופר', 'רואה חשבון', 'כלכלן', 'אסטרונאוט', 'אנימטור', 'במאי', 'גאולוג', 'דוגמן', 'ווטרינר', 'זגג', 'חוקר', 'יהלומן', 'כוריאוגרף', 'לבלר', 'מנעולן', 'נווט', 'סוכן', 'פסיכולוג', 'פרופסור', 'צורף', 'קוסם', 'רתך', 'שען', 'תסריטאי'];
+
+        // מילון דומם מורחב (בדגש גם על ר')
+        const objectsList = ['אוהל', 'ארון', 'אוטו', 'אבן', 'אגרטל', 'בובה', 'בורג', 'בקבוק', 'ברז', 'גדר', 'גלגל', 'גג', 'דלת', 'דגל', 'דלי', 'הגה', 'וילון', 'זכוכית', 'חוט', 'חלון', 'חולצה', 'טבעת', 'טלפון', 'טלוויזיה', 'ידית', 'יהלום', 'כדור', 'כסא', 'כוס', 'כלי', 'לוח', 'מראה', 'מנורה', 'מקרר', 'מחשב', 'מטבע', 'מכונית', 'מפתח', 'משקפיים', 'נעל', 'סיר', 'ספר', 'ספה', 'עט', 'עיפרון', 'עציץ', 'פח', 'פנס', 'פסנתר', 'פטיש', 'צלחת', 'קיר', 'קופסה', 'קערה', 'קלמר', 'רדיו', 'רכבת', 'רמזור', 'רהיט', 'רצועה', 'רשת', 'רחפן', 'רמקול', 'רכב', 'רצפה', 'שולחן', 'שטיח', 'שעון', 'שלט', 'שער', 'תמונה', 'תנור', 'תיק', 'תוף', 'אוזניות', 'ארנק', 'אופניים', 'בגד', 'בניין', 'גשר', 'דף', 'הליקופטר', 'ווקמן', 'זקט', 'חגורה', 'טיל', 'יומן', 'כובע', 'מברשת', 'מספריים', 'נורה', 'סולם', 'עגלה', 'פחית', 'צמיד', 'קומקום', 'רובה', 'רוכסן', 'רכבל', 'רעשן', 'רחוב', 'שרשרת', 'תכשיט'];
 
         const triviaQuestions = [
             { q: "איזה כלי שחמט יכול לזוז באלכסון בלבד?", options: ["צריח", "סוס", "רץ", "מלך"], a: 2 },
@@ -336,16 +338,16 @@
                 </div>
 
                 <div class="bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl shadow-lg p-1 mb-6 relative">
-                    <button onclick="resetGameScores()" class="absolute top-2 right-2 text-white/70 hover:text-white bg-black/20 p-2 rounded-full text-xs" title="איפוס תוצאות"><i class="fas fa-redo"></i> איפוס</button>
-                    <div class="bg-white rounded-xl p-4 flex justify-between items-center text-center mt-6">
+                    <button onclick="resetGameScores()" class="absolute top-2 right-2 text-white/70 hover:text-white bg-black/20 px-3 py-1.5 rounded-full text-xs font-bold transition shadow" title="איפוס תוצאות"><i class="fas fa-undo"></i> איפוס משחק</button>
+                    <div class="bg-white rounded-xl p-4 flex justify-between items-center text-center mt-8">
                         <div class="flex-1">
                             <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">משמר</p>
-                            <p class="text-3xl font-black text-indigo-600">${scores.mishmar || 0}</p>
+                            <p class="text-4xl font-black text-indigo-600">${scores.mishmar || 0}</p>
                         </div>
                         <div class="px-2 text-2xl font-black text-gray-300">VS</div>
                         <div class="flex-1">
                             <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">אדורה</p>
-                            <p class="text-3xl font-black text-blue-600">${scores.adora || 0}</p>
+                            <p class="text-4xl font-black text-blue-600">${scores.adora || 0}</p>
                         </div>
                     </div>
                 </div>
@@ -354,44 +356,44 @@
             if (activeGame === '') {
                 html += `
                 <div class="grid grid-cols-1 gap-4 mb-6">
-                    <button onclick="activeGame='trivia'; renderGamesDashboard()" class="bg-white p-5 rounded-2xl shadow-sm border border-purple-200 hover:bg-purple-50 transition text-right flex items-center gap-4">
-                        <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-2xl"><i class="fas fa-question"></i></div>
+                    <button onclick="activeGame='trivia'; renderGamesDashboard()" class="bg-white p-5 rounded-2xl shadow-sm border border-purple-200 hover:bg-purple-50 transition text-right flex items-center gap-4 group">
+                        <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-2xl group-hover:scale-110 transition"><i class="fas fa-question"></i></div>
                         <div><h3 class="font-bold text-gray-800 text-lg">טריוויה לייב</h3><p class="text-sm text-gray-500">שאלות לכל המשפחה, צוברים נקודות!</p></div>
                     </button>
-                    <button onclick="activeGame='music'; renderGamesDashboard()" class="bg-white p-5 rounded-2xl shadow-sm border border-pink-200 hover:bg-pink-50 transition text-right flex items-center gap-4">
-                        <div class="w-14 h-14 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-2xl"><i class="fas fa-music"></i></div>
-                        <div><h3 class="font-bold text-gray-800 text-lg">שירון קרוואנים</h3><p class="text-sm text-gray-500">מקבלים מילה, הראשונים ששרים מנצחים!</p></div>
+                    <button onclick="activeGame='music'; renderGamesDashboard()" class="bg-white p-5 rounded-2xl shadow-sm border border-pink-200 hover:bg-pink-50 transition text-right flex items-center gap-4 group">
+                        <div class="w-14 h-14 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-2xl group-hover:scale-110 transition"><i class="fas fa-music"></i></div>
+                        <div><h3 class="font-bold text-gray-800 text-lg">שירון קרוואנים</h3><p class="text-sm text-gray-500">מקבלים מילה, הראשונים שכותבים שיר מנצחים!</p></div>
                     </button>
-                    <button onclick="activeGame='eretzir'; renderGamesDashboard()" class="bg-white p-5 rounded-2xl shadow-sm border border-blue-200 hover:bg-blue-50 transition text-right flex items-center gap-4">
-                        <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl"><i class="fas fa-globe"></i></div>
+                    <button onclick="activeGame='eretzir'; renderGamesDashboard()" class="bg-white p-5 rounded-2xl shadow-sm border border-blue-200 hover:bg-blue-50 transition text-right flex items-center gap-4 group">
+                        <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl group-hover:scale-110 transition"><i class="fas fa-globe"></i></div>
                         <div><h3 class="font-bold text-gray-800 text-lg">ארץ עיר חכם</h3><p class="text-sm text-gray-500">המערכת בודקת תשובות ומחלקת ניקוד!</p></div>
                     </button>
                 </div>`;
             } else if (activeGame === 'trivia') {
                 html += `
-                <div class="bg-purple-50 border border-purple-200 rounded-2xl p-6 text-center relative">
-                    <button onclick="activeGame=''; renderGamesDashboard()" class="absolute top-4 left-4 text-gray-500 hover:bg-gray-200 p-2 rounded-full text-sm font-bold"><i class="fas fa-arrow-right"></i> חזור</button>
-                    <h3 class="font-bold text-purple-800 text-xl mb-4"><i class="fas fa-question-circle"></i> טריוויה לייב</h3>
+                <div class="bg-purple-50 border border-purple-200 rounded-2xl p-6 text-center relative shadow-inner">
+                    <button onclick="activeGame=''; renderGamesDashboard()" class="absolute top-4 left-4 text-purple-600 hover:bg-purple-200 p-2 rounded-full text-sm font-bold bg-purple-100"><i class="fas fa-arrow-right"></i> חזור</button>
+                    <h3 class="font-bold text-purple-800 text-xl mb-4 mt-6"><i class="fas fa-question-circle"></i> טריוויה לייב</h3>
                     <p class="text-gray-600 mb-6 text-sm">מי שעונה נכון מקבל נקודה למשפחה שלו!</p>
-                    <button onclick="startTriviaQuestion()" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-lg w-full">שלוף שאלה!</button>
+                    <button onclick="startTriviaQuestion()" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-lg w-full transition">שלוף שאלה!</button>
                     <div id="game-area" class="mt-6 hidden"></div>
                 </div>`;
             } else if (activeGame === 'music') {
                 html += `
-                <div class="bg-pink-50 border border-pink-200 rounded-2xl p-6 text-center relative">
-                    <button onclick="activeGame=''; renderGamesDashboard()" class="absolute top-4 left-4 text-gray-500 hover:bg-gray-200 p-2 rounded-full text-sm font-bold"><i class="fas fa-arrow-right"></i> חזור</button>
-                    <h3 class="font-bold text-pink-800 text-xl mb-4"><i class="fas fa-music"></i> שירון קרוואנים</h3>
-                    <p class="text-gray-600 mb-6 text-sm">המשפחה הראשונה ששרה שיר עם המילה זוכה בנקודה!</p>
-                    <button onclick="startMusicGame()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-lg w-full">הגרל מילה!</button>
+                <div class="bg-pink-50 border border-pink-200 rounded-2xl p-6 text-center relative shadow-inner">
+                    <button onclick="activeGame=''; renderGamesDashboard()" class="absolute top-4 left-4 text-pink-600 hover:bg-pink-200 p-2 rounded-full text-sm font-bold bg-pink-100"><i class="fas fa-arrow-right"></i> חזור</button>
+                    <h3 class="font-bold text-pink-800 text-xl mb-4 mt-6"><i class="fas fa-music"></i> שירון קרוואנים</h3>
+                    <p class="text-gray-600 mb-6 text-sm">מגרילים מילה. כותבים את השיר בתיבה ושולחים מיד כדי לנצח!</p>
+                    <button onclick="startMusicGame()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-lg w-full transition">הגרל מילה!</button>
                     <div id="game-area" class="mt-6 hidden"></div>
                 </div>`;
             } else if (activeGame === 'eretzir') {
                 html += `
-                <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center relative">
-                    <button onclick="activeGame=''; renderGamesDashboard()" class="absolute top-4 left-4 text-gray-500 hover:bg-gray-200 p-2 rounded-full text-sm font-bold"><i class="fas fa-arrow-right"></i> חזור</button>
-                    <h3 class="font-bold text-blue-800 text-xl mb-4"><i class="fas fa-globe"></i> ארץ עיר חכם</h3>
+                <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 text-center relative shadow-inner">
+                    <button onclick="activeGame=''; renderGamesDashboard()" class="absolute top-4 left-4 text-blue-600 hover:bg-blue-200 p-2 rounded-full text-sm font-bold bg-blue-100"><i class="fas fa-arrow-right"></i> חזור</button>
+                    <h3 class="font-bold text-blue-800 text-xl mb-4 mt-6"><i class="fas fa-globe"></i> ארץ עיר חכם</h3>
                     <p class="text-gray-600 mb-6 text-sm">הכנס מילים. המערכת תבדוק מול המילונים ותחלק ניקוד!</p>
-                    <button onclick="rollEretzIr()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-lg w-full">גלגל אות!</button>
+                    <button onclick="rollEretzIr()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-lg w-full transition">גלגל אות!</button>
                     <div id="game-area" class="mt-6 hidden"></div>
                 </div>`;
             }
@@ -401,14 +403,14 @@
         function addScoreAmount(family, amount) {
             const currentScore = appData.games.scores[family] || 0;
             db.ref(`games/scores/${family}`).set(currentScore + amount);
-            document.getElementById('game-area').innerHTML += `<p class="text-green-600 font-bold text-lg mt-4 animate-bounce">נוספו ${amount} נקודות ל${family === 'mishmar' ? 'משמר' : 'אדורה'}! 🏆</p>`;
-            setTimeout(() => renderGamesDashboard(), 2000);
+            document.getElementById('game-area').innerHTML += `<p class="text-green-600 font-bold text-lg mt-4 animate-bounce bg-green-100 p-3 rounded-xl border border-green-200">נוספו ${amount} נקודות ל${family === 'mishmar' ? 'משמר' : 'אדורה'}! 🏆</p>`;
+            setTimeout(() => renderGamesDashboard(), 2500);
         }
 
         function addScore(family) { addScoreAmount(family, 1); }
 
         function resetGameScores() {
-            showModal('איפוס משחקים', 'לאפס את הניקוד של שתי המשפחות?', true, () => {
+            showModal('איפוס תוצאות', 'לאפס את הניקוד של שתי המשפחות ולהתחיל משחק חדש?', true, () => {
                 db.ref('games/scores/mishmar').set(0);
                 db.ref('games/scores/adora').set(0);
             });
@@ -420,7 +422,7 @@
             area.classList.remove('hidden');
             
             let optionsHtml = qObj.options.map((opt, idx) => 
-                `<button onclick="answerTrivia(${idx}, ${qObj.a})" class="w-full text-right p-3 bg-white border border-purple-200 rounded-lg shadow-sm hover:bg-purple-100 font-medium transition">${opt}</button>`
+                `<button onclick="answerTrivia(${idx}, ${qObj.a})" class="w-full text-right p-3 bg-white border border-purple-200 rounded-lg shadow-sm hover:bg-purple-100 font-medium transition active:scale-95">${opt}</button>`
             ).join('');
 
             area.innerHTML = `
@@ -434,17 +436,17 @@
         function answerTrivia(selectedIdx, correctIdx) {
             if(selectedIdx === correctIdx) {
                 document.getElementById('game-area').innerHTML = `
-                    <div class="bg-green-100 p-5 rounded-xl border border-green-200 text-center animate-pulse mt-4">
+                    <div class="bg-green-100 p-5 rounded-xl border border-green-200 text-center animate-pulse mt-4 shadow-inner">
                         <p class="text-xl font-bold text-green-700 mb-4">🎉 תשובה נכונה! 🎉</p>
-                        <p class="text-sm font-bold text-gray-600 mb-3">מי ענה נכון?</p>
+                        <p class="text-sm font-bold text-gray-600 mb-3">איזו משפחה ענתה?</p>
                         <div class="flex gap-3 justify-center">
-                            <button onclick="addScore('mishmar')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">משמר</button>
-                            <button onclick="addScore('adora')" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">אדורה</button>
+                            <button onclick="addScore('mishmar')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold shadow transition">משמר</button>
+                            <button onclick="addScore('adora')" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow transition">אדורה</button>
                         </div>
                     </div>
                 `;
             } else {
-                document.getElementById('game-area').innerHTML = `<div class="bg-red-50 p-5 rounded-xl border border-red-200 text-center mt-4"><p class="text-lg font-bold text-red-600 mb-2">אופס... טעות! 😢</p><button onclick="startTriviaQuestion()" class="text-gray-500 underline text-sm mt-2">נסו שוב</button></div>`;
+                document.getElementById('game-area').innerHTML = `<div class="bg-red-50 p-5 rounded-xl border border-red-200 text-center mt-4"><p class="text-lg font-bold text-red-600 mb-2">אופס... טעות! 😢</p><button onclick="startTriviaQuestion()" class="text-gray-500 bg-white border border-gray-300 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-50 text-sm mt-2 transition">נסו שאלה אחרת</button></div>`;
             }
         }
 
@@ -454,17 +456,39 @@
             area.classList.remove('hidden');
             area.innerHTML = `
                 <div class="bg-white p-6 rounded-xl shadow border border-pink-200 text-center mt-4">
-                    <p class="text-sm text-gray-500 mb-2">שירו שיר שכולל את המילה:</p>
+                    <p class="text-sm text-gray-500 mb-2">מצאו שיר שכולל את המילה:</p>
                     <p class="text-5xl font-black text-pink-600 mb-6 drop-shadow-md">"${word}"</p>
-                    <div class="border-t pt-4">
-                        <p class="text-xs text-gray-500 mb-3 font-bold uppercase">מי שר ראשון וזכה?</p>
+                    
+                    <div class="bg-pink-50 p-4 rounded-xl border border-pink-100 mb-4">
+                        <p class="text-sm font-bold text-pink-800 mb-2">מצאתם? הקלידו כאן מהר!</p>
+                        <input type="text" id="music-answer-input" placeholder="הקלידו את השורה מהשיר..." class="w-full p-3 border border-pink-300 rounded-lg outline-none focus:ring-2 focus:ring-pink-500 mb-3 text-center font-medium">
+                        
                         <div class="flex gap-3 justify-center">
-                            <button onclick="addScore('mishmar')" class="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-lg font-bold transition">משמר</button>
-                            <button onclick="addScore('adora')" class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-bold transition">אדורה</button>
+                            <button onclick="submitMusicAnswer('mishmar')" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-3 rounded-lg font-bold shadow transition text-sm">משמר שולחים!</button>
+                            <button onclick="submitMusicAnswer('adora')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-3 rounded-lg font-bold shadow transition text-sm">אדורה שולחים!</button>
                         </div>
                     </div>
                 </div>
             `;
+        }
+
+        function submitMusicAnswer(family) {
+            const input = document.getElementById('music-answer-input').value.trim();
+            if (!input) {
+                alert("קודם תקלידו את השיר שמצאתם!");
+                return;
+            }
+            
+            const area = document.getElementById('game-area');
+            area.innerHTML = `
+                <div class="bg-green-100 p-5 rounded-xl border border-green-200 text-center mt-4 shadow-inner">
+                    <p class="text-xl font-bold text-green-700 mb-2">🎤 שיר נשלח!</p>
+                    <p class="text-md text-gray-700 italic mb-4">"${input}"</p>
+                    <p class="font-bold text-green-800">הנקודה הולכת ל${family === 'mishmar' ? 'משמר' : 'אדורה'}!</p>
+                </div>
+            `;
+            // Add score after short delay to show the success message
+            setTimeout(() => addScore(family), 1500);
         }
 
         function rollEretzIr() {
@@ -483,18 +507,18 @@
                     let inputsHtml = eretzIrCategories.map(cat => 
                         `<div class="flex items-center gap-2 mb-2">
                             <label class="w-1/3 text-sm font-bold text-blue-800 text-right">${cat}</label>
-                            <input type="text" id="eretz-ir-${cat}" class="w-2/3 p-2 border border-blue-200 rounded outline-none focus:border-blue-500" placeholder="הקלידו...">
+                            <input type="text" id="eretz-ir-${cat}" class="w-2/3 p-2 border border-blue-200 rounded outline-none focus:border-blue-500 focus:bg-blue-50 transition" placeholder="הקלידו...">
                         </div>`
                     ).join('');
                     
                     area.innerHTML = `
                         <div class="bg-white p-6 rounded-xl shadow border border-blue-200 text-center mt-4">
                             <p class="text-sm text-gray-500 mb-2">האות שנבחרה:</p>
-                            <p class="text-6xl font-black text-blue-600 mb-6 bg-blue-50 inline-block px-6 py-2 rounded-2xl border-2 border-blue-200">${finalLetter}</p>
-                            <div class="text-right border-t pt-4">
+                            <p class="text-6xl font-black text-blue-600 mb-6 bg-blue-50 inline-block px-6 py-2 rounded-2xl border-2 border-blue-200 shadow-inner">${finalLetter}</p>
+                            <div class="text-right border-t border-gray-100 pt-4">
                                 ${inputsHtml}
                             </div>
-                            <button onclick="checkEretzIr('${finalLetter}')" class="mt-4 bg-green-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg w-full transition">בדוק תוצאות וקבל ניקוד!</button>
+                            <button onclick="checkEretzIr('${finalLetter}')" class="mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg w-full transition text-lg"><i class="fas fa-check-double mr-2"></i> בדוק תוצאות וקבל ניקוד!</button>
                         </div>
                     `;
                 }
@@ -503,7 +527,7 @@
 
         function checkEretzIr(letter) {
             let points = 0;
-            let html = '<div class="bg-white p-6 rounded-xl shadow border border-blue-200 text-center mt-4"><h3 class="font-bold text-xl text-gray-800 mb-4">תוצאות הבדיקה:</h3><ul class="text-right space-y-2 mb-6 border-b pb-4">';
+            let html = '<div class="bg-white p-6 rounded-xl shadow border border-blue-200 text-center mt-4"><h3 class="font-bold text-xl text-gray-800 mb-4">תוצאות הבדיקה של השופט:</h3><ul class="text-right space-y-3 mb-6 border-b border-gray-100 pb-4">';
 
             eretzIrCategories.forEach(cat => {
                 let inputVal = document.getElementById(`eretz-ir-${cat}`).value.trim();
@@ -512,36 +536,42 @@
 
                 if(inputVal.length > 1) {
                     if(inputVal.charAt(0) !== letter) {
-                        reason = `לא מתחיל ב-${letter}`;
+                        reason = `פסול: לא מתחיל באות ${letter}`;
                     } else {
                         // בדיקת מילונים מובנים
-                        if(cat === 'ארץ' && !countriesList.includes(inputVal)) reason = "לא מוכר במילון הארצות";
-                        else if(cat === 'עיר' && !citiesList.includes(inputVal)) reason = "לא מוכר במילון הערים שלנו";
-                        else if(cat === 'חי' && !animalsList.includes(inputVal)) reason = "לא מוכר במילון החיות שלנו";
-                        else if(cat === 'צבע' && !colorsList.includes(inputVal)) reason = "לא מוכר במילון הצבעים";
+                        if(cat === 'ארץ' && !countriesList.includes(inputVal)) reason = "פסול: לא מופיע במילון הארצות!";
+                        else if(cat === 'עיר' && !citiesList.includes(inputVal)) reason = "פסול: לא מופיע במילון הערים המוכרות!";
+                        else if(cat === 'חי' && !animalsList.includes(inputVal)) reason = "פסול: לא מוכר במילון החיות המורחב!";
+                        else if(cat === 'צבע' && !colorsList.includes(inputVal)) reason = "פסול: לא מופיע במילון הצבעים!";
+                        else if(cat === 'מקצוע' && !professionsList.includes(inputVal)) reason = "פסול: לא מוכר במילון המקצועות!";
+                        else if(cat === 'דומם' && !objectsList.includes(inputVal)) reason = "פסול: לא מופיע במילון הדומם/חפצים שלנו!";
                         else isValid = true;
                     }
                 } else if(inputVal.length > 0) {
                     reason = "קצר מדי";
+                } else {
+                    reason = "לא הוזן ערך";
                 }
 
                 if(isValid) {
                     points++;
-                    html += `<li><i class="fas fa-check text-green-500 mr-2"></i> <b>${cat}:</b> ${inputVal} <span class="text-green-600 font-bold">(+1)</span></li>`;
-                } else if(inputVal.length > 0) {
-                    html += `<li><i class="fas fa-times text-red-500 mr-2"></i> <b>${cat}:</b> <span class="line-through">${inputVal}</span> <span class="text-xs text-red-400">(${reason})</span></li>`;
+                    html += `<li class="bg-green-50 p-2 rounded border border-green-100"><i class="fas fa-check text-green-500 mr-2"></i> <b>${cat}:</b> ${inputVal} <span class="text-green-600 font-bold bg-white px-2 py-0.5 rounded shadow-sm text-xs mr-2">+1</span></li>`;
+                } else {
+                    html += `<li class="bg-red-50 p-2 rounded border border-red-100"><i class="fas fa-times text-red-500 mr-2"></i> <b>${cat}:</b> <span class="line-through text-gray-500">${inputVal || '---'}</span> <span class="text-xs text-red-500 font-bold block mt-1">${reason}</span></li>`;
                 }
             });
 
-            html += `</ul><div class="p-3 bg-blue-100 rounded-lg border border-blue-200"><p class="text-2xl font-black text-blue-800 mb-2">סך הכל: ${points} נקודות!</p>`;
+            html += `</ul><div class="p-4 bg-blue-100 rounded-xl border border-blue-200 shadow-inner">
+                <p class="text-3xl font-black text-blue-800 mb-2">סה"כ הרווחתם: ${points} נקודות!</p>`;
+            
             if(points > 0) {
-                html += `<p class="text-sm text-blue-600 mt-2 mb-3 font-bold">לאיזו משפחה להוסיף את הניקוד?</p>
+                html += `<p class="text-sm text-blue-700 mt-4 mb-3 font-bold">לאיזו משפחה להוסיף את הניקוד עכשיו?</p>
                          <div class="flex gap-3 justify-center">
-                            <button onclick="addScoreAmount('mishmar', ${points})" class="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-lg font-bold">משמר</button>
-                            <button onclick="addScoreAmount('adora', ${points})" class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-bold">אדורה</button>
+                            <button onclick="addScoreAmount('mishmar', ${points})" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg font-bold shadow transition">משמר</button>
+                            <button onclick="addScoreAmount('adora', ${points})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold shadow transition">אדורה</button>
                          </div>`;
             } else {
-                html += `<button onclick="renderGamesDashboard()" class="mt-2 text-gray-500 underline">חזור למשחקים</button>`;
+                html += `<button onclick="activeGame='eretzir'; renderGamesDashboard()" class="mt-4 bg-white text-blue-600 font-bold py-2 px-6 rounded-lg shadow border border-blue-200 transition hover:bg-blue-50">נסו שוב באות אחרת</button>`;
             }
             html += `</div></div>`;
             document.getElementById('game-area').innerHTML = html;
@@ -554,20 +584,21 @@
             let html = `
                 <div class="text-center mb-6 mt-4">
                     <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-map-marked-alt text-red-500 mr-2"></i> מפת מסלול</h2>
-                    <p class="text-gray-500 mt-2">האב ניווט חכם לחניונים ויעדים</p>
+                    <p class="text-gray-500 mt-2">ניווט מהיר לחניונים ולנקודות עניין</p>
                 </div>
 
                 <div class="w-full bg-white rounded-2xl shadow-md overflow-hidden mb-8 border border-gray-200">
+                    <!-- מסגרת מפה של Google My Maps -->
                     <iframe src="https://www.google.com/maps/d/embed?mid=1vXv68_zBwN2A0E4yv6S5Sg2c7kM&hl=he" width="100%" height="350" frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
                 </div>
 
                 <div class="bg-slate-50 rounded-2xl shadow-inner p-5 mb-8 border border-slate-200">
-                    <h3 class="font-bold text-slate-800 mb-4 text-lg"><i class="fas fa-location-arrow mr-2 text-red-400"></i> מועדפים לניווט מהיר</h3>
+                    <h3 class="font-bold text-slate-800 mb-4 text-lg"><i class="fas fa-location-arrow mr-2 text-red-400"></i> מועדפים לניווט מהיר (Waze/Google Maps)</h3>
                     
                     <div class="flex flex-col gap-3 mb-6">
-                        <input type="text" id="loc-name" placeholder="שם המקום (למשל: חניון אוסטריה)" class="w-full p-3 border border-slate-300 rounded-lg outline-none">
-                        <input type="text" id="loc-url" placeholder="הדבק קישור גוגל מפות (Share Link)" class="w-full p-3 border border-slate-300 rounded-lg outline-none text-left" dir="ltr">
-                        <button onclick="addLocation()" class="bg-red-500 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-red-600 transition">הוסף מקום לניווט</button>
+                        <input type="text" id="loc-name" placeholder="שם המקום (למשל: חניון גארדה, מסעדה כשרה)" class="w-full p-3 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-red-400">
+                        <input type="text" id="loc-url" placeholder="הדבק כאן קישור מגוגל מפות (Share Link)" class="w-full p-3 border border-slate-300 rounded-lg outline-none text-left focus:ring-2 focus:ring-red-400" dir="ltr">
+                        <button onclick="addLocation()" class="bg-red-500 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-red-600 transition mt-1"><i class="fas fa-plus"></i> שמור מיקום לניווט</button>
                     </div>
 
                     <div class="flex flex-col gap-3">
@@ -575,7 +606,7 @@
 
             const locKeys = Object.keys(locations);
             if(locKeys.length === 0) {
-                html += `<div class="text-center p-4 bg-white/60 rounded-xl text-slate-500 text-sm">אין יעדים שמורים.</div>`;
+                html += `<div class="text-center p-4 bg-white rounded-xl text-slate-500 text-sm border border-slate-200">טרם נשמרו קישורים לניווט.</div>`;
             } else {
                 locKeys.forEach(key => {
                     const loc = locations[key];
@@ -599,7 +630,7 @@
         function addLocation() {
             const name = document.getElementById('loc-name').value.trim();
             const url = document.getElementById('loc-url').value.trim();
-            if(!name || !url) return showModal('שגיאה', 'יש להזין שם וקישור לניווט.');
+            if(!name || !url) return showModal('שגיאה', 'יש להזין שם וקישור תקין לניווט.');
             db.ref(`locations`).push({ name, url });
         }
 
@@ -610,42 +641,65 @@
         function renderChores() {
             const content = document.getElementById('app-content');
             const chores = appData.chores || {};
+            
             let html = `
-                <div class="text-center mb-6 mt-4"><h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-dice text-purple-500 mr-2"></i> תורנויות טיול</h2></div>
+                <div class="text-center mb-6 mt-4">
+                    <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-dice text-purple-500 mr-2"></i> תורנויות טיול</h2>
+                    <p class="text-gray-500 mt-2">מי עושה מה היום?</p>
+                </div>
+                
                 <div class="bg-purple-50 rounded-2xl shadow-inner p-5 mb-8 border border-purple-100">
+                    <h3 class="font-bold text-purple-800 mb-4"><i class="fas fa-plus-circle mr-1"></i> הוספת תורנות חדשה</h3>
                     <div class="flex flex-col gap-3">
-                        <input type="text" id="new-chore-name" placeholder="למשל: שטיפת כלים..." class="w-full p-3 border border-purple-200 rounded-lg">
-                        <button onclick="addChore()" class="bg-purple-600 text-white p-3 rounded-lg font-bold">הוסף תורנות</button>
+                        <input type="text" id="new-chore-name" placeholder="למשל: שטיפת כלים, ריקון פח..." class="w-full p-3 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400">
+                        <button onclick="addChore()" class="bg-purple-600 text-white p-3 rounded-lg font-bold shadow hover:bg-purple-700 transition">הוסף תורנות לרשימה</button>
                     </div>
-                </div><div class="flex flex-col gap-3">
+                </div>
+
+                <div class="flex flex-col gap-3">
             `;
-            Object.keys(chores).forEach(key => {
-                const c = chores[key];
-                html += `
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div class="flex-1"><p class="font-bold text-gray-800 text-lg">${c.name}</p></div>
-                    <div class="flex items-center gap-3 w-full sm:w-auto">
-                        <select onchange="assignChore('${key}', this.value)" class="flex-1 sm:w-40 p-2 border border-gray-200 rounded-lg bg-gray-50 outline-none">
-                            <option value="" ${!c.assignee ? 'selected' : ''}>-- ללא שיבוץ --</option>
-                            ${activeFamilyMembers.map(m => `<option value="${m}" ${c.assignee === m ? 'selected' : ''}>${m}</option>`).join('')}
-                        </select>
-                        <button onclick="editChore('${key}', '${c.name.replace(/'/g, "\\'")}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition"><i class="fas fa-pen"></i></button>
-                        <button onclick="deleteChore('${key}')" class="text-red-500 bg-red-50 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>`;
-            });
-            content.innerHTML = html + `</div>`;
+
+            const choreKeys = Object.keys(chores);
+            if(choreKeys.length === 0) {
+                html += `<div class="text-center p-6 bg-white rounded-xl text-gray-500">אין מטלות! (עדיין...)</div>`;
+            } else {
+                choreKeys.forEach(key => {
+                    const c = chores[key];
+                    html += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex-1">
+                            <p class="font-bold text-gray-800 text-lg">${c.name}</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <select onchange="assignChore('${key}', this.value)" class="flex-1 sm:w-40 p-2 border border-gray-200 rounded-lg text-sm bg-gray-50 outline-none focus:ring-2 focus:ring-purple-400">
+                                <option value="" ${!c.assignee ? 'selected' : ''}>-- ללא שיבוץ --</option>
+                                ${activeFamilyMembers.map(m => `<option value="${m}" ${c.assignee === m ? 'selected' : ''}>${m}</option>`).join('')}
+                            </select>
+                            <button onclick="editChore('${key}', '${c.name.replace(/'/g, "\\'")}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition"><i class="fas fa-pen"></i></button>
+                            <button onclick="deleteChore('${key}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
+                });
+            }
+            html += `</div>`;
+            content.innerHTML = html;
         }
-        function addChore() { const n = document.getElementById('new-chore-name').value; if(n) db.ref('chores').push({ name: n, assignee: "" }); }
-        function assignChore(id, p) { db.ref(`chores/${id}/assignee`).set(p); }
-        function editChore(id, oldName) { const newName = prompt("ערוך שם מטלה:", oldName); if(newName) db.ref(`chores/${id}/name`).set(newName.trim()); }
+
+        function addChore() {
+            const name = document.getElementById('new-chore-name').value.trim();
+            if(name) db.ref(`chores`).push({ name: name, assignee: "" });
+        }
+        function assignChore(id, personName) { db.ref(`chores/${id}/assignee`).set(personName); }
+        function editChore(id, oldName) { const newName = prompt("ערוך את שם המטלה:", oldName); if(newName) db.ref(`chores/${id}/name`).set(newName.trim()); }
         function deleteChore(id) { showModal('מחיקה', 'למחוק תורנות?', true, () => db.ref(`chores/${id}`).remove()); }
 
         function renderCaravan() {
             const content = document.getElementById('app-content');
             const depList = appData.checklists.departure || [];
             const arrList = appData.checklists.arrival || [];
-            
+
+            let html = `<div class="text-center mb-6 mt-4"><h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-steering-wheel text-green-600 mr-2"></i> ניהול קרוואן</h2><p class="text-gray-500 mt-2">אל תתניעו לפני שעברתם על זה!</p></div>`;
+
             const createListHtml = (title, icon, type, items) => {
                 const total = items.length;
                 const doneCount = items.filter(i => i.done).length;
@@ -671,119 +725,105 @@
                 });
                 return block + `</ul></div>`;
             };
-            content.innerHTML = `<div class="text-center mb-6 mt-4"><h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-steering-wheel text-green-600 mr-2"></i> ניהול קרוואן</h2></div>` + createListHtml('לפני נסיעה', 'fa-road', 'departure', depList) + createListHtml('הגעה לחניון', 'fa-map-marker-alt', 'arrival', arrList);
+
+            html += createListHtml('לפני נסיעה (עזיבת חניון)', 'fa-road', 'departure', depList);
+            html += createListHtml('הגעה לחניון חדש', 'fa-map-marker-alt', 'arrival', arrList);
+            content.innerHTML = html;
         }
-        function toggleChecklistTask(t, i) { db.ref(`checklists/${t}/${i}/done`).set(!appData.checklists[t][i].done); }
-        function resetChecklist(t) { showModal('איפוס', 'לאפס רשימה?', true, () => appData.checklists[t].forEach((_, i) => db.ref(`checklists/${t}/${i}/done`).set(false))); }
+
+        function toggleChecklistTask(type, index) { db.ref(`checklists/${type}/${index}/done`).set(!appData.checklists[type][index].done); }
+        function resetChecklist(type) { showModal('איפוס רשימה', 'לאפס את ה-V לקראת החניון הבא?', true, () => { const list = appData.checklists[type]; if(list) list.forEach((_, i) => db.ref(`checklists/${type}/${i}/done`).set(false)); }); }
 
         function renderWallet() {
             const content = document.getElementById('app-content');
-            const exp = appData.wallet.expenses || {};
+            const expenses = appData.wallet.expenses || {};
             const planned = appData.wallet.planned || {};
-            let tm = 0, ta = 0;
             
-            Object.values(exp).forEach(e => { if(e.paidBy==='משמר') tm+=Number(e.amount); if(e.paidBy==='אדורה') ta+=Number(e.amount); });
-            let bal = tm > ta ? `אדורה חייבים למשמר: €${(tm - (tm+ta)/2).toFixed(2)}` : (ta > tm ? `משמר חייבים לאדורה: €${(ta - (tm+ta)/2).toFixed(2)}` : "אין חובות!");
-            let balCol = (tm > ta || ta > tm) ? "text-red-500" : "text-green-600";
+            let tm = 0, ta = 0;
+            Object.values(expenses).forEach(exp => { if(exp.paidBy === 'משמר') tm += Number(exp.amount); if(exp.paidBy === 'אדורה') ta += Number(exp.amount); });
+            const tgt = (tm + ta) / 2;
+            let bText = "הוצאות שוות - אין חובות!"; let bCol = "text-green-600";
+            if (tm > ta) { bText = `אדורה חייבים למשמר: €${(tm - tgt).toFixed(2)}`; bCol = "text-red-500"; }
+            else if (ta > tm) { bText = `משמר חייבים לאדורה: €${(ta - tgt).toFixed(2)}`; bCol = "text-red-500"; }
 
             let html = `
                 <div class="text-center mb-6 mt-4"><h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-wallet text-indigo-500 mr-2"></i> ארנק משותף</h2></div>
                 <div class="bg-amber-50 rounded-2xl shadow-md p-5 mb-8 border border-amber-200">
-                    <h3 class="font-bold text-amber-800 mb-4 text-lg"><i class="fas fa-shopping-cart mr-2"></i> מה צריך לקנות?</h3>
+                    <h3 class="font-bold text-amber-800 mb-4 text-lg"><i class="fas fa-shopping-cart mr-2"></i> תכנון קניות (מי קונה מה?)</h3>
                     <div class="flex flex-col gap-3 mb-5">
-                        <input type="text" id="planned-desc" placeholder="למשל: כרטיסים לפארק..." class="w-full p-3 border border-amber-200 rounded-lg">
-                        <div class="flex gap-3"><select id="planned-assignee" class="flex-1 p-3 border rounded-lg bg-white"><option value="טרם הוחלט">מי קונה?</option><option value="משמר">משמר</option><option value="אדורה">אדורה</option></select><button onclick="addPlannedExpense()" class="bg-amber-500 text-white px-6 rounded-lg font-bold">הוסף</button></div>
-                    </div><div class="flex flex-col gap-2">
+                        <input type="text" id="planned-desc" placeholder="למשל: כרטיסים לאטרקציה..." class="w-full p-3 border border-amber-200 rounded-lg">
+                        <div class="flex gap-3">
+                            <select id="planned-assignee" class="flex-1 p-3 border border-amber-200 rounded-lg bg-white"><option value="טרם הוחלט">-- מי קונה? --</option><option value="משמר">משמר</option><option value="אדורה">אדורה</option></select>
+                            <button onclick="addPlannedExpense()" class="bg-amber-500 text-white px-6 rounded-lg font-bold shadow hover:bg-amber-600">הוסף</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2">
             `;
-            Object.keys(planned).forEach(k => {
-                const item = planned[k];
-                html += `<div class="bg-white p-3 rounded-xl shadow-sm border border-amber-100 flex justify-between items-center gap-2"><div class="flex items-center gap-3 flex-1"><div class="check-toggle flex items-center justify-center w-6 h-6 rounded border-2 cursor-pointer ${item.done ? 'bg-amber-500 border-amber-500 text-white' : 'border-gray-300 bg-white text-transparent'}" onclick="togglePlannedExpense('${k}')"><i class="fas fa-check text-xs"></i></div><span class="${item.done ? 'line-through text-gray-400' : 'font-bold text-gray-800'}">${item.description}</span></div><div class="flex items-center gap-2"><select onchange="updatePlannedAssignee('${k}', this.value)" class="text-xs p-1.5 border rounded-lg bg-amber-50"><option value="טרם הוחלט" ${item.assignee === 'טרם הוחלט' ? 'selected' : ''}>מי קונה?</option><option value="משמר" ${item.assignee === 'משמר' ? 'selected' : ''}>משמר</option><option value="אדורה" ${item.assignee === 'אדורה' ? 'selected' : ''}>אדורה</option></select><button onclick="deletePlannedExpense('${k}')" class="text-red-400 p-2"><i class="fas fa-trash text-sm"></i></button></div></div>`;
+
+            Object.keys(planned).forEach(key => {
+                const item = planned[key];
+                html += `
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-amber-100 flex justify-between items-center gap-2">
+                        <div class="flex items-center gap-3 flex-1">
+                            <div class="check-toggle flex items-center justify-center w-6 h-6 rounded border-2 cursor-pointer ${item.done ? 'bg-amber-500 border-amber-500 text-white' : 'border-gray-300 bg-white text-transparent'}" onclick="togglePlannedExpense('${key}')"><i class="fas fa-check text-xs"></i></div>
+                            <span class="${item.done ? 'line-through text-gray-400' : 'font-bold text-gray-800'}">${item.description}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select onchange="updatePlannedAssignee('${key}', this.value)" class="text-xs p-1.5 border border-amber-200 rounded-lg bg-amber-50 font-semibold"><option value="טרם הוחלט" ${item.assignee === 'טרם הוחלט' ? 'selected' : ''}>מי קונה?</option><option value="משמר" ${item.assignee === 'משמר' ? 'selected' : ''}>משמר</option><option value="אדורה" ${item.assignee === 'אדורה' ? 'selected' : ''}>אדורה</option></select>
+                            <button onclick="deletePlannedExpense('${key}')" class="text-red-400 p-2"><i class="fas fa-trash text-sm"></i></button>
+                        </div>
+                    </div>`;
             });
-            html += `</div></div><div class="bg-white rounded-2xl shadow-md p-5 mb-6"><div class="grid grid-cols-2 gap-4 text-center mb-4 border-b pb-4"><div><p class="text-sm text-gray-500">משמר שילמו</p><p class="text-xl font-bold text-indigo-600">€${tm.toFixed(2)}</p></div><div><p class="text-sm text-gray-500">אדורה שילמו</p><p class="text-xl font-bold text-blue-600">€${ta.toFixed(2)}</p></div></div><div class="text-center bg-gray-50 rounded-xl p-3"><p class="text-lg font-bold ${balCol}">${bal}</p></div></div><div class="bg-indigo-50 rounded-2xl shadow-inner p-5 mb-8"><h3 class="font-bold text-indigo-800 mb-4"><i class="fas fa-plus-circle mr-1"></i> הוספת הוצאה ששולמה</h3><div class="flex flex-col gap-3"><input type="text" id="w-desc" placeholder="תיאור הוצאה" class="p-3 border rounded-lg"><div class="flex gap-3"><input type="number" id="w-amt" placeholder="סכום €" class="w-1/2 p-3 border rounded-lg"><select id="w-pay" class="w-1/2 p-3 border rounded-lg bg-white"><option value="משמר">משמר</option><option value="אדורה">אדורה</option></select></div><button onclick="addExpense()" class="bg-indigo-600 text-white p-3 rounded-lg font-bold">הוסף הוצאה לארנק</button></div></div><div class="flex flex-col gap-3">`;
-            Object.keys(exp).reverse().forEach(k => {
-                const e = exp[k];
-                html += `<div class="bg-white p-4 rounded-xl shadow-sm border mb-3 flex justify-between items-center"><div><p class="font-bold text-lg">${e.description}</p><p class="text-sm text-gray-500">שילמו: ${e.paidBy}</p></div><div class="flex items-center gap-4"><p class="font-bold text-xl">€${e.amount}</p><button onclick="deleteExpense('${k}')" class="text-red-400 p-2"><i class="fas fa-trash"></i></button></div></div>`;
+
+            html += `</div></div><div class="bg-white rounded-2xl shadow-md p-5 mb-6 border border-gray-100"><div class="grid grid-cols-2 gap-4 text-center mb-4 border-b pb-4"><div><p class="text-sm text-gray-500">משמר שילמו</p><p class="text-xl font-bold text-indigo-600">€${tm.toFixed(2)}</p></div><div><p class="text-sm text-gray-500">אדורה שילמו</p><p class="text-xl font-bold text-blue-600">€${ta.toFixed(2)}</p></div></div><div class="text-center bg-gray-50 rounded-xl p-3"><p class="text-lg font-bold ${bCol}">${bText}</p></div></div><div class="bg-indigo-50 rounded-2xl shadow-inner p-5 mb-8 border border-indigo-100"><h3 class="font-bold text-indigo-800 mb-4"><i class="fas fa-plus-circle mr-1"></i> הוספת הוצאה ששולמה בפועל</h3><div class="flex flex-col gap-3"><input type="text" id="wallet-desc" placeholder="על מה שילמתם?" class="w-full p-3 border border-indigo-200 rounded-lg"><div class="flex gap-3"><input type="number" id="wallet-amount" placeholder="סכום €" class="w-1/2 p-3 border border-indigo-200 rounded-lg"><select id="wallet-payer" class="w-1/2 p-3 border border-indigo-200 rounded-lg bg-white"><option value="" disabled selected>מי שילם?</option><option value="משמר">משמר</option><option value="אדורה">אדורה</option></select></div><button onclick="addExpense()" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold">הוסף הוצאה לארנק</button></div></div><h3 class="font-bold text-gray-700 mb-3 ml-1 text-lg">פירוט הוצאות:</h3><div class="flex flex-col gap-3">`;
+
+            Object.keys(expenses).reverse().forEach(key => {
+                const exp = expenses[key];
+                const dStr = `${new Date(exp.timestamp).getDate()}/${new Date(exp.timestamp).getMonth()+1}`;
+                html += `<div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center"><div><p class="font-bold text-gray-800 text-lg">${exp.description}</p><p class="text-sm text-gray-500 mt-1"><span class="bg-gray-100 px-2 py-0.5 rounded text-xs ml-1">${dStr}</span> שילמו: <span class="font-semibold ${exp.paidBy === 'משמר' ? 'text-indigo-600' : 'text-blue-600'}">${exp.paidBy}</span></p></div><div class="flex items-center gap-4"><p class="font-bold text-xl">€${exp.amount}</p><button onclick="deleteExpense('${key}')" class="text-red-400 p-2"><i class="fas fa-trash"></i></button></div></div>`;
             });
             content.innerHTML = html + `</div>`;
         }
-        function addPlannedExpense() { const d=document.getElementById('planned-desc').value, a=document.getElementById('planned-assignee').value; if(d) db.ref('wallet/planned').push({description:d, assignee:a||'טרם הוחלט', done:false}); }
+
+        function addPlannedExpense() { const d = document.getElementById('planned-desc').value.trim(); const a = document.getElementById('planned-assignee').value; if(d) db.ref('wallet/planned').push({ description: d, assignee: a || 'טרם הוחלט', done: false, timestamp: firebase.database.ServerValue.TIMESTAMP }); }
         function updatePlannedAssignee(k, a) { db.ref(`wallet/planned/${k}/assignee`).set(a); }
         function togglePlannedExpense(k) { db.ref(`wallet/planned/${k}/done`).set(!appData.wallet.planned[k].done); }
-        function deletePlannedExpense(k) { db.ref(`wallet/planned/${k}`).remove(); }
-        function addExpense() { const d=document.getElementById('w-desc').value, a=document.getElementById('w-amt').value, p=document.getElementById('w-pay').value; if(d&&a&&p) db.ref('wallet/expenses').push({description:d, amount:Number(a), paidBy:p, timestamp:Date.now()}); }
+        function deletePlannedExpense(k) { showModal('מחיקה', 'למחוק משימת קנייה?', true, () => db.ref(`wallet/planned/${k}`).remove()); }
+        function addExpense() { const d = document.getElementById('wallet-desc').value.trim(); const a = document.getElementById('wallet-amount').value; const p = document.getElementById('wallet-payer').value; if(d && a && p) db.ref('wallet/expenses').push({ description: d, amount: Number(a), paidBy: p, timestamp: firebase.database.ServerValue.TIMESTAMP }); }
         function deleteExpense(id) { showModal('מחיקה', 'למחוק הוצאה?', true, () => db.ref(`wallet/expenses/${id}`).remove()); }
 
         function handleAvatarUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            showModal('מעלה תמונה...', 'מכווץ ושומר...', false);
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width, height = img.height;
-                    if (width > height) { if (width > 200) { height *= 200 / width; width = 200; } } 
-                    else { if (height > 200) { width *= 200 / height; height = 200; } }
-                    canvas.width = width; canvas.height = height;
-                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            const file = event.target.files[0]; if (!file) return; showModal('מעלה...', 'שומר...', false);
+            const r = new FileReader(); r.onload = e => {
+                const img = new Image(); img.onload = () => {
+                    const canvas = document.createElement('canvas'); let w = img.width, h = img.height;
+                    if (w > h) { if (w > 200) { h *= 200/w; w = 200; } } else { if (h > 200) { w *= 200/h; h = 200; } }
+                    canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                     db.ref('avatars/' + currentTab).set(canvas.toDataURL('image/jpeg', 0.6)).then(() => document.getElementById('custom-modal').classList.add('hidden'));
-                }
-                img.src = e.target.result;
-            }
-            reader.readAsDataURL(file);
+                }; img.src = e.target.result;
+            }; r.readAsDataURL(file);
         }
 
-        function openDocUpload(docType) {
-            currentUploadDocType = docType;
-            isUploadingCustomDoc = false;
-            document.getElementById('doc-upload-input').click();
-        }
-
-        function openCustomDocUpload() {
-            const docName = prompt("הכנס שם למסמך (למשל: ביטוח נסיעות, כרטיסים לגארדלנד):");
-            if (docName && docName.trim() !== "") {
-                currentUploadDocType = docName.trim();
-                isUploadingCustomDoc = true;
-                document.getElementById('doc-upload-input').click();
-            }
-        }
-
+        function openDocUpload(docType) { currentUploadDocType = docType; isUploadingCustomDoc = false; document.getElementById('doc-upload-input').click(); }
+        function openCustomDocUpload() { const n = prompt("הכנס שם למסמך (למשל: ביטוח נסיעות):"); if (n && n.trim()) { currentUploadDocType = n.trim(); isUploadingCustomDoc = true; document.getElementById('doc-upload-input').click(); } }
+        
         function handleDocumentUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            showModal('מעלה מסמך...', 'מכווץ ומאבטח...', false);
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width, height = img.height;
-                    if (width > height) { if (width > 1000) { height *= 1000 / width; width = 1000; } } 
-                    else { if (height > 1000) { width *= 1000 / height; height = 1000; } }
-                    canvas.width = width; canvas.height = height;
-                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            const file = event.target.files[0]; if (!file) return; showModal('מעלה מסמך...', 'שומר ומאבטח...', false);
+            const r = new FileReader(); r.onload = e => {
+                const img = new Image(); img.onload = () => {
+                    const canvas = document.createElement('canvas'); let w = img.width, h = img.height;
+                    if (w > h) { if (w > 1000) { h *= 1000/w; w = 1000; } } else { if (h > 1000) { w *= 1000/h; h = 1000; } }
+                    canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                     db.ref(`documents/${currentTab}/${currentUploadDocType}`).set(canvas.toDataURL('image/jpeg', 0.7)).then(() => document.getElementById('custom-modal').classList.add('hidden'));
-                }
-                img.src = e.target.result;
-            }
-            reader.readAsDataURL(file);
-            event.target.value = ''; 
+                }; img.src = e.target.result;
+            }; r.readAsDataURL(file); event.target.value = '';
         }
 
-        function viewDocument(docType) {
-            const base64 = appData.documents[currentTab][docType];
-            if(!base64) return;
-            document.getElementById('full-screen-img').src = base64;
-            document.getElementById('image-modal').classList.remove('hidden');
-            document.getElementById('delete-doc-btn').onclick = () => {
-                showModal('מחיקת מסמך', 'בטוח שברצונך למחוק?', true, () => db.ref(`documents/${currentTab}/${docType}`).remove().then(() => closeImageModal()));
-            };
-        }
+        function viewDocument(docType) { const b64 = appData.documents[currentTab][docType]; if(!b64) return; document.getElementById('full-screen-img').src = b64; document.getElementById('image-modal').classList.remove('hidden'); document.getElementById('delete-doc-btn').onclick = () => { showModal('מחיקה', 'למחוק מסמך זה?', true, () => db.ref(`documents/${currentTab}/${docType}`).remove().then(() => closeImageModal())); }; }
         function closeImageModal() { document.getElementById('image-modal').classList.add('hidden'); document.getElementById('full-screen-img').src = ''; }
-
+        
         function getRequiredDocsForTab(tabName) {
-            if (tabName === "ציוד כללי משותף") return [{ id: 'flight', name: 'כרטיסי טיסה', icon: 'fa-plane' }, { id: 'villa', name: 'הזמנת וילה', icon: 'fa-house-user' }, { id: 'caravan', name: 'השכרת קרוואנים', icon: 'fa-caravan' }, { id: 'insurance', name: 'ביטוחים כלליים', icon: 'fa-shield-alt' }];
+            if (tabName === "ציוד כללי משותף") return [{ id: 'flight', name: 'כרטיסי טיסה', icon: 'fa-plane' }, { id: 'villa', name: 'הזמנת וילה', icon: 'fa-house-user' }, { id: 'caravan', name: 'השכרת קרוואנים', icon: 'fa-caravan' }];
             if (tabName.startsWith("ציוד כללי")) return [];
             let docs = [{ id: 'passport', name: 'דרכון', icon: 'fa-passport' }];
             if (adults.includes(tabName)) docs.push({ id: 'driver_license', name: 'רישיון נהיגה', icon: 'fa-id-card' }, { id: 'int_license', name: 'רישיון בינלאומי', icon: 'fa-globe' });
@@ -795,60 +835,61 @@
             const items = appData.items[currentTab] || {};
             const docs = appData.documents[currentTab] || {};
             
-            let html = `
-                <div class="flex justify-center mb-2">
-                    <div class="avatar-container" onclick="document.getElementById('avatar-upload').click()">
-                        <img class="avatar-img" src="${appData.avatars[currentTab] || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentTab.split(' ')[0])}&background=random&color=fff&size=150`}">
-                        <div class="avatar-edit-btn"><i class="fas fa-camera"></i></div>
-                    </div>
-                </div>
-                <div class="text-center mb-8"><h2 class="text-3xl font-extrabold text-gray-800">${currentTab}</h2></div>
-            `;
+            let html = `<div class="flex justify-center mb-2"><div class="avatar-container" onclick="document.getElementById('avatar-upload').click()"><img class="avatar-img" src="${appData.avatars[currentTab] || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentTab.split(' ')[0])}&background=random&color=fff&size=150`}"><div class="avatar-edit-btn"><i class="fas fa-camera"></i></div></div></div><div class="text-center mb-8"><h2 class="text-3xl font-extrabold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-blue-500">${currentTab}</h2></div>`;
 
-            // Documents section
             const reqDocs = getRequiredDocsForTab(currentTab);
             if (reqDocs.length > 0 || Object.keys(docs).length > 0) {
                 html += `<div class="bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl shadow-lg mb-8 p-4 text-white"><h3 class="font-bold text-lg mb-3"><i class="fas fa-folder-open text-indigo-300 mr-2"></i> מסמכים דיגיטליים</h3><div class="grid grid-cols-2 sm:grid-cols-3 gap-3">`;
                 
                 reqDocs.forEach(d => {
-                    if (docs[d.id]) html += `<div onclick="viewDocument('${d.id}')" class="bg-slate-600/50 border border-slate-500 rounded-xl p-3 text-center relative"><i class="fas fa-check-circle absolute top-2 left-2 text-green-400"></i><i class="fas ${d.icon} text-3xl text-indigo-300 mb-2"></i><p class="text-xs font-bold">${d.name}</p></div>`;
-                    else html += `<div onclick="openDocUpload('${d.id}')" class="bg-slate-800 border-dashed border-2 border-slate-500 rounded-xl p-3 text-center"><i class="fas fa-cloud-upload-alt text-3xl text-slate-400 mb-2"></i><p class="text-xs font-bold">${d.name}</p></div>`;
+                    if (docs[d.id]) html += `<div onclick="viewDocument('${d.id}')" class="bg-slate-600/50 border border-slate-500 rounded-xl p-3 text-center cursor-pointer relative"><i class="fas fa-check-circle absolute top-2 left-2 text-green-400"></i><i class="fas ${d.icon} text-3xl text-indigo-300 mb-2"></i><p class="text-sm font-semibold">${d.name}</p></div>`;
+                    else html += `<div onclick="openDocUpload('${d.id}')" class="bg-slate-800 border border-dashed border-slate-500 rounded-xl p-3 text-center cursor-pointer"><i class="fas fa-cloud-upload-alt text-3xl text-slate-400 mb-2"></i><p class="text-sm font-semibold text-slate-200">${d.name}</p></div>`;
                 });
 
                 Object.keys(docs).forEach(k => {
-                    if (!reqDocs.find(rd => rd.id === k)) html += `<div onclick="viewDocument('${k}')" class="bg-slate-600/50 border border-slate-500 rounded-xl p-3 text-center relative"><i class="fas fa-check-circle absolute top-2 left-2 text-green-400"></i><i class="fas fa-file-image text-3xl text-blue-300 mb-2"></i><p class="text-xs font-bold truncate">${k}</p></div>`;
+                    if (!reqDocs.find(rd => rd.id === k)) html += `<div onclick="viewDocument('${k}')" class="bg-slate-600/50 border border-slate-500 rounded-xl p-3 text-center cursor-pointer relative"><i class="fas fa-check-circle absolute top-2 left-2 text-green-400"></i><i class="fas fa-file-image text-3xl text-blue-300 mb-2"></i><p class="text-sm font-semibold truncate">${k}</p></div>`;
                 });
 
-                html += `<div onclick="openCustomDocUpload()" class="bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 rounded-xl p-3 text-center flex flex-col justify-center cursor-pointer transition"><i class="fas fa-plus text-2xl text-white mb-2"></i><p class="text-xs font-bold text-white">הוסף מסמך</p></div></div></div>`;
+                html += `<div onclick="openCustomDocUpload()" class="bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 rounded-xl p-3 text-center flex flex-col justify-center cursor-pointer"><i class="fas fa-plus text-2xl text-white mb-2"></i><p class="text-xs font-bold text-white">הוסף מסמך</p></div></div></div>`;
             }
 
-            // Items section
             const grouped = {};
-            Object.keys(items).forEach(k => { if(!grouped[items[k].category]) grouped[items[k].category]=[]; grouped[items[k].category].push({id:k, ...items[k]}); });
-            
-            Object.keys(grouped).forEach(cat => {
-                const catItems = grouped[cat];
-                let packed = catItems.filter(i=>i.packed).length;
-                let isDone = packed===catItems.length;
+            Object.keys(items).forEach(k => { if (!grouped[items[k].category]) grouped[items[k].category] = []; grouped[items[k].category].push({ id: k, ...items[k] }); });
+
+            if (Object.keys(grouped).length === 0) { html += `<div class="text-center p-8"><p>הרשימה ריקה.</p></div>`; content.innerHTML = html; return; }
+
+            for (const [cat, catItems] of Object.entries(grouped)) {
+                let packed = catItems.filter(i => i.packed).length, total = catItems.length, done = packed === total;
+                html += `<div class="bg-white rounded-2xl mb-6 overflow-hidden border ${done ? 'border-green-300' : 'border-gray-200'}"><div class="${done ? 'bg-green-100' : 'bg-gray-100'} px-5 py-4 border-b flex justify-between"><h3 class="font-bold ${done ? 'text-green-800' : 'text-gray-800'} text-xl">${done ? '<i class="fas fa-check-circle mr-2 text-green-600"></i>' : ''}${cat}</h3><span class="text-sm font-bold bg-white px-3 py-1 rounded-full">${packed}/${total}</span></div><ul class="divide-y divide-gray-100">`;
                 
-                html += `<div class="bg-white rounded-2xl mb-6 overflow-hidden border ${isDone?'border-green-300':'border-gray-200'}"><div class="${isDone?'bg-green-100':'bg-gray-100'} px-5 py-4 flex justify-between"><h3 class="font-bold text-lg">${cat}</h3><span class="font-bold bg-white px-2 rounded-full">${packed}/${catItems.length}</span></div><ul class="divide-y divide-gray-100">`;
                 catItems.forEach(i => {
-                    html += `<li class="item-row p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0"><div class="flex items-center gap-3 flex-1 cursor-pointer" onclick="toggleItem('${currentTab}','${i.id}')"><div class="w-8 h-8 rounded border-2 flex items-center justify-center ${i.packed?'bg-green-500 border-green-500 text-white':'bg-white'}">${i.packed?'<i class="fas fa-check"></i>':''}</div><div><p class="font-bold ${i.packed?'line-through text-gray-400':''}">${i.name}</p><p class="text-xs text-gray-500">כמות: ${i.amount} ${i.note?`| ${i.note}`:''}</p></div></div><div class="flex gap-2"><button onclick="editExistingItem('${currentTab}','${i.id}','${i.name.replace(/'/g,"\\'")}','${i.amount}','${(i.note||'').replace(/'/g,"\\'")}')" class="text-blue-500 bg-blue-50 p-2 rounded"><i class="fas fa-pen"></i></button><button onclick="deleteItem('${currentTab}','${i.id}')" class="text-red-400 bg-red-50 p-2 rounded"><i class="fas fa-trash"></i></button></div></li>`;
+                    html += `
+                    <li class="item-row p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center ${i.packed ? 'bg-gray-50' : ''} gap-3 sm:gap-0">
+                        <div class="flex items-center gap-4 flex-1 w-full cursor-pointer" onclick="toggleItem('${currentTab}', '${i.id}')">
+                            <div class="flex items-center justify-center w-8 h-8 rounded-lg border-2 ${i.packed ? 'border-green-500 bg-green-500' : 'border-gray-300 bg-white'} flex-shrink-0">${i.packed ? '<i class="fas fa-check text-white"></i>' : ''}</div>
+                            <div class="flex-1 pr-1"><p class="font-bold ${i.packed ? 'packed-text' : 'text-gray-800'} text-lg">${i.name}</p><p class="text-sm text-gray-500"><span class="font-bold bg-indigo-50 text-indigo-700 px-2 rounded mr-1">כמות: ${i.amount}</span> ${i.note}</p></div>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0">
+                            <button onclick="editExistingItem('${currentTab}', '${i.id}', '${i.name.replace(/'/g, "\\'")}', '${i.amount}', '${(i.note||'').replace(/'/g, "\\'")}')" class="text-blue-500 bg-blue-50 px-4 py-2 rounded-xl"><i class="fas fa-pen"></i></button>
+                            <button onclick="deleteItem('${currentTab}', '${i.id}')" class="text-red-500 bg-red-50 px-4 py-2 rounded-xl"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </li>`;
                 });
-                html += `<li class="p-4 bg-gray-50 border-t"><div class="flex flex-col gap-2"><input type="text" id="n-${cat}" placeholder="שם פריט" class="p-3 border rounded-lg w-full"><div class="flex gap-2"><input type="text" id="a-${cat}" placeholder="כמות" class="w-1/3 p-3 border rounded-lg"><input type="text" id="nt-${cat}" placeholder="הערה" class="w-2/3 p-3 border rounded-lg"></div><button onclick="addNewItem('${currentTab}','${cat}')" class="bg-indigo-600 text-white p-3 rounded-lg font-bold w-full"><i class="fas fa-plus"></i> הוסף פריט</button></div></li></ul></div>`;
-            });
+
+                html += `<li class="p-4 bg-slate-50 border-t"><div class="flex flex-col gap-3"><input type="text" id="n-${cat}" placeholder="שם פריט" class="w-full p-3 border rounded-lg"><div class="flex gap-3"><input type="text" id="a-${cat}" placeholder="כמות" class="w-1/3 p-3 border rounded-lg"><input type="text" id="nt-${cat}" placeholder="הערה" class="w-2/3 p-3 border rounded-lg"></div><button onclick="addNewItem('${currentTab}', '${cat}')" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold">הוסף פריט</button></div></li></ul></div>`;
+            }
             content.innerHTML = html;
         }
 
         function toggleItem(p, i) { db.ref(`items/${p}/${i}/packed`).set(!appData.items[p][i].packed); }
         function deleteItem(p, i) { showModal('מחיקה', 'למחוק פריט?', true, () => db.ref(`items/${p}/${i}`).remove()); }
-        function editExistingItem(p, i, oldN, oldA, oldNt) { const n=prompt("ערוך שם:",oldN); if(n===null)return; const a=prompt("ערוך כמות:",oldA); if(a===null)return; const nt=prompt("ערוך הערה:",oldNt); if(nt===null)return; db.ref(`items/${p}/${i}`).update({name:n.trim()||oldN, amount:a.trim()||oldA, note:nt.trim()}); }
+        function editExistingItem(p, i, oldN, oldA, oldNt) { const n=prompt("שם:",oldN); if(n===null)return; const a=prompt("כמות:",oldA); if(a===null)return; const nt=prompt("הערה:",oldNt); if(nt===null)return; db.ref(`items/${p}/${i}`).update({name:n.trim()||oldN, amount:a.trim()||oldA, note:nt.trim()}); }
         function addNewItem(p, c) { const n=document.getElementById(`n-${c}`).value, a=document.getElementById(`a-${c}`).value, nt=document.getElementById(`nt-${c}`).value; if(n) db.ref(`items/${p}`).push({category:c, name:n, amount:a||"1", note:nt, packed:false}); }
         
         function updateTotalProgress() {
             let t = 0, p = 0;
-            Object.keys(appData.items).forEach(k => { if(!["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות"].includes(k)) Object.values(appData.items[k]).forEach(i => { t++; if(i.packed) p++; }); });
-            const pct = t===0?0:Math.round((p/t)*100);
+            Object.keys(appData.items || {}).forEach(k => { if(!["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות"].includes(k)) Object.values(appData.items[k]).forEach(i => { t++; if(i.packed) p++; }); });
+            const pct = t === 0 ? 0 : Math.round((p/t)*100);
             if(document.getElementById('total-progress-bar')) document.getElementById('total-progress-bar').style.width = pct+'%';
             if(document.getElementById('total-progress-text')) document.getElementById('total-progress-text').innerText = `התקדמות כללית: ${pct}%`;
         }
@@ -856,72 +897,29 @@
         function exportToExcel() {
             if (!appData.items) return alert("אין נתונים");
             let csv = "\uFEFFעבור,קטגוריה,פריט,כמות,הערות,נארז?\n";
-            people.forEach(p => {
-                if(appData.items[p] && !["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות"].includes(p)) {
-                    Object.values(appData.items[p]).forEach(i => {
-                        csv += `"${p}","${(i.category||"").replace(/"/g,'""')}","${(i.name||"").replace(/"/g,'""')}","${(i.amount||"").replace(/"/g,'""')}","${(i.note||"").replace(/"/g,'""')}","${i.packed?"כן":"לא"}"\n`;
-                    });
-                }
-            });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = "packing_list.csv"; link.click();
+            people.forEach(p => { if(appData.items[p] && !["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות"].includes(p)) Object.values(appData.items[p]).forEach(i => csv += `"${p}","${(i.category||"").replace(/"/g,'""')}","${(i.name||"").replace(/"/g,'""')}","${(i.amount||"").replace(/"/g,'""')}","${(i.note||"").replace(/"/g,'""')}","${i.packed?"כן":"לא"}"\n`); });
+            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); l.download = "packing_list.csv"; l.click();
         }
 
         function generateInitialData() {
-            if(!appData.chores || Object.keys(appData.chores).length===0) {
-                db.ref('chores').set([{name:"שטיפת כלים בוקר", assignee:""}, {name:"שטיפת כלים ערב", assignee:""}, {name:"ריקון שירותים", assignee:""}]);
-            }
-            if(!appData.checklists || Object.keys(appData.checklists.departure||{}).length===0) {
-                db.ref('checklists/departure').set([{task:"ניתוק חשמל", done:false}, {task:"ריקון מים אפורים", done:false}, {task:"סגירת גז וחלונות", done:false}]);
-                db.ref('checklists/arrival').set([{task:"ייצוב קרוואן", done:false}, {task:"חיבור לחשמל", done:false}, {task:"פתיחת מים", done:false}]);
-            }
+            if(!appData.chores || Object.keys(appData.chores).length===0) db.ref('chores').set([{name:"שטיפת כלים", assignee:""}, {name:"ריקון שירותים", assignee:""}]);
+            if(!appData.checklists || Object.keys(appData.checklists.departure||{}).length===0) { db.ref('checklists/departure').set([{task:"ניתוק חשמל", done:false}, {task:"ריקון מים", done:false}]); db.ref('checklists/arrival').set([{task:"ייצוב קרוואן", done:false}, {task:"חיבור לחשמל", done:false}]); }
 
             people.forEach(p => {
                 if (["💰 ארנק משותף", "🚐 ניהול קרוואן", "🎲 תורנויות"].includes(p)) return;
-                
                 if (!appData.items[p]) {
-                    let itemsArray = [];
+                    let arr = [];
                     if (!p.startsWith("ציוד כללי")) {
-                        itemsArray = [
-                            { category: "ביגוד יומיום", name: "חולצות קצרות", amount: "8", note: "מכונת כביסה" },
-                            { category: "ביגוד יומיום", name: "מכנסיים קצרים", amount: "5", note: "" },
-                            { category: "ביגוד יומיום", name: "מכנסיים ארוכים", amount: "3", note: "" },
-                            { category: "ביגוד יומיום", name: "לבנים / תחתונים", amount: "10", note: "" },
-                            { category: "ביגוד יומיום", name: "גרביים", amount: "8", note: "" },
-                            { category: "ביגוד יומיום", name: "פיג'מה", amount: "2", note: "" },
-                            { category: "ביגוד חורף", name: "מעיל פליז / סופטשל", amount: "1", note: "לאוסטריה" },
-                            { category: "ביגוד חורף", name: "חולצות ארוכות", amount: "2", note: "שיטת הבצל" },
-                            { category: "ביגוד חורף", name: "כובע גרב וכפפות", amount: "1", note: "" },
-                            { category: "הנעלה", name: "נעלי הליכה", amount: "1", note: "" },
-                            { category: "הנעלה", name: "סנדלים", amount: "1", note: "" },
-                            { category: "הנעלה", name: "כפכפים", amount: "1", note: "למקלחות" },
-                            { category: "בריכה וים", name: "בגדי ים", amount: "2", note: "" },
-                            { category: "היגיינה ורחצה", name: "תיק רחצה", amount: "1", note: "" },
-                            { category: "היגיינה ורחצה", name: "מגבת רחצה", amount: "1", note: "מיקרופייבר" }
-                        ];
-                        if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(p)) {
-                            itemsArray.push({ category: "דת ורוח", name: "תפילין", amount: "1", note: "" }, { category: "דת ורוח", name: "כיפות וציצית", amount: "3", note: "" });
-                        }
-                        if (["עוזיאל", "יוני"].includes(p)) itemsArray.push({ category: "דת ורוח", name: "טלית", amount: "1", note: "" });
-                        if (["הילה", "להבה"].includes(p)) itemsArray.push({ category: "ביגוד יומיום", name: "גוזיות", amount: "5", note: "" });
-                        if (["יובל", "הלל"].includes(p)) itemsArray.push({ category: "ציוד תינוקות", name: "חיתולים ומגבונים", amount: "מלאי", note: "" }, { category: "ציוד תינוקות", name: "מנשא / עגלה", amount: "1", note: "" });
+                        arr = [{category:"ביגוד יומיום",name:"חולצות קצרות",amount:"8",note:"מכונת כביסה"},{category:"ביגוד חורף",name:"סופטשל",amount:"1",note:"לאוסטריה"},{category:"היגיינה",name:"תיק רחצה",amount:"1",note:""}];
+                        if (["עוזיאל", "דביר", "אליה", "יוני", "ליאור", "אייל"].includes(p)) arr.push({category:"דת",name:"תפילין וכיפות",amount:"1",note:""});
+                        if (["עוזיאל", "יוני"].includes(p)) arr.push({category:"דת",name:"טלית",amount:"1",note:""});
+                        if (["הילה", "להבה"].includes(p)) arr.push({category:"ביגוד",name:"גוזיות",amount:"5",note:""});
                     } else if (p.startsWith("ציוד כללי פרידמן")) {
-                        itemsArray = [
-                            { category: "לינה בקרוואן", name: "סדינים וכריות", amount: "6", note: "" },
-                            { category: "לינה בקרוואן", name: "שמיכות", amount: "6", note: "קר!" },
-                            { category: "שבת", name: "פלטת שבת", amount: "1", note: "" },
-                            { category: "שבת", name: "מיחם", amount: "1", note: "" },
-                            { category: "שבת", name: "נרונים וקידוש", amount: "1", note: "" },
-                            { category: "מטבח", name: "סירים", amount: "3", note: "" },
-                            { category: "מטבח", name: "סכו״ם וצלחות", amount: "לכולם", note: "" }
-                        ];
-                    } else if (p === "ציוד כללי משותף") {
-                        itemsArray = [
-                            { category: "משחקים", name: "אליאס וקלפים", amount: "1", note: "" },
-                            { category: "חשמל", name: "מתאמים לאירופה", amount: "4", note: "" },
-                            { category: "רפואה", name: "עזרה ראשונה + כדורי בחילה", amount: "1", note: "" }
-                        ];
+                        arr = [{category:"לינה",name:"סדינים ושמיכות",amount:"6",note:"קר!"},{category:"שבת",name:"פלטה ומיחם",amount:"1",note:""}];
+                    } else {
+                        arr = [{category:"משחקים",name:"אליאס",amount:"1",note:""}];
                     }
-                    if(itemsArray.length>0){ const obj={}; itemsArray.forEach((i,idx)=>obj[`item_${Date.now()}_${idx}`]={...i,packed:false}); db.ref(`items/${p}`).set(obj); }
+                    if(arr.length>0){ const o={}; arr.forEach((i,idx)=>o[`item_${Date.now()}_${idx}`]={...i,packed:false}); db.ref(`items/${p}`).set(o); }
                 }
             });
         }
