@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -13,6 +14,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
+        /* הוסרה הגדרת select-none שחסמה לחיצות באייפונים */
         body { font-family: 'Heebo', sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -47,9 +49,9 @@
         .card-black { color: #1f2937; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 pb-24 select-none">
+<body class="bg-gray-100 text-gray-800 pb-24">
 
-    <header class="glass-header text-white p-4 shadow-lg sticky top-0 z-30">
+    <header class="glass-header text-white p-4 shadow-lg sticky top-0 z-30 pointer-events-auto">
         <div class="flex justify-between items-center">
             <h1 class="text-xl font-extrabold tracking-wide cursor-pointer flex items-center" onclick="navigate('dashboard')">
                 <i class="fas fa-caravan mr-2 text-2xl"></i> פרידמן 2026
@@ -85,11 +87,14 @@
         <!-- הלשוניות ייוצרו כאן -->
     </nav>
 
+    <!-- הועבר מחוץ ל-main כדי למנוע את באג הדריסה! -->
+    <div class="text-center mt-20" id="loading-spinner">
+        <i class="fas fa-spinner fa-spin text-5xl text-indigo-500"></i>
+        <p class="mt-4 text-gray-600 font-medium text-lg" id="loading-text">טוען נתונים מהענן...</p>
+    </div>
+
     <main id="app-content" class="p-4 max-w-3xl mx-auto">
-        <div class="text-center mt-20" id="loading-spinner">
-            <i class="fas fa-spinner fa-spin text-5xl text-indigo-500"></i>
-            <p class="mt-4 text-gray-600 font-medium text-lg" id="loading-text">טוען נתונים מהענן...</p>
-        </div>
+        <!-- התוכן המשתנה יכנס לכאן -->
     </main>
 
     <!-- מסך בחירת משתמש (מופיע פעם אחת) -->
@@ -205,7 +210,7 @@
         let currentUploadDocType = "";
         let lastSosTimestamp = 0;
 
-        // מילונים למשחקים (מערכים מלאים)
+        // מילונים למשחקים
         const dictCountries = ["אוגנדה","אוזבקיסטן","אוסטריה","אוסטרליה","אוקראינה","אורוגוואי","אזרבייג'ן","איחוד האמירויות","איטליה","איי בהאמה","איי מרשל","איי שלמה","אינדונזיה","איסלנד","איראן","אירלנד","אל סלוודור","אלבניה","אלג'יריה","אנגולה","אנדורה","אסטוניה","אפגניסטן","אקוודור","ארגנטינה","אריתריאה","ארמניה","ארצות הברית","אתיופיה","בולגריה","בוליביה","בוסניה והרצגובינה","בוצוואנה","בורונדי","בורקינה פאסו","בחריין","בלארוס","בלגיה","בליז","בנגלדש","בנין","ברבדוס","ברוניי","ברזיל","בריטניה","גאורגיה","גאנה","גבון","גואטמלה","גיאנה","ג'יבוטי","גינאה","גינאה ביסאו","גינאה המשוונית","גמביה","ג'מייקה","גרמניה","גרנדה","דומיניקה","דנמרק","דרום אפריקה","דרום סודאן","האיטי","הודו","הולנד","הונגריה","הונדורס","המלדיביים","הפיליפינים","הרפובליקה הדומיניקנית","הרפובליקה המרכז-אפריקאית","וייטנאם","ונואטו","ונצואלה","זמביה","זימבבואה","חוף השנהב","טג'יקיסטן","טובאלו","טוגו","טונגה","טורקיה","טורקמניסטן","טנזניה","טרינידד וטובגו","יוון","יפן","ירדן","ישראל","כווית","כף ורדה","לאוס","לבנון","לוב","לוקסמבורג","לטביה","ליבריה","ליטא","ליכטנשטיין","לסוטו","מאוריטניה","מאוריציוס","מאלי","מדגסקר","מוזמביק","מולדובה","מונגוליה","מונטנגרו","מונקו","מזרח טימור","מיאנמר","מיקרונזיה","מלאווי","מלזיה","מלטה","מצרים","מקדוניה הצפונית","מקסיקו","מרוקו","נאורו","נורווגיה","ניגריה","ניו זילנד","ניז'ר","ניקרגואה","נמיביה","נפאל","סאו טומה ופרינסיפה","סודאן","סומליה","סוריה","סורינאם","סיירה לאון","סיישל","סין","סינגפור","סלובניה","סלובקיה","סמואה","סנגל","סנט וינסנט והגרנדינים","סנט לוסיה","סנט קיטס ונוויס","סן מרינו","ספרד","סרביה","סרי לנקה","עומאן","עיראק","ערב הסעודית","פולין","פורטוגל","פיג'י","פינלנד","פלאו","פנמה","פפואה גינאה החדשה","פקיסטן","פרגוואי","פרו","צ'אד","צ'ילה","צ'כיה","צרפת","קובה","קולומביה","קומורו","קונגו","קוסטה ריקה","קוריאה הדרומית","קוריאה הצפונית","קזחסטן","קטר","קירגיזסטן","קיריבטי","קמבודיה","קמרון","קנדה","קניה","קפריסין","קרואטיה","רואנדה","רומניה","רוסיה","שוודיה","שווייץ","תאילנד","תוניסיה","תימן"];
         const dictColors = ["אדום","אפור","ארגמן","בורדו","ברונזה","ורוד","זהב","חאקי","חום","חרדל","טורקיז","ירוק","כסף","כחול","כתום","לבן","מג'נטה","סגול","פוקסיה","צהוב","ציאן","שחור","תכלת","תפוח"];
         const dictAnimals = ["אריה","ארנב","איילה","אפרוח","אלפקה","איגואנה","אנפה","אנקונדה","בבון","בואש","בונה","בז","ברדלס","ברבור","ברווז","גורילה","גמל","ג'ירפה","גירית","גמל שלמה","גנו","דולפין","דוב","דוכיפת","דינוזאור","דיונון","דבורה","היפופוטם","הודי","וואלבי","זאב","זברה","זבוב","זיקית","זרזיר","זחל","חזיר","חמור","חתול","חילזון","חולד","חרגול","חסידה","טיגריס","טוקן","טפיר","טווס","טרנטולה","יגואר","ינשוף","יתוש","יעל","יחמור","יערון","כבשה","כלב","כריש","כנר","לוויתן","למור","למה","לביאה","לטאה","לוקוס","מאנטה","מדוזה","מנטה ריי","מרבה רגליים","נמר","נמלה","נחש","נשר","נמיה","נקר","סוס","סרטן","סוריקטה","סלמנדרה","עטלף","עכבר","עכביש","עז","עקרב","עורב","עיט","פיל","פרה","פנדה","פרפר","פינגווין","פנתר","צב","צפרדע","צבוע","ציפור","קוף","קרנף","קנגורו","קואלה","קיפוד","קורמורן","קרפדה","ראם","רחם","רוטווילר","רימה","שועל","שור","שפן","שבלול","שלדג","שפירית","שנבוב","תנין","תנשמת","תולעת","תוכי","תאו"];
@@ -232,9 +237,9 @@
             { q: "איזה סוג של עץ נותן אצטרובלים?", o: ["אלון", "ברוש", "אורן", "זית"], a: 2 }
         ];
 
-        // זיהוי משתמש חכם
+        // --- זיהוי משתמש חכם ובטוח ---
         window.addEventListener('DOMContentLoaded', () => {
-            const savedName = localStorage.getItem('tiyul_my_identity');
+            const savedName = getMyIdentity();
             if (!savedName) {
                 changeUserIdentity();
             } else {
@@ -243,7 +248,12 @@
         });
 
         function getMyIdentity() {
-            return localStorage.getItem('tiyul_my_identity');
+            try {
+                return localStorage.getItem('tiyul_my_identity') || window.tiyul_temp_identity;
+            } catch(e) {
+                // מניעת קריסה במקרה של חסימת קוקיז
+                return window.tiyul_temp_identity;
+            }
         }
 
         function updateHeaderUserName() {
@@ -264,14 +274,21 @@
         function saveUserIdentity() {
             const select = document.getElementById('welcome-user-select');
             if (!select.value) {
-                alert('אנא בחר מי אתה מתוך הרשימה כדי להמשיך לטיול.');
+                showModal('רגע אחד...', 'אנא בחר מי אתה מתוך הרשימה כדי להמשיך לטיול.');
                 return;
             }
-            localStorage.setItem('tiyul_my_identity', select.value);
+            try {
+                localStorage.setItem('tiyul_my_identity', select.value);
+            } catch(e) {
+                // הגנה מפני חסימת דפדפן
+            }
+            window.tiyul_temp_identity = select.value;
+            
             updateHeaderUserName();
             document.getElementById('welcome-modal').style.display = 'none';
         }
 
+        // --- חיבור לשרת הנתונים ---
         db.ref('/').on('value', (snapshot) => {
             try {
                 const data = snapshot.val();
@@ -303,7 +320,9 @@
 
                     // בדיקת בקשת Ping למיקום
                     const pingTime = appData.emergency.ping || 0;
-                    const lastHandledPing = Number(localStorage.getItem('last_ping_handled')) || 0;
+                    let lastHandledPing = 0;
+                    try { lastHandledPing = Number(localStorage.getItem('last_ping_handled')) || 0; } catch(e){}
+                    
                     if (pingTime > lastHandledPing && (Date.now() - pingTime) < 30000) {
                         const myIdentity = getMyIdentity();
                         if (myIdentity && navigator.geolocation) {
@@ -315,7 +334,7 @@
                                 });
                             }, ()=>{}, { enableHighAccuracy: true });
                         }
-                        localStorage.setItem('last_ping_handled', pingTime);
+                        try { localStorage.setItem('last_ping_handled', pingTime); } catch(e){}
                     }
                 }
                 
@@ -336,7 +355,7 @@
         });
 
         // -----------------------------------------------------------
-        // מערכת מודלים אמינה ב-100% (ללא התנגשויות תצוגה)
+        // מערכת מודלים אמינה ב-100%
         // -----------------------------------------------------------
         function showModal(title, message, showCancel = false, onOk = null) {
             document.getElementById('modal-title').innerText = title;
@@ -409,6 +428,7 @@
             }
         }
 
+        // --- ניהול הניווט הפנימי ---
         function navigate(view, group = null) {
             currentView = view; currentGame = null;
             if (group) { currentGroup = group; currentTab = families[group].members[0]; }
@@ -422,7 +442,9 @@
             const progressContainer = document.getElementById('progress-container');
             const totalPoints = document.getElementById('total-points-display');
 
-            document.getElementById('loading-spinner').style.display = 'none';
+            // הסתרת ספינר הטעינה בצורה בטוחה!
+            const spinner = document.getElementById('loading-spinner');
+            if (spinner) spinner.style.display = 'none';
 
             if (currentView === 'dashboard') {
                 homeBtn.classList.add('hidden'); tabsContainer.classList.add('hidden'); progressContainer.classList.add('hidden'); totalPoints.classList.add('hidden');
@@ -631,7 +653,7 @@
         }
         function viewDocument(docType) {
             const base64String = appData.documents[currentTab][docType]; if(!base64String) return;
-            document.getElementById('full-screen-img').src = base64String; document.getElementById('image-modal').style.display = 'block';
+            document.getElementById('full-screen-img').src = base64String; document.getElementById('image-modal').style.display = 'flex';
             document.getElementById('delete-doc-btn').onclick = () => { showModal('מחיקת מסמך', 'בטוח שברצונך למחוק?', true, () => db.ref(`documents/${currentTab}/${docType}`).remove().then(() => closeImageModal())); };
         }
         function closeImageModal() { document.getElementById('image-modal').style.display = 'none'; document.getElementById('full-screen-img').src = ''; }
@@ -1010,7 +1032,7 @@
         }
 
         // -----------------------------------------------------------
-        // אתחול נתונים
+        // אתחול נתונים ראשוני
         // -----------------------------------------------------------
         function generateInitialData() {
             if (!appData.chores || Object.keys(appData.chores || {}).length === 0) {
