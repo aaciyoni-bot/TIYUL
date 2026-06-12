@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -160,8 +161,6 @@
     <!-- Main Content Area -->
     <main id="app-content" class="p-4 max-w-3xl mx-auto"></main>
 
-    <!-- MODALS -->
-    
     <!-- Welcome Modal -->
     <div id="welcome-modal" style="display: none;" class="fixed inset-0 z-[100] overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
@@ -181,7 +180,7 @@
         </div>
     </div>
 
-    <!-- Generic Alert/Confirm Modal -->
+    <!-- Generic Modal -->
     <div id="custom-modal" style="display: none;" class="fixed inset-0 z-[80] overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
@@ -214,7 +213,7 @@
         </div>
     </div>
 
-    <!-- Edit Packing Item Modal -->
+    <!-- Edit Item Modal -->
     <div id="edit-item-modal" style="display: none;" class="fixed inset-0 z-[82] overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="fixed inset-0 bg-black/70 backdrop-blur-sm"></div>
@@ -242,7 +241,7 @@
         </div>
     </div>
 
-    <!-- Buy Item to Pantry Modal -->
+    <!-- Buy Checkout Modal -->
     <div id="buy-modal" style="display: none;" class="fixed inset-0 z-[83] overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="fixed inset-0 bg-black/80 backdrop-blur-sm"></div>
@@ -282,7 +281,7 @@
         </div>
     </div>
 
-    <!-- View Image Modal -->
+    <!-- Image Modal -->
     <div id="image-modal" style="display: none;" class="fixed inset-0 z-[85] overflow-y-auto">
         <div class="flex flex-col items-center justify-center min-h-screen p-4">
             <div class="fixed inset-0 bg-black/95 backdrop-blur-md"></div>
@@ -295,7 +294,7 @@
         </div>
     </div>
 
-    <!-- SOS Alert Modal -->
+    <!-- SOS Modal -->
     <div id="sos-alert-modal" style="display: none;" class="fixed inset-0 z-[90] overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="fixed inset-0 bg-black/80 backdrop-blur-md"></div>
@@ -310,12 +309,10 @@
         </div>
     </div>
 
-    <!-- Floating SOS Button -->
     <button onclick="triggerSOS()" class="fixed bottom-6 left-6 w-16 h-16 bg-red-600 text-white rounded-full shadow-[0_0_20px_rgba(220,38,38,0.6)] flex items-center justify-center text-2xl z-40 border-2 border-red-300 hover:bg-red-700 transition transform hover:scale-110" title="שידור מצוקה ומכ"ם">
         <i class="fas fa-life-ring"></i>
     </button>
 
-    <!-- Hidden Inputs for Files -->
     <input type="file" id="doc-upload-input" style="display:none;" accept="image/*" onchange="handleDocumentUpload(event)">
     <input type="file" id="avatar-upload" style="display:none;" accept="image/*" onchange="handleAvatarUpload(event)">
     <input type="file" id="photo-hunt-upload" style="display:none;" accept="image/*" onchange="handlePhotoHuntUpload(event)">
@@ -339,7 +336,7 @@
         try { 
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); 
         } catch (e) { 
-            document.getElementById('loading-text').innerText = "שגיאה באתחול: " + e.message; 
+            console.error("Firebase init error", e);
         }
         
         const db = firebase.database();
@@ -375,8 +372,7 @@
 
         let appData = { 
             items: {}, avatars: {}, documents: {}, 
-            wallet: { expenses: {}, planned: {} }, 
-            checklists: {}, chores: {}, locations: {}, 
+            wallet: { expenses: {}, planned: {} }, checklists: {}, chores: {}, locations: {}, 
             shopping: {}, pantry: {}, gallery: {}, schedule: {}, emergencyContacts: { custom: {} }, 
             emergency: { sos: null, liveLocations: {}, ping: 0 }, 
             games: { 
@@ -511,7 +507,7 @@
         });
 
         // ==========================================
-        //  4. מזהה משתמש וחיבור Firebase
+        //  4. מזהה משתמש
         // ==========================================
         window.addEventListener('DOMContentLoaded', () => { 
             const savedName = getMyIdentity(); 
@@ -542,6 +538,7 @@
             document.getElementById('welcome-modal').style.display = 'block'; 
         }
         
+        // תיקון שגיאת ה-Syntax - פונקציה אחת בלבד של saveUserIdentity!
         function saveUserIdentity() { 
             const select = document.getElementById('welcome-user-select'); 
             if (!select.value) { 
@@ -550,13 +547,19 @@
             } 
             try { localStorage.setItem('tiyul_my_identity', select.value); } catch(e) {} 
             window.tiyul_temp_identity = select.value; 
-        function saveUserIdentity() { const select = document.getElementById('welcome-user-select'); if (!select.value) { showModal('רגע אחד...', 'אנא בחר מי אתה מתוך הרשימה כדי להמשיך לטיול.'); return; } try { localStorage.setItem('tiyul_my_identity', select.value); } catch(e) {} window.tiyul_temp_identity = select.value; updateHeaderUserName(); document.getElementById('welcome-modal').style.display = 'none'; }
+            updateHeaderUserName(); 
+            document.getElementById('welcome-modal').style.display = 'none'; 
+        }
 
+        // ==========================================
+        //  5. חיבור Firebase בטוח
+        // ==========================================
         db.ref('/').on('value', (snapshot) => {
             try {
                 const data = snapshot.val();
                 if (data) {
                     appData = { ...appData, ...data };
+                    
                     // הבטחת עצי נתונים בסיסיים
                     if (!appData.wallet) appData.wallet = { expenses: {}, planned: {} };
                     if (!appData.wallet.planned) appData.wallet.planned = {};
@@ -596,8 +599,8 @@
                         document.getElementById('sos-alert-modal').style.display = 'none'; 
                     }
 
-                    // טיפול בדו-קרב (התראה קופצת) - הוספנו סימן שאלה להגנה נוספת
-                    const duel = appData.games.duel?.current;
+                    // טיפול בדו-קרב (התראה קופצת) - הוספנו הגנות
+                    const duel = appData.games.duel && appData.games.duel.current;
                     if (duel && duel.timestamp > lastDuelTimestamp) {
                         const myName = getMyIdentity();
                         lastDuelTimestamp = duel.timestamp;
@@ -631,6 +634,7 @@
                 }
                 
                 generateInitialData();
+                
                 document.getElementById('sync-status').innerHTML = '<i class="fas fa-cloud-check text-green-300 mr-1"></i> מחובר ומסונכרן';
                 
                 if (document.getElementById('pts-m')) document.getElementById('pts-m').innerText = appData.games.scores.mishmar || 0; 
@@ -639,14 +643,16 @@
                 renderApp();
             } catch (err) { 
                 document.getElementById('loading-text').innerText = "שגיאה במסד הנתונים: " + err.message; 
+                document.getElementById('loading-spinner').style.display = 'block';
             }
         }, (err) => { 
             document.getElementById('sync-status').innerHTML = '<i class="fas fa-exclamation-triangle text-red-300 mr-1"></i> אין רשת'; 
             document.getElementById('loading-text').innerText = "אין קליטה."; 
+            document.getElementById('loading-spinner').style.display = 'block';
         });
 
         // ==========================================
-        //  5. מודלים וחירום
+        //  6. מודלים וחירום
         // ==========================================
         function showModal(title, message, showCancel = false, onOk = null) { 
             document.getElementById('modal-title').innerText = title; 
@@ -723,7 +729,7 @@
         }
 
         // ==========================================
-        //  6. ניהול מסכים
+        //  7. ניהול מסכים
         // ==========================================
         function navigate(view, group = null) { 
             currentView = view; 
@@ -798,7 +804,7 @@
         }
 
         // ==========================================
-        //  7. מסך הדאשבורד (תפריט ראשי)
+        //  8. מסך הדאשבורד (תפריט ראשי)
         // ==========================================
         function renderDashboard(content) {
             content.innerHTML = `
@@ -878,7 +884,7 @@
         }
 
         // ==========================================
-        //  8. קניות ומזווה
+        //  9. קניות ומזווה
         // ==========================================
         function renderPantry() {
             const content = document.getElementById('app-content');
@@ -1146,7 +1152,7 @@
         }
 
         // ==========================================
-        //  9. מודול האריזה ותת-מוצרים
+        //  10. מודול האריזה ותת-מוצרים
         // ==========================================
         function renderTabs() { 
             const container = document.getElementById('tabs-container'); 
@@ -1364,7 +1370,7 @@
         }
 
         // ==========================================
-        //  10. 10 משחקים בלייב! 
+        //  11. 10 משחקים בלייב! 
         // ==========================================
         function renderGamesMenu(content) { 
             let html = `
@@ -2082,26 +2088,37 @@
         }
 
         // ==========================================
-        //  11. אתחול הנתונים הראשוני
+        //  12. אתחול הנתונים בטוח וחכם! (Batch Update)
         // ==========================================
         function generateInitialData() {
-            if (!appData.chores || Object.keys(appData.chores || {}).length === 0) { 
-                db.ref('chores').set([
+            let updates = {};
+            let hasUpdates = false;
+
+            // 1. תורנויות
+            if (!appData.chores || Object.keys(appData.chores).length === 0) { 
+                updates['chores'] = [
                     { name: "שטיפת כלים", assignee: "" }, 
                     { name: "ריקון שירותים", assignee: "" }, 
                     { name: "הכנת קפה", assignee: "" }
-                ]); 
+                ]; 
+                hasUpdates = true;
             }
+            
+            // 2. ניהול קרוואן
             if (!appData.checklists || Object.keys(appData.checklists.departure || {}).length === 0) { 
-                db.ref('checklists/departure').set([
+                updates['checklists/departure'] = [
                     { task: "ניתוק חשמל וגלגול כבל", done: false }, 
                     { task: "סגירת גז וחלונות", done: false }
-                ]); 
-                db.ref('checklists/arrival').set([
+                ]; 
+                updates['checklists/arrival'] = [
                     { task: "ייצוב הקרוואן", done: false }, 
                     { task: "חיבור לחשמל", done: false }
-                ]); 
+                ]; 
+                hasUpdates = true;
             }
+            
+            // 3. רשימות אריזה
+            if (!appData.items) appData.items = {};
             
             allPeople.forEach(person => {
                 if (!appData.items[person] || Object.keys(appData.items[person]).length === 0) {
@@ -2109,13 +2126,15 @@
                     
                     if (!person.startsWith("ציוד")) {
                         itemsArray = [ 
-                            { category: "ביגוד", name: "חולצות", amount: "8", note: "" }, 
-                            { category: "ביגוד", name: "מכנסיים", amount: "5", note: "" } 
+                            { category: "ביגוד", name: "חולצות קצרות", amount: "8", note: "" }, 
+                            { category: "ביגוד", name: "מכנסיים", amount: "5", note: "" },
+                            { category: "ביגוד", name: "מעיל/סופטשל", amount: "1", note: "לאוסטריה" }
                         ];
                     } else {
                         itemsArray = [ 
                             { category: "קרוואן", name: "סדינים וכריות", amount: "6", note: "" }, 
-                            { category: "קרוואן", name: "שמיכות", amount: "6", note: "" } 
+                            { category: "קרוואן", name: "שמיכות", amount: "6", note: "קר בלילות!" },
+                            { category: "שבת", name: "פלטת שבת", amount: "1", note: "לבדוק תאימות לחשמל" }
                         ];
                     }
                     
@@ -2124,10 +2143,16 @@
                         itemsArray.forEach((item, index) => { 
                             personItemsObj[`item_${Date.now()}_${index}`] = { ...item, packed: false }; 
                         }); 
-                        db.ref(`items/${person}`).set(personItemsObj); 
+                        updates[`items/${person}`] = personItemsObj;
+                        hasUpdates = true;
                     }
                 }
             });
+
+            // שליחה לענן פעם אחת בלבד רק אם חסר משהו!
+            if (hasUpdates) {
+                db.ref('/').update(updates);
+            }
         }
     </script>
 </body>
