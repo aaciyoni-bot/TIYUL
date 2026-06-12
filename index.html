@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -112,6 +113,7 @@
     
     <div id="edit-item-modal" style="display: none;" class="fixed inset-0 z-[82] overflow-y-auto"><div class="flex items-center justify-center min-h-screen p-4"><div class="fixed inset-0 bg-black/70 backdrop-blur-sm"></div><div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6"><h3 class="text-2xl font-extrabold mb-4 text-indigo-800 border-b pb-2"><i class="fas fa-edit mr-2"></i> עריכת פריט</h3><div class="flex flex-col gap-4"><div><label class="block text-sm font-bold text-gray-600 mb-1">שם הפריט</label><input type="text" id="edit-item-name" class="w-full p-3 border border-gray-300 rounded-xl outline-none font-bold"></div><div><label class="block text-sm font-bold text-gray-600 mb-1">כמות</label><input type="text" id="edit-item-qty" class="w-full p-3 border border-gray-300 rounded-xl outline-none"></div><div><label class="block text-sm font-bold text-gray-600 mb-1">פירוט</label><textarea id="edit-item-note" rows="4" class="w-full p-3 border border-gray-300 rounded-xl outline-none"></textarea></div></div><div class="flex justify-end gap-3 mt-6"><button onclick="document.getElementById('edit-item-modal').style.display='none'" class="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold">ביטול</button><button onclick="saveEditedItem()" class="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold">שמור שינויים</button></div></div></div></div>
     
+    <!-- קופה רושמת (מזווה וארנק משולב) -->
     <div id="buy-modal" style="display: none;" class="fixed inset-0 z-[83] overflow-y-auto"><div class="flex items-center justify-center min-h-screen p-4"><div class="fixed inset-0 bg-black/80 backdrop-blur-sm"></div><div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 border-t-8 border-orange-500"><div class="text-center mb-4"><div class="w-16 h-16 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-2"><i class="fas fa-cash-register"></i></div><h3 class="text-2xl font-extrabold text-gray-800">הכנסה למזווה</h3><p class="text-orange-600 font-bold mt-1 text-lg" id="buy-item-name"></p></div><div class="bg-gray-50 p-4 rounded-2xl mb-6 border border-gray-200"><div class="flex items-center justify-between mb-4"><span class="font-bold text-gray-700">הוסף לארנק?</span><div class="relative inline-block w-12 mr-2 align-middle select-none"><input type="checkbox" id="sync-wallet-toggle" checked class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 top-0 bottom-0 m-auto"/><label for="sync-wallet-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label></div></div><div id="buy-cost-fields" class="transition-opacity duration-300"><label class="block text-sm font-bold text-gray-600 mb-1">כמה זה עלה? (₪)</label><input type="number" id="buy-item-cost" class="w-full p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-400 mb-3 text-lg font-bold text-center"><label class="block text-sm font-bold text-gray-600 mb-1">מי שילם בקופה?</label><select id="buy-item-payer" class="w-full p-3 border border-gray-300 rounded-xl font-bold"><option value="משמר">משפחת משמר</option><option value="אדורה">משפחת אדורה</option></select></div></div><div class="flex gap-3"><button onclick="document.getElementById('buy-modal').style.display='none'" class="flex-1 px-4 py-3 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold">ביטול</button><button onclick="confirmBuyAndSync()" class="flex-1 px-4 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 font-bold"><i class="fas fa-check mr-1"></i> אישור</button></div></div></div></div>
     
     <div id="image-modal" style="display: none;" class="fixed inset-0 z-[85] overflow-y-auto"><div class="flex flex-col items-center justify-center min-h-screen p-4"><div class="fixed inset-0 bg-black/95 backdrop-blur-md"></div><button onclick="closeImageModal()" class="absolute top-6 right-6 text-white text-4xl z-[90]"><i class="fas fa-times"></i></button><img id="full-screen-img" src="" class="relative max-w-full max-h-[75vh] rounded-xl shadow-2xl object-contain z-[90]"><div class="relative mt-8 flex gap-4 w-full max-w-sm justify-center z-[90]"><button id="delete-doc-btn" class="bg-red-500 text-white px-8 py-3 rounded-2xl font-bold flex-1"><i class="fas fa-trash mr-2"></i>מחק</button><button onclick="closeImageModal()" class="bg-white text-gray-800 px-8 py-3 rounded-2xl font-bold flex-1">סגור</button></div></div></div>
@@ -190,8 +192,8 @@
         let lastDuelTimestamp = 0; 
         let leafletMapInstance = null; 
         let mapMarkers = [];
+        let pendingCheckout = null; // אובייקט חכם לקופה שמזהה מאיפה הפריט הגיע
         let editingItemInfo = null; 
-        let pendingBuyKey = null; 
         let myTakiHand = []; 
         let myBingoBoard = [];
 
@@ -536,7 +538,8 @@
                                 <option value="בחו''ל">בחו"ל</option>
                             </select>
                         </div>
-                        <button onclick="addShoppingItem()" class="w-full bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-xl font-bold shadow transition text-lg mt-1">הוסף לרשימת הקניות</button>
+                        <button onclick="openCheckoutDirect()" class="w-full bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-xl font-bold shadow transition text-lg mt-1">הוסף למזווה וקופה</button>
+                        <button onclick="addShoppingItem()" class="w-full text-sm font-bold text-orange-600 hover:text-orange-800 mt-2">רק הוסף לרשימת התכנון (עוד לא קניתי)</button>
                     </div>
                     
                     <div class="flex flex-col gap-2">`;
@@ -553,7 +556,7 @@
                     html += `
                         <div class="bg-white p-3 rounded-2xl shadow-sm border border-orange-100 flex justify-between items-center">
                             <div class="flex items-center gap-3">
-                                <div onclick="openCheckoutModal('${key}')" class="w-10 h-10 rounded-full border-2 border-orange-400 flex items-center justify-center cursor-pointer hover:bg-orange-100 transition text-orange-600" title="לחץ כשתקנה - יעבור אוטומטית למזווה!">
+                                <div onclick="openCheckoutFromShopping('${key}')" class="w-10 h-10 rounded-full border-2 border-orange-400 flex items-center justify-center cursor-pointer hover:bg-orange-100 transition text-orange-600" title="לחץ כשתקנה - יעבור אוטומטית למזווה!">
                                     <i class="fas fa-cart-arrow-down opacity-50 hover:opacity-100 transition-opacity text-lg"></i>
                                 </div>
                                 <div>
@@ -632,44 +635,66 @@
             const l = document.getElementById('new-shop-location').value; 
             if(n) { 
                 db.ref('shopping').push({ name: n, qty: q, assignee: a, location: l }); 
+                document.getElementById('new-shop-item').value = '';
             } else { 
                 showModal('שגיאה', 'אנא הזן שם מוצר לטובת הקנייה.'); 
             } 
         }
         
         function deleteShoppingItem(key) { db.ref(`shopping/${key}`).remove(); }
-        
-        function openCheckoutModal(key) { 
-            pendingBuyKey = key; 
+
+        // קופה רושמת חכמה (למזווה + ארנק)
+        function openCheckoutFromShopping(key) { 
             const item = appData.shopping[key]; 
             if(!item) return; 
+            pendingCheckout = { source: 'shopping', key: key, name: item.name, qty: item.qty || '1', assignee: item.assignee };
+            showCheckoutUI();
+        }
+
+        function openCheckoutDirect() {
+            const name = document.getElementById('new-shop-item').value.trim();
+            const qty = document.getElementById('new-shop-qty').value.trim() || '1';
+            const assignee = document.getElementById('new-shop-assignee').value;
             
+            if(!name) return showModal('שגיאה', 'אנא הזן את שם המוצר.');
+            pendingCheckout = { source: 'direct', key: null, name: name, qty: qty, assignee: assignee };
+            showCheckoutUI();
+        }
+
+        function showCheckoutUI() {
             const nameEl = document.getElementById('buy-item-name');
-            if(nameEl) nameEl.innerText = `${item.name} (${item.qty})`; 
+            if(nameEl) nameEl.innerText = `${pendingCheckout.name} (${pendingCheckout.qty})`; 
             
             const payerSelect = document.getElementById('buy-item-payer'); 
-            if(payerSelect && (item.assignee === 'משמר' || item.assignee === 'אדורה')) { 
-                payerSelect.value = item.assignee; 
+            if(payerSelect && (pendingCheckout.assignee === 'משמר' || pendingCheckout.assignee === 'אדורה')) { 
+                payerSelect.value = pendingCheckout.assignee; 
             } 
             
             const costEl = document.getElementById('buy-item-cost');
             if(costEl) costEl.value = ''; 
             
+            const toggle = document.getElementById('sync-wallet-toggle');
+            if (toggle) toggle.checked = true;
+            
+            const fields = document.getElementById('buy-cost-fields');
+            if (fields) {
+                fields.style.opacity = '1';
+                fields.style.pointerEvents = 'auto';
+            }
+
             const buyModal = document.getElementById('buy-modal');
             if(buyModal) buyModal.style.display = 'block'; 
         }
         
         function confirmBuyAndSync() { 
-            if(!pendingBuyKey) return; 
-            const item = appData.shopping[pendingBuyKey]; 
-            if(!item) return;
+            if(!pendingCheckout) return; 
             
             const isSync = document.getElementById('sync-wallet-toggle').checked; 
             const cost = document.getElementById('buy-item-cost').value; 
             const payer = document.getElementById('buy-item-payer').value; 
             
             if (isSync && (!cost || cost <= 0)) { 
-                showModal('שגיאה', 'יש להזין מחיר גדול מ-0 כדי לסנכרן לארנק, או לכבות את הסנכרון.'); 
+                showModal('שגיאה', 'יש להזין סכום או לכבות את הסנכרון לארנק.'); 
                 return; 
             } 
             
@@ -678,7 +703,7 @@
                 const newExpenseRef = db.ref(`wallet/expenses`).push();
                 linkedExpenseId = newExpenseRef.key;
                 newExpenseRef.set({ 
-                    description: `סופר: ${item.name}`, 
+                    description: `סופר: ${pendingCheckout.name}`, 
                     amount: Number(cost), 
                     paidBy: payer, 
                     timestamp: firebase.database.ServerValue.TIMESTAMP 
@@ -686,16 +711,22 @@
             } 
             
             db.ref('pantry').push({ 
-                name: item.name, 
-                qty: item.qty || 1, 
+                name: pendingCheckout.name, 
+                qty: pendingCheckout.qty, 
                 used: false,
                 linkedExpenseId: linkedExpenseId 
             }); 
             
-            db.ref(`shopping/${pendingBuyKey}`).remove(); 
+            if (pendingCheckout.source === 'shopping') {
+                db.ref(`shopping/${pendingCheckout.key}`).remove(); 
+            } else {
+                document.getElementById('new-shop-item').value = '';
+                document.getElementById('new-shop-qty').value = '';
+            }
+
             const buyModal = document.getElementById('buy-modal');
             if(buyModal) buyModal.style.display = 'none'; 
-            pendingBuyKey = null; 
+            pendingCheckout = null; 
         }
         
         function changePantryQty(key, diff) { 
@@ -793,9 +824,9 @@
             setTimeout(() => { printWin.print(); printWin.close(); }, 500); 
         }
 
-        // ---------------------------------------------------------
-        // ארנק
-        // ---------------------------------------------------------
+        // ==========================================
+        //  ארנק
+        // ==========================================
         function renderWallet(content) { 
             const expenses = appData.wallet.expenses || {}; 
             let totalMishmar = 0; let totalAdora = 0; 
@@ -899,9 +930,9 @@
             showModal('מחיקה', 'למחוק הוצאה זו מהארנק?', true, () => db.ref(`wallet/expenses/${id}`).remove()); 
         }
 
-        // ---------------------------------------------------------
+        // ==========================================
         // תורנויות
-        // ---------------------------------------------------------
+        // ==========================================
         function renderChores(content) { 
             const chores = appData.chores || {}; 
             let html = `
@@ -947,9 +978,9 @@
         function editChore(id, o) { const n = prompt("ערוך שם:", o); if(n && n.trim()) db.ref(`chores/${id}/name`).set(n.trim()); }
         function deleteChore(id) { showModal('מחיקה', 'למחוק תורנות?', true, () => db.ref(`chores/${id}`).remove()); }
 
-        // ---------------------------------------------------------
-        // ניהול קרוואן (צ'קליסט)
-        // ---------------------------------------------------------
+        // ==========================================
+        //  ניהול קרוואן
+        // ==========================================
         function renderCaravan(content) { 
             const depList = appData.checklists.departure || []; 
             const arrList = appData.checklists.arrival || []; 
@@ -997,9 +1028,9 @@
         function toggleChecklistTask(type, index) { db.ref(`checklists/${type}/${index}/done`).set(!appData.checklists[type][index].done); }
         function resetChecklist(type) { showModal('איפוס רשימה', 'האם לאפס את כל ה-V ברשימה זו?', true, () => { const list = appData.checklists[type]; if(list) { list.forEach((_, index) => { db.ref(`checklists/${type}/${index}/done`).set(false); }); } }); }
 
-        // ---------------------------------------------------------
+        // ==========================================
         // גלריית תמונות
-        // ---------------------------------------------------------
+        // ==========================================
         function renderGallery(content) { 
             const gallery = appData.gallery || {}; 
             
@@ -1037,9 +1068,9 @@
         function viewGalleryImage(data, key) { const fullImg = document.getElementById('full-screen-img'); if (fullImg) fullImg.src = data; const imgModal = document.getElementById('image-modal'); if (imgModal) imgModal.style.display = 'flex'; const delBtn = document.getElementById('delete-doc-btn'); if(delBtn) { delBtn.onclick = () => { showModal('מחיקה', 'למחוק מהגלריה?', true, () => { db.ref(`gallery/${key}`).remove().then(() => closeImageModal()); }); }; } }
         function closeImageModal() { const imageModal = document.getElementById('image-modal'); if(imageModal) imageModal.style.display = 'none'; const fullScreenImg = document.getElementById('full-screen-img'); if(fullScreenImg) fullScreenImg.src = ''; }
 
-        // ---------------------------------------------------------
-        // אריזה, מסמכים
-        // ---------------------------------------------------------
+        // ==========================================
+        // ציוד ומסמכים (+ הוספת ומחיקת קטגוריות)
+        // ==========================================
         function renderTabs() { const container = document.getElementById('tabs-container'); if(!container) return; container.innerHTML = ''; if(!currentGroup) return; families[currentGroup].members.forEach(person => { const isActive = person === currentTab; let total = 0, packed = 0; if(appData.items[person]) { Object.values(appData.items[person]).forEach(item => { total++; if(item.packed) packed++; }); } const isDone = (packed === total && total > 0); const progressText = total > 0 ? `${packed}/${total}` : ''; const btn = document.createElement('button'); btn.className = `px-5 py-3 whitespace-nowrap text-sm flex-shrink-0 transition-colors border-b-[3px] ${isActive ? 'border-indigo-600 text-indigo-700 font-extrabold bg-indigo-50/50' : 'border-transparent text-gray-500 hover:bg-gray-50'}`; btn.innerHTML = `<div class="flex flex-col items-center gap-1"><span class="text-base">${person}</span>${total > 0 ? `<span class="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded-full shadow-sm ${isDone ? 'text-green-600 font-bold' : 'text-gray-500'}">${isDone ? '<i class="fas fa-check mr-1"></i>' : ''}${progressText}</span>` : ''}</div>`; btn.onclick = () => { currentTab = person; renderApp(); }; container.appendChild(btn); }); }
         
         function renderContent(content) { 
@@ -1057,43 +1088,100 @@
             html += `<div onclick="addCustomDoc()" class="doc-card bg-indigo-50 border border-dashed border-indigo-300 rounded-2xl p-4 text-center cursor-pointer hover:bg-indigo-100 flex flex-col justify-center items-center"><div class="text-2xl mb-1 text-indigo-400"><i class="fas fa-plus-circle"></i></div><p class="text-sm font-bold text-indigo-600">הוסף מסמך</p></div></div></div>`; 
             
             const grouped = {}; 
-            Object.keys(personItems).forEach(key => { const item = personItems[key]; if (!grouped[item.category]) grouped[item.category] = []; grouped[item.category].push({ id: key, ...item }); }); 
-            if (Object.keys(grouped).length === 0) { html += `<div class="text-center p-8 bg-white rounded-3xl shadow-sm border"><p class="text-gray-500">הרשימה ריקה.</p></div>`; content.innerHTML = html; return; } 
+            Object.keys(personItems).forEach(key => { 
+                const item = personItems[key]; 
+                if (!grouped[item.category]) grouped[item.category] = []; 
+                grouped[item.category].push({ id: key, ...item }); 
+            }); 
             
             for (const [category, items] of Object.entries(grouped)) { 
-                let catPacked = items.filter(i => i.packed).length; let catTotal = items.length; let isCatDone = catPacked === catTotal; 
-                html += `<div class="bg-white rounded-3xl shadow-sm mb-6 overflow-hidden border ${isCatDone ? 'border-green-300' : 'border-gray-200'} transition-colors"><div class="${isCatDone ? 'bg-green-50' : 'bg-gray-50'} px-5 py-4 border-b ${isCatDone ? 'border-green-200' : 'border-gray-100'} flex justify-between items-center transition-colors"><h3 class="font-extrabold ${isCatDone ? 'text-green-800' : 'text-gray-800'} text-lg">${isCatDone ? '<i class="fas fa-check-circle mr-2 text-green-500"></i>' : ''}${category}</h3><span class="text-xs font-bold bg-white px-3 py-1.5 rounded-full shadow-sm border ${isCatDone ? 'border-green-200 text-green-700' : 'border-gray-200'}">${catPacked}/${catTotal}</span></div><ul class="divide-y divide-gray-50">`; 
+                let catPacked = items.filter(i => i.packed && i.name !== "---").length; 
+                let catTotal = items.filter(i => i.name !== "---").length; 
+                let isCatDone = catPacked === catTotal && catTotal > 0; 
+                
+                html += `
+                    <div class="bg-white rounded-3xl shadow-sm mb-6 overflow-hidden border ${isCatDone ? 'border-green-300' : 'border-gray-200'} transition-colors">
+                        <div class="${isCatDone ? 'bg-green-50' : 'bg-gray-50'} px-5 py-4 border-b ${isCatDone ? 'border-green-200' : 'border-gray-100'} flex justify-between items-center transition-colors">
+                            <h3 class="font-extrabold ${isCatDone ? 'text-green-800' : 'text-gray-800'} text-lg">${isCatDone ? '<i class="fas fa-check-circle mr-2 text-green-500"></i>' : ''}${category}</h3>
+                            <div class="flex items-center gap-3">
+                                ${catTotal > 0 ? `<span class="text-xs font-bold bg-white px-3 py-1.5 rounded-full shadow-sm border ${isCatDone ? 'border-green-200 text-green-700' : 'border-gray-200'}">${catPacked}/${catTotal}</span>` : ''}
+                                <button onclick="deleteCategory('${currentTab}', '${category}')" class="text-red-400 hover:text-red-600" title="מחק קטגוריה"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <ul class="divide-y divide-gray-50">
+                `; 
+                
                 items.forEach(item => { 
+                    if(item.name === "---") return; // זה פריט דמה כדי להחזיק את הקטגוריה ריקה
                     const notesFormatted = item.note ? `<div class="text-sm mt-1 pre-wrap ${item.packed ? 'text-gray-300' : 'text-gray-500'}">${item.note}</div>` : ''; 
                     html += `
-                        <li class="item-row p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center ${item.packed ? 'bg-gray-50/50' : ''} gap-4 sm:gap-0">
-                            <div class="flex items-start gap-4 flex-1 w-full cursor-pointer" onclick="toggleItem('${currentTab}', '${item.id}')">
-                                <div class="check-toggle mt-0.5 flex items-center justify-center w-8 h-8 rounded-xl border-2 flex-shrink-0 shadow-sm ${item.packed ? 'active' : 'border-gray-300 bg-white text-transparent'}"><i class="fas fa-check"></i></div>
-                                <div class="flex-1 pr-1">
-                                    <p class="font-bold ${item.packed ? 'packed-text' : 'text-gray-800'} text-lg leading-tight">
-                                        ${item.name} 
-                                        ${item.amount && item.amount !== "1" ? `<span class="text-xs font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-600 mr-2 border border-gray-200">כמות: ${item.amount}</span>` : ''}
-                                    </p>
-                                    ${notesFormatted}
+                            <li class="item-row p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center ${item.packed ? 'bg-gray-50/50' : ''} gap-4 sm:gap-0">
+                                <div class="flex items-start gap-4 flex-1 w-full cursor-pointer" onclick="toggleItem('${currentTab}', '${item.id}')">
+                                    <div class="check-toggle mt-0.5 flex items-center justify-center w-8 h-8 rounded-xl border-2 flex-shrink-0 shadow-sm ${item.packed ? 'active' : 'border-gray-300 bg-white text-transparent'}">
+                                        <i class="fas fa-check"></i>
+                                    </div>
+                                    <div class="flex-1 pr-1">
+                                        <p class="font-bold ${item.packed ? 'packed-text' : 'text-gray-800'} text-lg leading-tight">
+                                            ${item.name} 
+                                            ${item.amount && item.amount !== "1" ? `<span class="text-xs font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-600 mr-2 border border-gray-200">כמות: ${item.amount}</span>` : ''}
+                                        </p>
+                                        ${notesFormatted}
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="flex gap-2 w-full sm:w-auto justify-end border-t sm:border-0 pt-3 sm:pt-0 border-gray-100">
-                                <button onclick="openEditItemModal('${currentTab}', '${item.id}', '${item.name.replace(/'/g, "\\'")}', '${item.amount}', '${(item.note||'').replace(/'/g, "\\'").replace(/\n/g, "\\n")}')" class="text-blue-500 bg-blue-50 hover:bg-blue-100 px-4 py-2.5 rounded-xl transition font-medium"><i class="fas fa-pen"></i></button>
-                                <button onclick="deleteItem('${currentTab}', '${item.id}')" class="text-red-500 bg-red-50 hover:bg-red-100 px-4 py-2.5 rounded-xl transition font-medium"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </li>
+                                <div class="flex gap-2 w-full sm:w-auto justify-end border-t sm:border-0 pt-3 sm:pt-0 border-gray-100">
+                                    <button onclick="openEditItemModal('${currentTab}', '${item.id}', '${item.name.replace(/'/g, "\\'")}', '${item.amount}', '${(item.note||'').replace(/'/g, "\\'").replace(/\n/g, "\\n")}')" class="text-blue-500 bg-blue-50 hover:bg-blue-100 px-4 py-2.5 rounded-xl transition font-medium"><i class="fas fa-pen"></i></button>
+                                    <button onclick="deleteItem('${currentTab}', '${item.id}')" class="text-red-500 bg-red-50 hover:bg-red-100 px-4 py-2.5 rounded-xl transition font-medium"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </li>
                     `; 
                 }); 
+                
                 html += `
-                        <li class="p-4 bg-gray-50/50">
-                            <div class="flex flex-col gap-3">
-                                <input type="text" id="new-name-${category}" placeholder="שם פריט חדש" class="w-full p-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 bg-white font-bold">
-                                <button onclick="openNewItemModal('${currentTab}', '${category}')" class="w-full bg-gray-800 text-white p-3 rounded-xl font-bold shadow-md hover:bg-black transition"><i class="fas fa-plus mr-1"></i> הוסף עם פירוט</button>
-                            </div>
-                        </li>
-                    </ul></div>`; 
+                            <li class="p-4 bg-gray-50/50">
+                                <div class="flex flex-col gap-3">
+                                    <input type="text" id="new-name-${category}" placeholder="שם פריט חדש" class="w-full p-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 bg-white font-bold">
+                                    <button onclick="openNewItemModal('${currentTab}', '${category}')" class="w-full bg-gray-800 text-white p-3 rounded-xl font-bold shadow-md hover:bg-black transition"><i class="fas fa-plus mr-1"></i> הוסף עם פירוט</button>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                `; 
             } 
+            
+            html += `
+                <div class="mt-6 mb-8">
+                    <button onclick="addNewCategory('${currentTab}')" class="w-full bg-indigo-100 text-indigo-700 font-bold py-3 rounded-2xl hover:bg-indigo-200 transition border border-indigo-200 shadow-sm">
+                        <i class="fas fa-folder-plus mr-2"></i> הוסף קטגוריית ציוד חדשה
+                    </button>
+                </div>
+            `;
             content.innerHTML = html; 
+        }
+        
+        function addNewCategory(person) {
+            const catName = prompt("הכנס שם לקטגוריה החדשה (למשל: ציוד צילום):");
+            if(catName && catName.trim() !== "") {
+                db.ref(`items/${person}`).push({
+                    category: catName.trim(),
+                    name: "---", // פריט דמה שלא יוצג כדי להחזיק את הקטגוריה
+                    amount: "0",
+                    note: "",
+                    packed: true
+                });
+            }
+        }
+        
+        function deleteCategory(person, category) {
+            showModal('מחיקת קטגוריה', `האם אתה בטוח שברצונך למחוק את כל הקטגוריה '${category}' ואת כל הפריטים שבה?`, true, () => {
+                const itemsRef = db.ref(`items/${person}`);
+                itemsRef.once('value', snapshot => {
+                    snapshot.forEach(child => {
+                        if(child.val().category === category) {
+                            child.ref.remove();
+                        }
+                    });
+                });
+            });
         }
 
         function renderDocCard(id, name, icon, hasDoc) { if (hasDoc) { return `<div onclick="viewDocument('${id}')" class="doc-card bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-center cursor-pointer relative group flex flex-col justify-center items-center shadow-sm"><div class="absolute top-2 left-2 text-green-500 text-lg"><i class="fas fa-check-circle bg-white rounded-full"></i></div><div class="text-3xl mb-2 text-indigo-500"><i class="fas ${icon}"></i></div><p class="text-sm font-bold text-indigo-900 truncate w-full">${name}</p><p class="text-[10px] text-indigo-400 mt-1 uppercase tracking-wider font-bold">הקש לצפייה</p></div>`; } else { return `<div onclick="openDocUpload('${id}')" class="doc-card bg-gray-50 border border-dashed border-gray-300 rounded-2xl p-4 text-center cursor-pointer hover:bg-gray-100 flex flex-col justify-center items-center"><div class="text-3xl mb-2 text-gray-400"><i class="fas fa-cloud-upload-alt"></i></div><p class="text-sm font-bold text-gray-600 truncate w-full">${name}</p><p class="text-[10px] text-gray-400 mt-1 font-bold">העלה צילום</p></div>`; } }
@@ -1107,122 +1195,31 @@
         function handleDocumentUpload(event) { const file = event.target.files[0]; if (!file) return; showModal('מעלה מסמך...', 'מכווץ ושומר...', false); const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); let width = img.width, height = img.height; if (width > height) { if (width > 1200) { height *= 1200 / width; width = 1200; } } else { if (height > 1200) { width *= 1200 / height; height = 1200; } } canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); db.ref(`documents/${currentTab}/${currentUploadDocType}`).set(canvas.toDataURL('image/jpeg', 0.7)).then(() => { const modal = document.getElementById('custom-modal'); if(modal) modal.style.display = 'none'; }); }; img.src = e.target.result; }; reader.readAsDataURL(file); event.target.value = ''; }
         function handleAvatarUpload(event) { const file = event.target.files[0]; if (!file) return; showModal('מעלה תמונה...', '', false); const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); let width = img.width, height = img.height; if (width > height) { if (width > 200) { height *= 200 / width; width = 200; } } else { if (height > 200) { width *= 200 / height; height = 200; } } canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); db.ref('avatars/' + currentTab).set(canvas.toDataURL('image/jpeg', 0.6)).then(() => { const modal = document.getElementById('custom-modal'); if(modal) modal.style.display = 'none'; }); }; img.src = e.target.result; }; reader.readAsDataURL(file); }
         function updateGroupProgress() { if(!currentGroup) return; let total = 0, packed = 0; families[currentGroup].members.forEach(person => { if(appData.items[person]) { Object.values(appData.items[person]).forEach(item => { total++; if(item.packed) packed++; }); } }); const percent = total === 0 ? 0 : Math.round((packed / total) * 100); const bar = document.getElementById('group-progress-bar'); if(bar) bar.style.width = `${percent}%`; const text = document.getElementById('group-progress-text'); if(text) text.innerText = `${percent}%`; }
-        function exportToExcel() { if (!appData.items) return showModal("שגיאה", "אין נתונים לייצוא"); let csvContent = "\uFEFFעבור,קטגוריה,פריט,כמות,הערות,נארז?\n"; allPeople.forEach(person => { if(appData.items[person]) { Object.values(appData.items[person]).forEach(item => { csvContent += `"${person}","${(item.category||"").replace(/"/g,'""')}","${(item.name||"").replace(/"/g,'""')}","${(item.amount||"").replace(/"/g,'""')}","${(item.note||"").replace(/"/g,'""')}","${item.packed?"כן":"לא"}"\n`; }); } }); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = "רשימת_אריזה_קרוואנים.csv"; link.click(); }
+        function exportToExcel() { if (!appData.items) return showModal("שגיאה", "אין נתונים לייצוא"); let csvContent = "\uFEFFעבור,קטגוריה,פריט,כמות,הערות,נארז?\n"; allPeople.forEach(person => { if(appData.items[person]) { Object.values(appData.items[person]).forEach(item => { if(item.name === "---") return; csvContent += `"${person}","${(item.category||"").replace(/"/g,'""')}","${(item.name||"").replace(/"/g,'""')}","${(item.amount||"").replace(/"/g,'""')}","${(item.note||"").replace(/"/g,'""')}","${item.packed?"כן":"לא"}"\n`; }); } }); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = "רשימת_אריזה_קרוואנים.csv"; link.click(); }
         function getRequiredDocsForTab(tabName) { if (tabName === "ציוד כללי משותף") return [ { id: 'flight', name: 'כרטיסי טיסה', icon: 'fa-plane' }, { id: 'villa', name: 'הזמנת וילה', icon: 'fa-house-user' }, { id: 'caravan', name: 'השכרת קרוואנים', icon: 'fa-caravan' }, { id: 'insurance', name: 'ביטוחים כלליים', icon: 'fa-shield-alt' } ]; if (tabName.startsWith("ציוד כללי") || tabName.startsWith("ציוד משמר") || tabName.startsWith("ציוד אדורה")) return []; let docs = [{ id: 'passport', name: 'דרכון', icon: 'fa-passport' }]; if (["יוני", "חנה", "עוזיאל", "שרונה"].includes(tabName)) { docs.push({ id: 'driver_license', name: 'רישיון נהיגה', icon: 'fa-id-card' }); docs.push({ id: 'int_license', name: 'רישיון בינלאומי', icon: 'fa-globe' }); } return docs; }
 
         // ==========================================
-        //  11. משחקים
+        //  משחקים (קריאה לניווט)
         // ==========================================
         function renderGamesMenu(content) { 
             let html = `
-                <div class="text-center mb-6 mt-4">
-                    <h2 class="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-rose-500"><i class="fas fa-gamepad mr-2"></i> קונסולת משחקים</h2>
-                    <p class="text-gray-500 mt-2 font-medium">זירת התחרויות הרשמית של הטיול!</p>
-                </div>
-                
-                <div class="bg-white rounded-3xl shadow-lg p-6 mb-8 border border-gray-100">
-                    <h3 class="font-extrabold text-center text-gray-800 text-xl mb-4">🏆 הענקת נקודות אליפות</h3>
-                    <div class="flex flex-col gap-3">
-                        <select id="score-target" class="w-full p-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-pink-400 bg-gray-50 font-bold text-lg text-center">
-                            <option value="mishmar">למשפחת משמר</option>
-                            <option value="adora">למשפחת אדורה</option>
-                            <optgroup label="שחקנים יחידים:">
-                                ${activeFamilyMembers.map(m => `<option value="ind_${m}">ל-${m}</option>`).join('')}
-                            </optgroup>
-                        </select>
-                        <div class="flex gap-3">
-                            <input type="number" id="score-amount" value="5" class="w-1/3 p-3 border border-gray-200 rounded-xl outline-none text-center font-bold text-xl">
-                            <button onclick="addScore()" class="w-2/3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-extrabold text-xl shadow-md hover:opacity-90 transition">הענק נקודות!</button>
-                        </div>
-                    </div>
-                </div>
-                
+                <div class="text-center mb-6 mt-4"><h2 class="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-rose-500"><i class="fas fa-gamepad mr-2"></i> קונסולת משחקים</h2><p class="text-gray-500 mt-2 font-medium">זירת התחרויות הרשמית של הטיול!</p></div>
+                <div class="bg-white rounded-3xl shadow-lg p-6 mb-8 border border-gray-100"><h3 class="font-extrabold text-center text-gray-800 text-xl mb-4">🏆 הענקת נקודות אליפות</h3><div class="flex flex-col gap-3"><select id="score-target" class="w-full p-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-pink-400 bg-gray-50 font-bold text-lg text-center"><option value="mishmar">למשפחת משמר</option><option value="adora">למשפחת אדורה</option><optgroup label="שחקנים יחידים:">${activeFamilyMembers.map(m => `<option value="ind_${m}">ל-${m}</option>`).join('')}</optgroup></select><div class="flex gap-3"><input type="number" id="score-amount" value="5" class="w-1/3 p-3 border border-gray-200 rounded-xl outline-none text-center font-bold text-xl"><button onclick="addScore()" class="w-2/3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-extrabold text-xl shadow-md hover:opacity-90 transition">הענק נקודות!</button></div></div></div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                    <!-- חדש 1: דו קרב -->
-                    <div onclick="navigate('games_console', null, 'duel')" class="bg-gradient-to-br from-indigo-600 to-purple-800 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center col-span-1 sm:col-span-2 border-2 border-yellow-400">
-                        <i class="fas fa-bolt text-5xl mb-3 text-yellow-400"></i>
-                        <h3 class="font-black text-2xl">קריאת תיגר! (דו-קרב)</h3>
-                        <p class="text-indigo-200 mt-1 text-sm font-bold">בחרו קורבן, לחצו, והטלפון שלו יקפוץ עם משימה חובה!</p>
-                    </div>
-
-                    <!-- חדש 2: ספיד טאקי -->
-                    <div onclick="navigate('games_console', null, 'speed_taki')" class="bg-gradient-to-br from-green-500 to-teal-700 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center">
-                        <i class="fas fa-layer-group text-5xl mb-3 opacity-80"></i>
-                        <h3 class="font-black text-2xl">ספיד טאקי</h3>
-                        <p class="text-green-200 mt-1 text-sm font-bold">משחק קלפים מהיר וחי לכולם</p>
-                    </div>
-
-                    <!-- חדש 3: בינגו דרכים -->
-                    <div onclick="navigate('games_console', null, 'bingo')" class="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center">
-                        <i class="fas fa-th text-5xl mb-3 opacity-80"></i>
-                        <h3 class="font-black text-2xl">בינגו דרכים</h3>
-                        <p class="text-yellow-100 mt-1 text-sm font-bold">לוח אישי לכל אחד מהחלון</p>
-                    </div>
-
-                    <!-- חדש 4: מגה חידות -->
-                    <div onclick="navigate('games_console', null, 'riddles')" class="bg-gradient-to-br from-sky-500 to-cyan-600 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center">
-                        <i class="fas fa-question-circle text-5xl mb-3 opacity-80"></i>
-                        <h3 class="font-black text-2xl">מגה חידות</h3>
-                        <p class="text-sky-200 mt-1 text-sm font-bold">פיצוחים שיעבירו את הזמן</p>
-                    </div>
-
-                    <!-- חדש 5: מי אני? -->
-                    <div onclick="navigate('games_console', null, 'whoami')" class="bg-gradient-to-br from-rose-400 to-red-500 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center">
-                        <i class="fas fa-user-secret text-5xl mb-3 opacity-80"></i>
-                        <h3 class="font-black text-2xl">מי אני?</h3>
-                        <p class="text-rose-200 mt-1 text-sm font-bold">שימו את הטלפון על המצח!</p>
-                    </div>
-                    
-                    <!-- משחקים קיימים -->
-                    <div onclick="navigate('games_console', null, 'war')" class="bg-gradient-to-br from-red-600 to-red-800 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center">
-                        <i class="fas fa-heart text-5xl mb-3 opacity-80"></i>
-                        <h3 class="font-black text-2xl">מלחמת קלפים (מזל)</h3>
-                    </div>
-                    <div onclick="navigate('games_console', null, 'photo_hunt')" class="bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center">
-                        <i class="fas fa-camera-retro text-5xl mb-3 opacity-80"></i>
-                        <h3 class="font-black text-2xl">ציידי התמונות</h3>
-                    </div>
-                    <div onclick="navigate('games_console', null, 'trivia')" class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center">
-                        <i class="fas fa-brain text-5xl mb-3 opacity-80"></i>
-                        <h3 class="font-black text-2xl">טריוויה כללית</h3>
-                    </div>
-                    <div onclick="navigate('games_console', null, 'country_city')" class="bg-gradient-to-br from-emerald-500 to-green-600 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center">
-                        <i class="fas fa-globe-americas text-5xl mb-3 opacity-80"></i>
-                        <h3 class="font-black text-2xl">ארץ עיר חכם</h3>
-                    </div>
-                    <div onclick="navigate('games_console', null, 'songs')" class="bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center sm:col-span-2">
-                        <i class="fas fa-music text-5xl mb-3 opacity-80"></i>
-                        <h3 class="font-black text-2xl">שירון קרוואנים</h3>
-                    </div>
+                    <div onclick="navigate('games_console', null, 'duel')" class="bg-gradient-to-br from-indigo-600 to-purple-800 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center col-span-1 sm:col-span-2 border-2 border-yellow-400"><i class="fas fa-bolt text-5xl mb-3 text-yellow-400"></i><h3 class="font-black text-2xl">קריאת תיגר! (דו-קרב)</h3><p class="text-indigo-200 mt-1 text-sm font-bold">בחרו קורבן, לחצו, והטלפון שלו יקפוץ עם משימה חובה!</p></div>
+                    <div onclick="navigate('games_console', null, 'speed_taki')" class="bg-gradient-to-br from-green-500 to-teal-700 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center"><i class="fas fa-layer-group text-5xl mb-3 opacity-80"></i><h3 class="font-black text-2xl">ספיד טאקי</h3><p class="text-green-200 mt-1 text-sm font-bold">משחק קלפים מהיר וחי לכולם</p></div>
+                    <div onclick="navigate('games_console', null, 'bingo')" class="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center"><i class="fas fa-th text-5xl mb-3 opacity-80"></i><h3 class="font-black text-2xl">בינגו דרכים</h3><p class="text-yellow-100 mt-1 text-sm font-bold">לוח אישי לכל אחד מהחלון</p></div>
+                    <div onclick="navigate('games_console', null, 'riddles')" class="bg-gradient-to-br from-sky-500 to-cyan-600 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center"><i class="fas fa-question-circle text-5xl mb-3 opacity-80"></i><h3 class="font-black text-2xl">מגה חידות</h3><p class="text-sky-200 mt-1 text-sm font-bold">פיצוחים שיעבירו את הזמן</p></div>
+                    <div onclick="navigate('games_console', null, 'whoami')" class="bg-gradient-to-br from-rose-400 to-red-500 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center"><i class="fas fa-user-secret text-5xl mb-3 opacity-80"></i><h3 class="font-black text-2xl">מי אני?</h3><p class="text-rose-200 mt-1 text-sm font-bold">שימו את הטלפון על המצח!</p></div>
+                    <div onclick="navigate('games_console', null, 'war')" class="bg-gradient-to-br from-red-600 to-red-800 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center"><i class="fas fa-heart text-5xl mb-3 opacity-80"></i><h3 class="font-black text-2xl">מלחמת קלפים (מזל)</h3></div>
+                    <div onclick="navigate('games_console', null, 'photo_hunt')" class="bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center"><i class="fas fa-camera-retro text-5xl mb-3 opacity-80"></i><h3 class="font-black text-2xl">ציידי התמונות</h3></div>
+                    <div onclick="navigate('games_console', null, 'trivia')" class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center"><i class="fas fa-brain text-5xl mb-3 opacity-80"></i><h3 class="font-black text-2xl">טריוויה כללית</h3></div>
+                    <div onclick="navigate('games_console', null, 'country_city')" class="bg-gradient-to-br from-emerald-500 to-green-600 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center"><i class="fas fa-globe-americas text-5xl mb-3 opacity-80"></i><h3 class="font-black text-2xl">ארץ עיר חכם</h3></div>
+                    <div onclick="navigate('games_console', null, 'songs')" class="bg-gradient-to-br from-fuchsia-500 to-purple-600 rounded-3xl p-6 shadow-lg text-white cursor-pointer transform hover:scale-105 transition flex flex-col items-center justify-center text-center sm:col-span-2"><i class="fas fa-music text-5xl mb-3 opacity-80"></i><h3 class="font-black text-2xl">שירון קרוואנים</h3></div>
                 </div>
-                
-                <div class="bg-gray-800 rounded-3xl p-6 text-white text-center shadow-lg">
-                    <h3 class="font-extrabold text-xl mb-4 text-yellow-400"><i class="fas fa-medal mr-2"></i> טבלת אליפות אישית</h3>
-                    <div class="flex flex-wrap justify-center gap-3">
-                        ${Object.keys(appData.games.individualScores || {}).sort((a,b)=>appData.games.individualScores[b]-appData.games.individualScores[a]).map(m => `
-                            <div class="bg-gray-700 px-4 py-2 rounded-xl border border-gray-600 font-bold">
-                                <span class="text-gray-300 mr-2">${m}</span>
-                                <span class="text-xl text-yellow-400">${appData.games.individualScores[m]}</span>
-                            </div>
-                        `).join('') || '<p class="text-gray-400">טרם נצברו נקודות אישיות.</p>'}
-                    </div>
-                    <button onclick="resetGames()" class="mt-6 text-xs text-red-400 hover:text-red-300 transition underline">איפוס כל המשחקים ל-0</button>
-                </div>
-            `; 
-            content.innerHTML = html; 
+                <div class="bg-gray-800 rounded-3xl p-6 text-white text-center shadow-lg"><h3 class="font-extrabold text-xl mb-4 text-yellow-400"><i class="fas fa-medal mr-2"></i> טבלת אליפות אישית</h3><div class="flex flex-wrap justify-center gap-3">${Object.keys(appData.games.individualScores || {}).sort((a,b)=>appData.games.individualScores[b]-appData.games.individualScores[a]).map(m => `<div class="bg-gray-700 px-4 py-2 rounded-xl border border-gray-600 font-bold"><span class="text-gray-300 mr-2">${m}</span><span class="text-xl text-yellow-400">${appData.games.individualScores[m]}</span></div>`).join('') || '<p class="text-gray-400">טרם נצברו נקודות אישיות.</p>'}</div><button onclick="resetGames()" class="mt-6 text-xs text-red-400 hover:text-red-300 transition underline">איפוס כל המשחקים ל-0</button></div>`; content.innerHTML = html; 
         }
-
-        function addScore() { 
-            const target = document.getElementById('score-target').value; 
-            const amount = Number(document.getElementById('score-amount').value); 
-            if(target === 'mishmar' || target === 'adora') { 
-                db.ref(`games/scores/${target}`).set((appData.games.scores[target] || 0) + amount); 
-            } else { 
-                const name = target.replace('ind_', ''); 
-                db.ref(`games/individualScores/${name}`).set((appData.games.individualScores[name] || 0) + amount); 
-            } 
-            showModal('נקודות עודכנו!', `הוענקו ${amount} נק' בהצלחה.`, false, () => renderApp()); 
-        }
+        function addScore() { const target = document.getElementById('score-target').value; const amount = Number(document.getElementById('score-amount').value); if(target === 'mishmar' || target === 'adora') { db.ref(`games/scores/${target}`).set((appData.games.scores[target] || 0) + amount); } else { const name = target.replace('ind_', ''); db.ref(`games/individualScores/${name}`).set((appData.games.individualScores[name] || 0) + amount); } showModal('נקודות עודכנו!', `הוענקו ${amount} נק' בהצלחה.`, false, () => renderApp()); }
         function resetGames() { showModal('איפוס מוחלט', 'לאפס את כל התוצאות ל-0?', true, () => { db.ref('games/scores').set({mishmar:0,adora:0}); db.ref('games/individualScores').set({}); renderApp(); }); }
 
         function renderCardWar(content) { const warData = appData.games.war || { players: {} }; const myName = getMyIdentity(); let html = `<div class="text-center mb-8"><h2 class="text-4xl font-extrabold text-red-600"><i class="fas fa-heart mr-2"></i> מלחמת קלפים</h2></div><div class="bg-white rounded-3xl p-8 shadow-2xl text-center border-t-8 border-red-600 mb-8"><p class="text-gray-500 mb-6 font-bold">מי ישלוף את הקלף הגבוה ביותר?</p><div class="flex flex-wrap justify-center gap-6 mb-8 min-h-[150px]">`; const players = Object.keys(warData.players); if(players.length === 0) { html += `<div class="w-full text-center text-gray-400 font-bold text-xl mt-10">השולחן ריק. שלפו קלף!</div>`; } else { players.forEach(p => { const card = warData.players[p]; html += `<div class="flex flex-col items-center anim-pulse"><span class="font-bold mb-2 text-gray-700 bg-gray-100 px-3 py-1 rounded-full text-sm shadow-sm">${p}</span><div class="playing-card ${card.color}"><div class="suit-top">${card.suit}</div><span>${card.val}</span><div class="suit-bottom">${card.suit}</div></div></div>`; }); } html += `</div><div class="flex flex-col sm:flex-row gap-4 justify-center items-center"><div class="bg-red-50 text-red-800 px-6 py-4 rounded-2xl font-bold text-lg border border-red-200 shadow-inner">משחק בתור: <span class="font-black text-red-600">${myName || '?'}</span></div><button onclick="drawCard()" class="bg-red-600 text-white font-black text-xl px-10 py-4 rounded-2xl shadow-lg hover:bg-red-700 transition transform hover:scale-105"><i class="fas fa-hand-paper mr-2"></i> שלוף קלף!</button></div><button onclick="clearTable()" class="mt-8 text-sm text-gray-400 hover:text-gray-600 underline font-bold">נקה שולחן לסיבוב חדש</button></div>`; content.innerHTML = html; }
@@ -1267,114 +1264,7 @@
         function checkCountryCity(letter) { if(letter === "?") return; const vals = { country: document.getElementById('c_country').value.trim(), color: document.getElementById('c_color').value.trim(), animal: document.getElementById('c_animal').value.trim(), object: document.getElementById('c_object').value.trim(), prof: document.getElementById('c_prof').value.trim() }; let score = 0; let msgs = []; const checkDict = (val, dict, name) => { if(!val) return; if(val.charAt(0) !== letter) { msgs.push(`❌ ${name}: '${val}' לא מתחיל ב-'${letter}'`); return; } if(dict.includes(val)) { score += 10; msgs.push(`✅ ${name}: מושלם!`); } else { msgs.push(`❌ ${name}: לא במילון.`); } }; checkDict(vals.country, dictCountries, "ארץ"); checkDict(vals.color, dictColors, "צבע"); checkDict(vals.animal, dictAnimals, "חי"); checkDict(vals.prof, dictProfessions, "מקצוע"); if(vals.object) { if(vals.object.charAt(0) !== letter) { msgs.push(`❌ דומם: שגוי`); } else if(letter === 'ר' && !dictObjectsR.includes(vals.object)) { msgs.push(`❌ דומם: לא במילון.`); } else { score+=10; msgs.push(`✅ דומם: אושר`); } } document.getElementById('cc-results').innerHTML = `<h3 class="text-3xl font-black text-green-600 mb-4">סך הכל: ${score} נק'!</h3><div class="text-right text-gray-600 font-bold bg-white p-4 rounded-xl border">${msgs.join('<br>')}</div>`; }
 
         // ==========================================
-        //  12. מפות
-        // ==========================================
-        function renderMap(content) {
-            const locs = appData.locations || {};
-            let html = `
-                <div class="text-center mb-6 mt-4">
-                    <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-map-marked-alt text-cyan-600 mr-2"></i> מפת מסלול וניווט</h2>
-                    <p class="text-gray-500 mt-2">המסלול הרשמי של משפחות פרידמן</p>
-                </div>
-                <div class="bg-white rounded-3xl shadow-md mb-8 border border-gray-200 overflow-hidden flex flex-col md:flex-row h-[60vh] sm:h-[70vh]">
-                    <div class="w-full md:w-1/3 bg-indigo-50 border-b md:border-l border-indigo-100 flex flex-col h-2/5 md:h-full shrink-0">
-                        <div class="p-4 bg-indigo-600 text-white shrink-0 shadow-md z-10">
-                            <h3 class="font-bold text-lg"><i class="fas fa-route mr-1"></i> נקודות המסלול</h3>
-                            <p class="text-xs text-indigo-200 mb-2">לחצו על היעד לפתיחה במפה</p>
-                            <div class="flex gap-2">
-                                <button onclick="openGoogleMaps(0, 6)" class="flex-1 bg-white text-indigo-700 text-xs font-bold py-2 rounded-xl shadow-sm hover:bg-indigo-100 transition flex items-center justify-center gap-1"><i class="fas fa-external-link-alt"></i> חלק א'</button>
-                                <button onclick="openGoogleMaps(6, 13)" class="flex-1 bg-white text-indigo-700 text-xs font-bold py-2 rounded-xl shadow-sm hover:bg-indigo-100 transition flex items-center justify-center gap-1"><i class="fas fa-external-link-alt"></i> חלק ב'</button>
-                            </div>
-                        </div>
-                        <div class="flex-1 overflow-y-auto hide-scrollbar p-3" id="locations-list"></div>
-                    </div>
-                    <div class="w-full md:w-2/3 h-3/5 md:h-full relative z-0">
-                        <div id="leaflet-map-container" class="absolute inset-0 z-0"></div>
-                    </div>
-                </div>
-                <div class="bg-cyan-50 rounded-3xl shadow-sm p-6 mb-8 border border-cyan-100">
-                    <h3 class="font-extrabold text-cyan-800 mb-4 text-lg"><i class="fas fa-map-pin mr-2"></i> הוספת יעד עצמאי לניווט מהיר</h3>
-                    <div class="flex flex-col gap-3">
-                        <input type="text" id="loc-name" placeholder="שם היעד (למשל: סופרמרקט קרוב)" class="w-full p-3 border border-cyan-200 rounded-xl outline-none focus:ring-2 focus:ring-cyan-400 bg-white">
-                        <input type="url" id="loc-url" placeholder="קישור ל-Google Maps או Waze" class="w-full p-3 border border-cyan-200 rounded-xl outline-none focus:ring-2 focus:ring-cyan-400 bg-white dir-ltr">
-                        <button onclick="addLocation()" class="w-full bg-cyan-600 text-white p-3.5 rounded-xl font-bold shadow-md hover:bg-cyan-700 transition mt-1 text-lg">הוסף לרשימה</button>
-                    </div>
-                </div>
-                <h3 class="font-extrabold text-gray-700 mb-3 ml-2 text-lg">יעדים מועדפים שהוספתם:</h3>
-                <div class="flex flex-col gap-3">`;
-            const locKeys = Object.keys(locs);
-            if(locKeys.length === 0) { 
-                html += `<div class="text-center p-6 bg-white rounded-3xl text-gray-500 font-medium border">טרם הוספתם יעדים עצמאיים.</div>`; 
-            } else { 
-                locKeys.forEach(key => { 
-                    const loc = locs[key]; 
-                    html += `<div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex justify-between items-center"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center text-lg"><i class="fas fa-map-marker-alt"></i></div><span class="font-bold text-gray-800 text-lg">${loc.name}</span></div><div class="flex gap-2"><a href="${loc.url}" target="_blank" class="bg-gray-800 hover:bg-black text-white px-4 py-2.5 rounded-xl font-bold shadow transition"><i class="fas fa-location-arrow mr-1"></i> נווט</a><button onclick="deleteLocation('${key}')" class="text-red-400 hover:text-red-600 px-3"><i class="fas fa-trash"></i></button></div></div>`; 
-                }); 
-            }
-            html += `</div>`; 
-            content.innerHTML = html;
-            setTimeout(() => { initLeafletMap(); renderLocationsList(); }, 100);
-        }
-
-        function initLeafletMap() {
-            const container = document.getElementById('leaflet-map-container');
-            if (!container) return;
-            if (leafletMapInstance) { leafletMapInstance.remove(); leafletMapInstance = null; }
-            leafletMapInstance = L.map('leaflet-map-container').setView([46.1, 11.5], 7);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(leafletMapInstance);
-            const latlngs = []; mapMarkers = [];
-            routePoints.forEach((point, index) => {
-                latlngs.push([point.lat, point.lng]);
-                let markerClass = 'route-marker'; 
-                if (point.type === 'start') markerClass += ' start-point'; 
-                if (point.type === 'end') markerClass += ' end-point';
-                const customIcon = L.divIcon({ className: 'custom-div-icon', html: `<div class="${markerClass}" style="width: 30px; height: 30px; line-height: 24px;">${point.id}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
-                const marker = L.marker([point.lat, point.lng], { icon: customIcon }).addTo(leafletMapInstance);
-                marker.bindPopup(`<div class="text-right" style="direction: rtl;"><div class="text-xl mb-1">${point.icon}</div><h3 class="font-extrabold text-indigo-800 text-lg mb-1">${point.name}</h3><p class="text-sm text-gray-600 leading-tight">${point.desc}</p></div>`);
-                mapMarkers.push(marker);
-            });
-            const polyline = L.polyline(latlngs, { color: '#4f46e5', weight: 4, opacity: 0.8, dashArray: '10, 10' }).addTo(leafletMapInstance);
-            leafletMapInstance.fitBounds(polyline.getBounds(), { padding: [30, 30] });
-        }
-
-        function renderLocationsList() {
-            const container = document.getElementById('locations-list'); 
-            if (!container) return; 
-            container.innerHTML = '';
-            routePoints.forEach((point, index) => {
-                const isLast = index === routePoints.length - 1;
-                container.innerHTML += `<div class="flex cursor-pointer hover:bg-indigo-100 p-2 rounded-xl transition group relative mb-1" onclick="panToLocation(${index})"><div class="flex flex-col items-center ml-3 relative"><div class="w-6 h-6 rounded-full ${point.type === 'start' ? 'bg-emerald-500' : (point.type === 'end' ? 'bg-red-500' : 'bg-indigo-600')} text-white flex items-center justify-center font-bold text-xs z-10 shadow-md group-hover:scale-110 transition">${point.id}</div>${!isLast ? '<div class="w-0.5 bg-indigo-200 flex-1 my-1"></div>' : ''}</div><div class="flex-1"><div class="flex justify-between items-start"><h3 class="font-bold text-gray-800 text-sm leading-tight">${point.name}</h3><span class="text-sm ml-1">${point.icon}</span></div></div></div>`;
-            });
-        }
-
-        function panToLocation(index) {
-            if (!leafletMapInstance || !mapMarkers[index]) return; 
-            const point = routePoints[index];
-            leafletMapInstance.flyTo([point.lat, point.lng], 12, { duration: 1.5 }); 
-            mapMarkers[index].openPopup();
-            if (window.innerWidth < 768) { document.getElementById('leaflet-map-container').scrollIntoView({ behavior: 'smooth' }); }
-        }
-
-        function openGoogleMaps(startIndex, endIndex) { 
-            const subset = routePoints.slice(startIndex, endIndex + 1); 
-            let baseUrl = "https://www.google.com/maps/dir/"; 
-            subset.forEach(point => { baseUrl += `${point.lat},${point.lng}/`; }); 
-            window.open(baseUrl, '_blank'); 
-        }
-
-        function addLocation() { 
-            const n = document.getElementById('loc-name').value.trim(); 
-            const u = document.getElementById('loc-url').value.trim(); 
-            if(!n || !u) { return showModal('שגיאה', 'יש למלא שם וקישור חוקי.'); }
-            db.ref(`locations`).push({ name: n, url: u }); 
-        }
-
-        function deleteLocation(id) { 
-            showModal('מחיקה', 'למחוק יעד זה?', true, () => { db.ref(`locations/${id}`).remove(); }); 
-        }
-
-        // ==========================================
-        //  13. אתחול הנתונים הראשוני
+        //  12. אתחול נתונים ראשוניים
         // ==========================================
         function generateInitialData() {
             let updates = {};
