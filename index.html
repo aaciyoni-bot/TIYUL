@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -74,6 +75,9 @@
                 <button onclick="goBack()" id="back-btn" class="hidden text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition shadow backdrop-blur-sm font-bold flex items-center">
                     <i class="fas fa-arrow-right mr-1.5"></i> חזור
                 </button>
+                <button onclick="exportToExcel()" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition shadow backdrop-blur-sm font-bold">
+                    <i class="fas fa-file-excel"></i> יצוא
+                </button>
             </div>
         </div>
         
@@ -97,6 +101,7 @@
 
     <nav id="tabs-container" class="hidden flex overflow-x-auto hide-scrollbar bg-white shadow-sm border-b z-20 sticky top-[76px] px-2 py-1"></nav>
 
+    <!-- אנימציית טעינה -->
     <div class="text-center mt-20" id="loading-spinner">
         <i class="fas fa-spinner fa-spin text-5xl text-indigo-500"></i>
         <p class="mt-4 text-gray-600 font-medium text-lg" id="loading-text">טוען נתונים מהענן...</p>
@@ -105,7 +110,7 @@
     <!-- תוכן ראשי -->
     <main id="app-content" class="p-4 max-w-3xl mx-auto"></main>
 
-    <!-- מודלים / חלונות קופצים (מוגדרים רק פעם אחת!) -->
+    <!-- מודלים / חלונות קופצים -->
     <div id="welcome-modal" style="display: none;" class="fixed inset-0 z-[100] overflow-y-auto"><div class="flex items-center justify-center min-h-screen p-4"><div class="fixed inset-0 bg-indigo-900/95 backdrop-blur-md"></div><div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 text-center border-4 border-indigo-200"><div class="text-6xl mb-4 bg-indigo-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-inner">👋</div><h2 class="text-3xl font-extrabold text-gray-800 mb-2">מי מחזיק במכשיר?</h2><p class="text-gray-500 mb-8 font-medium">אנא בחר את שמך:</p><div class="relative"><select id="welcome-user-select" class="w-full p-4 border-2 border-indigo-200 rounded-2xl text-xl font-bold bg-indigo-50 text-indigo-800 mb-8 outline-none focus:ring-4 focus:ring-indigo-300 transition text-center appearance-none cursor-pointer"></select><i class="fas fa-chevron-down absolute left-5 top-5 text-indigo-400 text-xl pointer-events-none"></i></div><button onclick="saveUserIdentity()" class="w-full bg-indigo-600 text-white font-black text-2xl py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition transform hover:scale-105">המשך לטיול! 🚐</button></div></div></div>
     
     <div id="custom-modal" style="display: none;" class="fixed inset-0 z-[80] overflow-y-auto"><div class="flex items-center justify-center min-h-screen p-4"><div class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div><div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-transform" id="modal-content-box"><h3 id="modal-title" class="text-2xl font-extrabold mb-2 text-gray-800"></h3><p id="modal-message" class="text-gray-600 mb-6 text-lg"></p><div class="flex justify-end gap-3"><button id="modal-cancel-btn" style="display: none;" class="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold transition">ביטול</button><button id="modal-ok-btn" class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold shadow-md transition w-full sm:w-auto">אישור</button></div></div></div></div>
@@ -191,12 +196,12 @@
         let lastDuelTimestamp = 0; 
         let leafletMapInstance = null; 
         let mapMarkers = [];
-        let pendingCheckout = null; // אובייקט חכם לקופה שמזהה מאיפה הפריט הגיע
+        let pendingCheckout = null; 
         let editingItemInfo = null; 
         let myTakiHand = []; 
         let myBingoBoard = [];
 
-        // מילונים
+        // מילונים למשחקים
         const dictCountries = ["אוגנדה", "אוסטריה", "אוסטרליה", "איטליה", "אירלנד", "ארצות הברית", "בולגריה", "בלגיה", "ברזיל", "גרמניה", "דנמרק", "הודו", "הולנד", "הונגריה", "טורקיה", "יוון", "יפן", "ישראל", "מצרים", "מקסיקו", "ספרד", "סין", "צרפת", "קנדה", "רוסיה", "שווייץ", "תאילנד"];
         const dictColors = ["אדום", "אפור", "ארגמן", "בורדו", "ברונזה", "ורוד", "זהב", "חאקי", "חום", "חרדל", "טורקיז", "ירוק", "כסף", "כחול", "כתום", "לבן", "מג'נטה", "סגול", "פוקסיה", "צהוב", "ציאן", "שחור", "תכלת", "תפוח"];
         const dictAnimals = ["אריה", "ארנב", "איילה", "אפרוח", "בבון", "בואש", "בונה", "בז", "ברדלס", "ברבור", "ברווז", "גורילה", "גמל", "ג'ירפה", "גירית", "דולפין", "דוב", "זאב", "זברה", "זבוב", "חתול", "כלב", "נמר", "נמלה", "סוס", "פיל", "פרה", "צפרדע", "קוף", "קרנף", "שועל", "שור", "תנין", "תוכי"];
@@ -209,6 +214,18 @@
         const duelTasks = ["שיר שיר שלם כשיש לך מים בפה מבלי לירוק!","עשה 15 קפיצות ג'אמפינג ג'קס (Jumping Jacks) מחוץ לקרוואן עכשיו!","עשה מסאז' בכתפיים לנהג של הקרוואן למשך 2 דקות.","דבר רק באנגלית (במבטא בריטי) ב-10 הדקות הקרובות.","ספר בדיחת קרש, אם אף אחד לא צוחק - הפסדת!","נסה ללקק את המרפק של עצמך במשך דקה שלמה.","שים גרביים על הידיים עד סוף הנסיעה הקרובה.","בקש מהרכב השני בוואטסאפ מתכון לעוגת שוקולד.","תעשה חיקוי מוגזם של אמא/אבא במשך דקה."];
         const whoAmIChars = ["מיקי מאוס", "בנימין נתניהו", "נועה קירל", "מכונת כביסה", "קרוואן", "הארי פוטר", "דונאלד טראמפ", "כלב פודל", "ברוס לי", "ספיידרמן", "פיקאצ'ו", "גל גדות", "עומר אדם"];
         const bingoItems = ["פרה", "רכב אדום", "משאית", "טרקטור", "גשר", "נהר/מים", "אופנוע", "קרוואן אחר", "פסגת שלג", "כנסייה", "תחנת דלק", "אופניים", "שוטר ניידת", "מנהרה", "רכבת"];
+
+        // אירוע פתיחה למתגים (Checkout Toggle)
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggle = document.getElementById('sync-wallet-toggle');
+            const fields = document.getElementById('buy-cost-fields');
+            if(toggle && fields) {
+                toggle.addEventListener('change', (e) => {
+                    fields.style.opacity = e.target.checked ? '1' : '0.3';
+                    fields.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+                });
+            }
+        });
 
         // ==========================================
         //  זיהוי משתמש
@@ -264,7 +281,7 @@
                 if (!appData.emergency) appData.emergency = { sos: null, liveLocations: {}, ping: 0 };
                 if (!appData.emergency.liveLocations) appData.emergency.liveLocations = {};
 
-                // ניקוי אוטומטי במזווה
+                // ניקוי אוטומטי במזווה (Anti-Ghost)
                 Object.keys(appData.pantry).forEach(key => {
                     const item = appData.pantry[key];
                     if (!item || !item.name || item.name === "undefined" || item.name.trim() === "") {
@@ -334,8 +351,6 @@
                 renderApp();
             } catch (err) { 
                 console.error("Firebase Error:", err);
-                const loadingText = document.getElementById('loading-text');
-                if (loadingText) loadingText.innerText = "שגיאה במסד הנתונים: " + err.message; 
             }
         }, (err) => { 
             console.error(err);
@@ -369,6 +384,36 @@
             const close = () => { modal.style.display = 'none'; }; 
             newOkBtn.onclick = () => { close(); if (onOk) onOk(); }; 
             newCancelBtn.onclick = close; 
+        }
+
+        // פעולות מצוקה ומכ"ם
+        function triggerSOS() { 
+            const myName = getMyIdentity(); 
+            if (!myName) { changeUserIdentity(); return; } 
+            if (navigator.geolocation) { 
+                showModal('משדר מצוקה...', '<i class="fas fa-satellite-dish fa-spin text-3xl text-red-500 mb-2"></i><br>מאתר מיקום...', false); 
+                navigator.geolocation.getCurrentPosition((pos) => { 
+                    db.ref('emergency/sos').set({ active: true, sender: myName, lat: pos.coords.latitude, lng: pos.coords.longitude, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => { 
+                        showModal('המצוקה שודרה!', 'כל המשפחה קיבלה התראה!', false, () => { 
+                            setTimeout(() => { showModal('ביטול אזעקה', 'לכבות?', true, cancelSOS); }, 500); 
+                        }); 
+                    }); 
+                }, (err) => { showModal('שגיאת GPS', 'לא מצאנו מיקום.'); }, { enableHighAccuracy: true, timeout: 10000 }); 
+            } else { showModal('שגיאה', 'אין GPS במכשיר.'); } 
+        }
+        function cancelSOS() { db.ref('emergency/sos/active').set(false); const sosModal = document.getElementById('sos-alert-modal'); if (sosModal) sosModal.style.display = 'none'; }
+        function pingEveryone() { showModal('מפעיל מכ"ם...', 'שולח פקודה למכשירים...', false); db.ref('emergency/ping').set(firebase.database.ServerValue.TIMESTAMP).then(() => { setTimeout(() => { const customModal = document.getElementById('custom-modal'); if(customModal) customModal.style.display = 'none'; }, 2000); }); }
+        function updateMyLiveLocation() { 
+            const myName = getMyIdentity(); 
+            if (!myName) { changeUserIdentity(); return; } 
+            if (navigator.geolocation) { 
+                showModal('מעדכן מיקום...', 'מחפש...', false); 
+                navigator.geolocation.getCurrentPosition((pos) => { 
+                    db.ref(`emergency/liveLocations/${myName}`).set({ lat: pos.coords.latitude, lng: pos.coords.longitude, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => { 
+                        const customModal = document.getElementById('custom-modal'); if(customModal) customModal.style.display = 'none'; 
+                    }); 
+                }, () => { showModal('שגיאה', 'לא ניתן לקרוא מיקום.'); }, { enableHighAccuracy: true }); 
+            } 
         }
 
         // ==========================================
@@ -472,18 +517,18 @@
         }
 
         // ==========================================
-        //  מסך הבית (Dashboard)
+        //  מסך הבית (Dashboard) - הנה התיקון לכפתורים!
         // ==========================================
         function renderDashboard(content) {
             content.innerHTML = `
                 <div class="grid grid-cols-1 gap-4 mb-6 mt-4">
-                    <div onclick="navigate('mishmar')" class="menu-card bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl p-5 shadow-lg text-white flex items-center justify-between">
+                    <div onclick="navigate('mishmar', 'mishmar')" class="menu-card bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl p-5 shadow-lg text-white flex items-center justify-between">
                         <div class="flex items-center gap-4"><div class="bg-white/20 p-3 rounded-2xl"><i class="fas fa-backpack text-2xl"></i></div><div><h3 class="font-extrabold text-xl">ציוד משפחת פרידמן משמר</h3></div></div><i class="fas fa-chevron-left opacity-70"></i>
                     </div>
-                    <div onclick="navigate('adora')" class="menu-card bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-3xl p-5 shadow-lg text-white flex items-center justify-between">
+                    <div onclick="navigate('adora', 'adora')" class="menu-card bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-3xl p-5 shadow-lg text-white flex items-center justify-between">
                         <div class="flex items-center gap-4"><div class="bg-white/20 p-3 rounded-2xl"><i class="fas fa-suitcase-rolling text-2xl"></i></div><div><h3 class="font-extrabold text-xl">ציוד משפחת פרידמן אדורה</h3></div></div><i class="fas fa-chevron-left opacity-70"></i>
                     </div>
-                    <div onclick="navigate('shared')" class="menu-card bg-gradient-to-r from-teal-500 to-teal-600 rounded-3xl p-5 shadow-lg text-white flex items-center justify-between">
+                    <div onclick="navigate('shared', 'shared')" class="menu-card bg-gradient-to-r from-teal-500 to-teal-600 rounded-3xl p-5 shadow-lg text-white flex items-center justify-between">
                         <div class="flex items-center gap-4"><div class="bg-white/20 p-3 rounded-2xl"><i class="fas fa-box-open text-2xl"></i></div><div><h3 class="font-extrabold text-xl">ציוד משותף</h3><p class="text-teal-100 text-sm">אוכל, פנאי ומשחקים</p></div></div><i class="fas fa-chevron-left opacity-70"></i>
                     </div>
                 </div>
@@ -503,7 +548,7 @@
         }
 
         // ==========================================
-        //  מזווה וקניות (כולל סנכרון לארנק!)
+        //  קניות ומזווה (כולל סנכרון לארנק!)
         // ==========================================
         function renderPantry(content) {
             const pantry = appData.pantry || {}; 
@@ -587,7 +632,7 @@
                     html += `
                         <div class="bg-gray-50 p-3 rounded-2xl border border-gray-200 flex justify-between items-center shadow-sm hover:shadow transition">
                             <div class="flex-1">
-                                <span class="font-extrabold text-gray-800 text-lg">${item.name}</span>
+                                <span class="font-extrabold text-gray-800 text-lg">${item.name || 'פריט ריק'}</span>
                             </div>
                             <div class="flex items-center gap-3">
                                 <div class="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm h-10">
@@ -616,7 +661,7 @@
                                 <div onclick="changePantryQty('${key}', 1)" class="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center cursor-pointer hover:bg-gray-400 transition text-sm">
                                     <i class="fas fa-undo"></i>
                                 </div>
-                                <span class="font-bold text-gray-500 line-through text-lg">${item.name}</span>
+                                <span class="font-bold text-gray-500 line-through text-lg">${item.name || 'פריט ריק'}</span>
                             </div>
                             <button onclick="deletePantryItem('${key}')" class="text-gray-300 hover:text-red-500 px-2"><i class="fas fa-trash"></i></button>
                         </div>`; 
@@ -693,7 +738,7 @@
             const payer = document.getElementById('buy-item-payer').value; 
             
             if (isSync && (!cost || cost <= 0)) { 
-                showModal('שגיאה', 'יש להזין סכום או לכבות את הסנכרון לארנק.'); 
+                showModal('שגיאה', 'יש להזין מחיר (₪) גדול מ-0 כדי לסנכרן לארנק, או לכבות את הסנכרון.'); 
                 return; 
             } 
             
@@ -745,9 +790,8 @@
             const item = appData.pantry[key]; 
             if(!item) return;
             
-            let msg = `האם למחוק את הפריט '${item.name}' לגמרי מהמזווה?`;
+            let msg = `האם למחוק את הפריט '${item.name || ''}' לגמרי מהמזווה?`;
             
-            // בדיקה אם המוצר מקושר לארנק
             if (item.linkedExpenseId && appData.wallet && appData.wallet.expenses && appData.wallet.expenses[item.linkedExpenseId]) {
                 msg += `<br><br><span class='text-red-500 font-bold'>* שימו לב: מחיקה זו תבטל גם את ההוצאה הכספית (₪) שנרשמה בארנק המשותף!</span>`;
             }
@@ -824,7 +868,7 @@
         }
 
         // ==========================================
-        //  ארנק
+        //  ארנק משותף (שקלים)
         // ==========================================
         function renderWallet(content) { 
             const expenses = appData.wallet.expenses || {}; 
@@ -1068,7 +1112,7 @@
         function closeImageModal() { const imageModal = document.getElementById('image-modal'); if(imageModal) imageModal.style.display = 'none'; const fullScreenImg = document.getElementById('full-screen-img'); if(fullScreenImg) fullScreenImg.src = ''; }
 
         // ==========================================
-        // ציוד ומסמכים (+ הוספת ומחיקת קטגוריות)
+        // אריזה ומסמכים (+ הוספת ומחיקת קטגוריות)
         // ==========================================
         function renderTabs() { const container = document.getElementById('tabs-container'); if(!container) return; container.innerHTML = ''; if(!currentGroup) return; families[currentGroup].members.forEach(person => { const isActive = person === currentTab; let total = 0, packed = 0; if(appData.items[person]) { Object.values(appData.items[person]).forEach(item => { total++; if(item.packed) packed++; }); } const isDone = (packed === total && total > 0); const progressText = total > 0 ? `${packed}/${total}` : ''; const btn = document.createElement('button'); btn.className = `px-5 py-3 whitespace-nowrap text-sm flex-shrink-0 transition-colors border-b-[3px] ${isActive ? 'border-indigo-600 text-indigo-700 font-extrabold bg-indigo-50/50' : 'border-transparent text-gray-500 hover:bg-gray-50'}`; btn.innerHTML = `<div class="flex flex-col items-center gap-1"><span class="text-base">${person}</span>${total > 0 ? `<span class="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded-full shadow-sm ${isDone ? 'text-green-600 font-bold' : 'text-gray-500'}">${isDone ? '<i class="fas fa-check mr-1"></i>' : ''}${progressText}</span>` : ''}</div>`; btn.onclick = () => { currentTab = person; renderApp(); }; container.appendChild(btn); }); }
         
@@ -1111,7 +1155,7 @@
                 `; 
                 
                 items.forEach(item => { 
-                    if(item.name === "---") return; // זה פריט דמה כדי להחזיק את הקטגוריה ריקה
+                    if(item.name === "---") return; // פריט דמה
                     const notesFormatted = item.note ? `<div class="text-sm mt-1 pre-wrap ${item.packed ? 'text-gray-300' : 'text-gray-500'}">${item.note}</div>` : ''; 
                     html += `
                             <li class="item-row p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center ${item.packed ? 'bg-gray-50/50' : ''} gap-4 sm:gap-0">
@@ -1198,7 +1242,7 @@
         function getRequiredDocsForTab(tabName) { if (tabName === "ציוד כללי משותף") return [ { id: 'flight', name: 'כרטיסי טיסה', icon: 'fa-plane' }, { id: 'villa', name: 'הזמנת וילה', icon: 'fa-house-user' }, { id: 'caravan', name: 'השכרת קרוואנים', icon: 'fa-caravan' }, { id: 'insurance', name: 'ביטוחים כלליים', icon: 'fa-shield-alt' } ]; if (tabName.startsWith("ציוד כללי") || tabName.startsWith("ציוד משמר") || tabName.startsWith("ציוד אדורה")) return []; let docs = [{ id: 'passport', name: 'דרכון', icon: 'fa-passport' }]; if (["יוני", "חנה", "עוזיאל", "שרונה"].includes(tabName)) { docs.push({ id: 'driver_license', name: 'רישיון נהיגה', icon: 'fa-id-card' }); docs.push({ id: 'int_license', name: 'רישיון בינלאומי', icon: 'fa-globe' }); } return docs; }
 
         // ==========================================
-        //  משחקים (קריאה לניווט)
+        //  משחקים 
         // ==========================================
         function renderGamesMenu(content) { 
             let html = `
@@ -1263,7 +1307,114 @@
         function checkCountryCity(letter) { if(letter === "?") return; const vals = { country: document.getElementById('c_country').value.trim(), color: document.getElementById('c_color').value.trim(), animal: document.getElementById('c_animal').value.trim(), object: document.getElementById('c_object').value.trim(), prof: document.getElementById('c_prof').value.trim() }; let score = 0; let msgs = []; const checkDict = (val, dict, name) => { if(!val) return; if(val.charAt(0) !== letter) { msgs.push(`❌ ${name}: '${val}' לא מתחיל ב-'${letter}'`); return; } if(dict.includes(val)) { score += 10; msgs.push(`✅ ${name}: מושלם!`); } else { msgs.push(`❌ ${name}: לא במילון.`); } }; checkDict(vals.country, dictCountries, "ארץ"); checkDict(vals.color, dictColors, "צבע"); checkDict(vals.animal, dictAnimals, "חי"); checkDict(vals.prof, dictProfessions, "מקצוע"); if(vals.object) { if(vals.object.charAt(0) !== letter) { msgs.push(`❌ דומם: שגוי`); } else if(letter === 'ר' && !dictObjectsR.includes(vals.object)) { msgs.push(`❌ דומם: לא במילון.`); } else { score+=10; msgs.push(`✅ דומם: אושר`); } } document.getElementById('cc-results').innerHTML = `<h3 class="text-3xl font-black text-green-600 mb-4">סך הכל: ${score} נק'!</h3><div class="text-right text-gray-600 font-bold bg-white p-4 rounded-xl border">${msgs.join('<br>')}</div>`; }
 
         // ==========================================
-        //  12. אתחול נתונים ראשוניים
+        //  12. אתחול נתונים (מפות וניווט)
+        // ==========================================
+        function renderMap(content) {
+            const locs = appData.locations || {};
+            let html = `
+                <div class="text-center mb-6 mt-4">
+                    <h2 class="text-3xl font-extrabold text-gray-800"><i class="fas fa-map-marked-alt text-cyan-600 mr-2"></i> מפת מסלול וניווט</h2>
+                    <p class="text-gray-500 mt-2">המסלול הרשמי של משפחות פרידמן</p>
+                </div>
+                <div class="bg-white rounded-3xl shadow-md mb-8 border border-gray-200 overflow-hidden flex flex-col md:flex-row h-[60vh] sm:h-[70vh]">
+                    <div class="w-full md:w-1/3 bg-indigo-50 border-b md:border-l border-indigo-100 flex flex-col h-2/5 md:h-full shrink-0">
+                        <div class="p-4 bg-indigo-600 text-white shrink-0 shadow-md z-10">
+                            <h3 class="font-bold text-lg"><i class="fas fa-route mr-1"></i> נקודות המסלול</h3>
+                            <p class="text-xs text-indigo-200 mb-2">לחצו על היעד לפתיחה במפה</p>
+                            <div class="flex gap-2">
+                                <button onclick="openGoogleMaps(0, 6)" class="flex-1 bg-white text-indigo-700 text-xs font-bold py-2 rounded-xl shadow-sm hover:bg-indigo-100 transition flex items-center justify-center gap-1"><i class="fas fa-external-link-alt"></i> חלק א'</button>
+                                <button onclick="openGoogleMaps(6, 13)" class="flex-1 bg-white text-indigo-700 text-xs font-bold py-2 rounded-xl shadow-sm hover:bg-indigo-100 transition flex items-center justify-center gap-1"><i class="fas fa-external-link-alt"></i> חלק ב'</button>
+                            </div>
+                        </div>
+                        <div class="flex-1 overflow-y-auto hide-scrollbar p-3" id="locations-list"></div>
+                    </div>
+                    <div class="w-full md:w-2/3 h-3/5 md:h-full relative z-0">
+                        <div id="leaflet-map-container" class="absolute inset-0 z-0"></div>
+                    </div>
+                </div>
+                <div class="bg-cyan-50 rounded-3xl shadow-sm p-6 mb-8 border border-cyan-100">
+                    <h3 class="font-extrabold text-cyan-800 mb-4 text-lg"><i class="fas fa-map-pin mr-2"></i> הוספת יעד עצמאי לניווט מהיר</h3>
+                    <div class="flex flex-col gap-3">
+                        <input type="text" id="loc-name" placeholder="שם היעד (למשל: סופרמרקט קרוב)" class="w-full p-3 border border-cyan-200 rounded-xl outline-none focus:ring-2 focus:ring-cyan-400 bg-white">
+                        <input type="url" id="loc-url" placeholder="קישור ל-Google Maps או Waze" class="w-full p-3 border border-cyan-200 rounded-xl outline-none focus:ring-2 focus:ring-cyan-400 bg-white dir-ltr">
+                        <button onclick="addLocation()" class="w-full bg-cyan-600 text-white p-3.5 rounded-xl font-bold shadow-md hover:bg-cyan-700 transition mt-1 text-lg">הוסף לרשימה</button>
+                    </div>
+                </div>
+                <h3 class="font-extrabold text-gray-700 mb-3 ml-2 text-lg">יעדים מועדפים שהוספתם:</h3>
+                <div class="flex flex-col gap-3">`;
+            const locKeys = Object.keys(locs);
+            if(locKeys.length === 0) { 
+                html += `<div class="text-center p-6 bg-white rounded-3xl text-gray-500 font-medium border">טרם הוספתם יעדים עצמאיים.</div>`; 
+            } else { 
+                locKeys.forEach(key => { 
+                    const loc = locs[key]; 
+                    html += `<div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex justify-between items-center"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center text-lg"><i class="fas fa-map-marker-alt"></i></div><span class="font-bold text-gray-800 text-lg">${loc.name}</span></div><div class="flex gap-2"><a href="${loc.url}" target="_blank" class="bg-gray-800 hover:bg-black text-white px-4 py-2.5 rounded-xl font-bold shadow transition"><i class="fas fa-location-arrow mr-1"></i> נווט</a><button onclick="deleteLocation('${key}')" class="text-red-400 hover:text-red-600 px-3"><i class="fas fa-trash"></i></button></div></div>`; 
+                }); 
+            }
+            html += `</div>`; 
+            content.innerHTML = html;
+            setTimeout(() => { initLeafletMap(); renderLocationsList(); }, 100);
+        }
+
+        function initLeafletMap() {
+            const container = document.getElementById('leaflet-map-container');
+            if (!container) return;
+            if (leafletMapInstance) { leafletMapInstance.remove(); leafletMapInstance = null; }
+            leafletMapInstance = L.map('leaflet-map-container').setView([46.1, 11.5], 7);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(leafletMapInstance);
+            const latlngs = []; mapMarkers = [];
+            routePoints.forEach((point, index) => {
+                latlngs.push([point.lat, point.lng]);
+                let markerClass = 'route-marker'; 
+                if (point.type === 'start') markerClass += ' start-point'; 
+                if (point.type === 'end') markerClass += ' end-point';
+                const customIcon = L.divIcon({ className: 'custom-div-icon', html: `<div class="${markerClass}" style="width: 30px; height: 30px; line-height: 24px;">${point.id}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+                const marker = L.marker([point.lat, point.lng], { icon: customIcon }).addTo(leafletMapInstance);
+                marker.bindPopup(`<div class="text-right" style="direction: rtl;"><div class="text-xl mb-1">${point.icon}</div><h3 class="font-extrabold text-indigo-800 text-lg mb-1">${point.name}</h3><p class="text-sm text-gray-600 leading-tight">${point.desc}</p></div>`);
+                mapMarkers.push(marker);
+            });
+            const polyline = L.polyline(latlngs, { color: '#4f46e5', weight: 4, opacity: 0.8, dashArray: '10, 10' }).addTo(leafletMapInstance);
+            leafletMapInstance.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+        }
+
+        function renderLocationsList() {
+            const container = document.getElementById('locations-list'); 
+            if (!container) return; 
+            container.innerHTML = '';
+            routePoints.forEach((point, index) => {
+                const isLast = index === routePoints.length - 1;
+                container.innerHTML += `<div class="flex cursor-pointer hover:bg-indigo-100 p-2 rounded-xl transition group relative mb-1" onclick="panToLocation(${index})"><div class="flex flex-col items-center ml-3 relative"><div class="w-6 h-6 rounded-full ${point.type === 'start' ? 'bg-emerald-500' : (point.type === 'end' ? 'bg-red-500' : 'bg-indigo-600')} text-white flex items-center justify-center font-bold text-xs z-10 shadow-md group-hover:scale-110 transition">${point.id}</div>${!isLast ? '<div class="w-0.5 bg-indigo-200 flex-1 my-1"></div>' : ''}</div><div class="flex-1"><div class="flex justify-between items-start"><h3 class="font-bold text-gray-800 text-sm leading-tight">${point.name}</h3><span class="text-sm ml-1">${point.icon}</span></div></div></div>`;
+            });
+        }
+
+        function panToLocation(index) {
+            if (!leafletMapInstance || !mapMarkers[index]) return; 
+            const point = routePoints[index];
+            leafletMapInstance.flyTo([point.lat, point.lng], 12, { duration: 1.5 }); 
+            mapMarkers[index].openPopup();
+            if (window.innerWidth < 768) { document.getElementById('leaflet-map-container').scrollIntoView({ behavior: 'smooth' }); }
+        }
+
+        function openGoogleMaps(startIndex, endIndex) { 
+            const subset = routePoints.slice(startIndex, endIndex + 1); 
+            let baseUrl = "https://www.google.com/maps/dir/"; 
+            subset.forEach(point => { baseUrl += `${point.lat},${point.lng}/`; }); 
+            window.open(baseUrl, '_blank'); 
+        }
+
+        function addLocation() { 
+            const n = document.getElementById('loc-name').value.trim(); 
+            const u = document.getElementById('loc-url').value.trim(); 
+            if(!n || !u) { return showModal('שגיאה', 'יש למלא שם וקישור חוקי.'); }
+            db.ref(`locations`).push({ name: n, url: u }); 
+        }
+
+        function deleteLocation(id) { 
+            showModal('מחיקה', 'למחוק יעד זה?', true, () => { db.ref(`locations/${id}`).remove(); }); 
+        }
+
+        // ==========================================
+        //  13. אתחול הנתונים הראשוני
         // ==========================================
         function generateInitialData() {
             let updates = {};
