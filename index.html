@@ -551,9 +551,7 @@
             } 
             try { localStorage.setItem('tiyul_my_identity', select.value); } catch(e) {} 
             window.tiyul_temp_identity = select.value; 
-            updateHeaderUserName(); 
-            document.getElementById('welcome-modal').style.display = 'none'; 
-        }
+        function saveUserIdentity() { const select = document.getElementById('welcome-user-select'); if (!select.value) { showModal('רגע אחד...', 'אנא בחר מי אתה מתוך הרשימה כדי להמשיך לטיול.'); return; } try { localStorage.setItem('tiyul_my_identity', select.value); } catch(e) {} window.tiyul_temp_identity = select.value; updateHeaderUserName(); document.getElementById('welcome-modal').style.display = 'none'; }
 
         db.ref('/').on('value', (snapshot) => {
             try {
@@ -567,19 +565,21 @@
                     if (!appData.shopping) appData.shopping = {};
                     if (!appData.pantry) appData.pantry = {};
                     if (!appData.gallery) appData.gallery = {};
-                    if (!appData.games) appData.games = { 
-                        scores: { mishmar: 0, adora: 0 }, 
-                        individualScores: {}, 
-                        currentCountryCity: { letter: "?" }, 
-                        liveSong: { word: "?" }, 
-                        photoHunt: { mission: "לחצו להגרלת משימה ראשונה!" }, 
-                        war: { players: {} }, 
-                        taki: { center: null }, 
-                        duel: { current: null }, 
-                        riddles: { current: null, showAns: false }, 
-                        bingo: { winners: [] }, 
-                        whoami: { current: null } 
-                    };
+                    
+                    // אבטחת כל משחק בנפרד למניעת קריסות ממסד נתונים ישן!
+                    if (!appData.games) appData.games = {};
+                    if (!appData.games.scores) appData.games.scores = { mishmar: 0, adora: 0 };
+                    if (!appData.games.individualScores) appData.games.individualScores = {};
+                    if (!appData.games.currentCountryCity) appData.games.currentCountryCity = { letter: "?" };
+                    if (!appData.games.liveSong) appData.games.liveSong = { word: "?" };
+                    if (!appData.games.photoHunt) appData.games.photoHunt = { mission: "לחצו להגרלת משימה ראשונה!" };
+                    if (!appData.games.war) appData.games.war = { players: {} };
+                    if (!appData.games.taki) appData.games.taki = { center: null };
+                    if (!appData.games.duel) appData.games.duel = { current: null };
+                    if (!appData.games.riddles) appData.games.riddles = { current: null, showAns: false };
+                    if (!appData.games.bingo) appData.games.bingo = { winners: [] };
+                    if (!appData.games.whoami) appData.games.whoami = { current: null };
+
                     if (!appData.emergencyContacts) appData.emergencyContacts = { custom: {} };
                     if (!appData.emergency) appData.emergency = { sos: null, liveLocations: {}, ping: 0 };
                     
@@ -597,8 +597,8 @@
                         document.getElementById('sos-alert-modal').style.display = 'none'; 
                     }
 
-                    // טיפול בדו-קרב (התראה קופצת)
-                    const duel = appData.games.duel.current;
+                    // טיפול בדו-קרב (התראה קופצת) - הוספנו סימן שאלה להגנה נוספת
+                    const duel = appData.games.duel?.current;
                     if (duel && duel.timestamp > lastDuelTimestamp) {
                         const myName = getMyIdentity();
                         lastDuelTimestamp = duel.timestamp;
